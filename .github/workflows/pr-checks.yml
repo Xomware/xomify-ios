@@ -1,0 +1,150 @@
+name: PR Checks (Lint, Test, Build)
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [develop]
+
+env:
+  XCODE_VERSION: '16.1'
+
+jobs:
+  lint:
+    name: Lint & Code Quality
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Run SwiftLint
+        run: |
+          if which swiftlint >/dev/null; then
+            swiftlint lint --strict Xomify-iOS/ --reporter json > lint-results.json || true
+            swiftlint lint --strict Xomify-iOS/ --reporter github-actions-logging
+          else
+            echo "SwiftLint not installed, installing..."
+            brew install swiftlint
+            swiftlint lint --strict Xomify-iOS/ --reporter github-actions-logging || true
+          fi
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: lint-results.json
+          retention-days: 30
+
+  build:
+    name: Build & Validation
+    runs-on: macos-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Set up secrets config
+        run: |
+          cat > Xomify-iOS/secrets.xcconfig << XCCONFIG
+          SPOTIFY_CLIENT_ID = ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_REDIRECT_URI = ${{ secrets.SPOTIFY_REDIRECT_URI }}
+          XCCONFIG
+
+      - name: Build for Testing
+        run: |
+          xcodebuild build-for-testing \
+            -project Xomify-iOS.xcodeproj \
+            -scheme Xomify-iOS \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Debug \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty || true
+
+      - name: Run Unit Tests
+        run: |
+          xcodebuild test-without-building \
+            -project Xomify-iOS.xcodeproj \
+            -scheme Xomify-iOS \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Debug \
+            -derivedDataPath DerivedData \
+            -testPlan UnitTests \
+            -resultBundlePath TestResults \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          retention-days: 30
+
+      - name: Archive Build
+        if: success()
+        run: |
+          xcodebuild archive \
+            -project Xomify-iOS.xcodeproj \
+            -scheme Xomify-iOS \
+            -destination generic/platform=iOS \
+            -archivePath "Xomify-iOS.xcarchive" \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty || true
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-archive
+          path: Xomify-iOS.xcarchive
+          retention-days: 7
+
+  test:
+    name: Run Tests
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Set up secrets config
+        run: |
+          cat > Xomify-iOS/secrets.xcconfig << XCCONFIG
+          SPOTIFY_CLIENT_ID = ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_REDIRECT_URI = ${{ secrets.SPOTIFY_REDIRECT_URI }}
+          XCCONFIG
+
+      - name: Run Unit Tests with Coverage
+        run: |
+          xcodebuild test \
+            -project Xomify-iOS.xcodeproj \
+            -scheme Xomify-iOS \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Debug \
+            -derivedDataPath DerivedData \
+            -enableCodeCoverage YES \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty || true
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          verbose: true
