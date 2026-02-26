@@ -1,0 +1,53 @@
+version: 2
+updates:
+  # Enable version updates for Swift Package Manager dependencies
+  - package-ecosystem: "swift"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "domgiordano"
+    assignees:
+      - "domgiordano"
+    labels:
+      - "dependencies"
+      - "swift"
+    commit-message:
+      prefix: "chore(deps):"
+      prefix-development: "chore(deps-dev):"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "Alamofire"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "domgiordano"
+    labels:
+      - "github-actions"
+    commit-message:
+      prefix: "chore(actions):"
+
+  # CocoaPods support (if using)
+  # - package-ecosystem: "bundler"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+
+# Security updates are always enabled and opened with high priority
+vulnerability-alerts: true
+dependabot-alerts: true
