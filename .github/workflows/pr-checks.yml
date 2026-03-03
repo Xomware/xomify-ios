@@ -5,6 +5,7 @@ on:
     branches: [main, master, develop]
   push:
     branches: [develop]
+  workflow_dispatch:
 
 env:
   XCODE_VERSION: '16.1'
