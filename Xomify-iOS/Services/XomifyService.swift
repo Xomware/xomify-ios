@@ -67,4 +67,57 @@ actor XomifyService {
             "monthKey": monthKey
         ])
     }
+
+    // MARK: - Social
+
+    /// Create a new share in the feed
+    @discardableResult
+    func createShare(
+        email: String,
+        type: ShareType,
+        payload: [String: Any],
+        caption: String? = nil
+    ) async throws -> ShareCreateResponse {
+        var body: [String: Any] = [
+            "email": email,
+            "type": type.rawValue,
+            "payload": payload
+        ]
+        if let caption = caption {
+            body["caption"] = caption
+        }
+        return try await network.xomifyPost("/shares/create", body: body)
+    }
+
+    /// Get the social feed for a user
+    func getFeed(email: String) async throws -> FeedResponse {
+        try await network.xomifyGet("/shares/feed", queryParams: ["email": email])
+    }
+
+    /// React to a share (like / fire / love / none to remove)
+    @discardableResult
+    func reactToShare(
+        shareId: String,
+        email: String,
+        action: ReactionAction
+    ) async throws -> ReactionResponse {
+        try await network.xomifyPost("/shares/react", body: [
+            "shareId": shareId,
+            "email": email,
+            "action": action.rawValue
+        ])
+    }
+
+    /// Create a friend invite code
+    func createInvite(email: String) async throws -> InviteCreateResponse {
+        try await network.xomifyPost("/invites/create", body: ["email": email])
+    }
+
+    /// Accept a friend invite code
+    func acceptInvite(email: String, inviteCode: String) async throws -> InviteAcceptResponse {
+        try await network.xomifyPost("/invites/accept", body: [
+            "email": email,
+            "inviteCode": inviteCode
+        ])
+    }
 }

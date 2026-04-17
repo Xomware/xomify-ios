@@ -73,6 +73,20 @@ struct ReleaseRadarView: View {
                     }
                     .disabled(viewModel.isRefreshing || isLoadingUser)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if viewModel.selectedWeek != nil || !viewModel.historyWeeks.isEmpty {
+                        ShareLink(
+                            item: URL(string: "https://xomify.xomware.com/release-radar")!,
+                            subject: Text("My Release Radar"),
+                            message: Text(shareCaption)
+                        ) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .simultaneousGesture(TapGesture().onEnded {
+                            Task { await publishReleaseRadarShare() }
+                        })
+                    }
+                }
             }
             .task {
                 await loadUserAndData()
@@ -422,8 +436,51 @@ struct ReleaseRadarView: View {
         .padding(.horizontal, 40)
     }
     
+    // MARK: - Share to Feed
+
+    private var shareCaption: String {
+        "My Release Radar — \(viewModel.displayWeekName)"
+    }
+
+    private func publishReleaseRadarShare() async {
+        let week = viewModel.selectedWeek ?? viewModel.historyWeeks.first
+        guard let week = week else { return }
+        guard let email = viewModel.userEmail, !email.isEmpty else {
+            print("⚠️ ReleaseRadar share: no email")
+            return
+        }
+
+        let topReleases: [[String: Any]] = (week.releases ?? []).prefix(5).map { release in
+            var item: [String: Any] = [
+                "albumName": release.displayName,
+                "artistName": release.displayArtist
+            ]
+            if let type = release.albumType { item["albumType"] = type }
+            if let image = release.imageUrl { item["imageUrl"] = image }
+            return item
+        }
+
+        let payload: [String: Any] = [
+            "weekLabel": week.displayName,
+            "weekKey": week.weekKey,
+            "topReleases": topReleases
+        ]
+
+        do {
+            _ = try await XomifyService.shared.createShare(
+                email: email,
+                type: .releaseRadar,
+                payload: payload,
+                caption: shareCaption
+            )
+            print("✅ ReleaseRadar: shared to feed")
+        } catch {
+            print("❌ ReleaseRadar: share failed - \(error)")
+        }
+    }
+
     // MARK: - Week Picker
-    
+
     private var weekPicker: some View {
         NavigationStack {
             List {
