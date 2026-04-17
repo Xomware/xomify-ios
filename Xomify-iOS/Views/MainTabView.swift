@@ -48,6 +48,13 @@ struct MainTabView: View {
                     Label("Builder", systemImage: "music.note.list")
                 }
                 .tag(5)
+
+            // More (Friends, Groups, Invites, Ratings, Compare, etc.)
+            MoreView()
+                .tabItem {
+                    Label("More", systemImage: "ellipsis.circle")
+                }
+                .tag(6)
         }
         .tint(Color.xomifyGreen)
     }
