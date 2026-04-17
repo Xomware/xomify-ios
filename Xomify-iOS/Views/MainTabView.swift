@@ -49,7 +49,7 @@ struct MainTabView: View {
                 }
                 .tag(5)
 
-            // More (Friends, Groups, Invites, Ratings, Compare, etc.)
+            // More (Friends, Groups, Invites, Ratings, etc.)
             MoreView()
                 .tabItem {
                     Label("More", systemImage: "ellipsis.circle")

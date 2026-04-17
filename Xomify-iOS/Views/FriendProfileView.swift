@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Read-only profile of another user (pushed from FriendsView / CompareView).
+/// Read-only profile of another user (pushed from FriendsView).
 struct FriendProfileView: View {
 
     let profileEmail: String

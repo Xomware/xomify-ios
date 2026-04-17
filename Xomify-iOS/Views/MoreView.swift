@@ -41,11 +41,6 @@ struct MoreView: View {
                     .listRowBackground(Color.xomifyCard)
 
                     Section {
-                        row(icon: "person.line.dotted.person",
-                            title: "Compare",
-                            subtitle: "Music taste similarity with a friend",
-                            tint: Color.xomifyPurple,
-                            destination: AnyView(CompareView()))
                         row(icon: "waveform.path.ecg",
                             title: "Playlist Analysis",
                             subtitle: "Breakdown of any playlist",
