@@ -216,3 +216,189 @@ struct InviteAcceptResponse: Codable, Sendable {
     let inviteCode: String?
     let friendEmail: String?
 }
+
+// MARK: - Friends
+
+/// A single friend / friend-request row in any bucket.
+struct Friend: Codable, Sendable, Hashable {
+    let email: String
+    let friendEmail: String?
+    let displayName: String?
+    let avatar: String?
+    let status: String?
+    let direction: String?
+    let createdAt: String?
+    let mutualCount: Int?
+
+    /// Friend-side email (the target). For accepted/pending/requested rows the
+    /// backend stores the row under the current user and identifies the other
+    /// party via `friendEmail`.
+    var targetEmail: String {
+        if let fe = friendEmail, !fe.isEmpty { return fe }
+        return email
+    }
+
+    /// Human-facing label.
+    var label: String {
+        if let name = displayName, !name.isEmpty { return name }
+        return targetEmail
+    }
+}
+
+/// Response for GET /friends/all?email=...
+struct FriendsAllResponse: Codable, Sendable {
+    let email: String?
+    let accepted: [Friend]?
+    let requested: [Friend]?
+    let pending: [Friend]?
+    let blocked: [Friend]?
+    let acceptedCount: Int?
+    let requestedCount: Int?
+    let pendingCount: Int?
+    let blockedCount: Int?
+    let totalCount: Int?
+}
+
+/// Public profile of another user. Nested term maps are stored loosely since
+/// the backend shape can vary (track objects vs id strings).
+struct FriendProfile: Codable, Sendable {
+    let email: String?
+    let displayName: String?
+    let userId: String?
+    let avatar: String?
+    let followersCount: Int?
+    let followingCount: Int?
+    let playlistCount: Int?
+    let friendsCount: Int?
+    let topSongs: [String: JSONValue]?
+    let topArtists: [String: JSONValue]?
+    let topGenres: [String: JSONValue]?
+    let playlists: [JSONValue]?
+}
+
+/// Response for GET /friends/list?email=... — every other user on the platform.
+struct UserListResponse: Codable, Sendable {
+    let users: [SearchResult]?
+    let totalCount: Int?
+}
+
+/// A user in the "find friends" list. Action flags come from the backend.
+struct SearchResult: Codable, Sendable, Identifiable, Hashable {
+    let email: String
+    let displayName: String?
+    let avatar: String?
+    let isFriend: Bool?
+    let isPending: Bool?
+    let isOutgoingRequest: Bool?
+    let isIncomingRequest: Bool?
+    let mutualCount: Int?
+
+    var id: String { email }
+
+    var label: String {
+        if let name = displayName, !name.isEmpty { return name }
+        return email
+    }
+}
+
+// MARK: - Groups
+
+/// A group you belong to.
+struct XomifyGroup: Codable, Sendable, Identifiable, Hashable {
+    let groupId: String
+    let name: String
+    let description: String?
+    let ownerEmail: String?
+    let createdAt: String?
+    let memberCount: Int?
+    let trackCount: Int?
+
+    var id: String { groupId }
+}
+
+/// Response for GET /groups/list
+struct GroupsListResponse: Codable, Sendable {
+    let email: String?
+    let groups: [XomifyGroup]?
+    let totalCount: Int?
+}
+
+/// Response for GET /groups/info — group + members + tracks
+struct GroupInfo: Codable, Sendable {
+    let group: XomifyGroup?
+    let members: [GroupMember]?
+    let tracks: [GroupTrack]?
+}
+
+struct GroupMember: Codable, Sendable, Identifiable, Hashable {
+    let email: String
+    let displayName: String?
+    let joinedAt: String?
+    let isOwner: Bool?
+
+    var id: String { email }
+
+    var label: String {
+        if let name = displayName, !name.isEmpty { return name }
+        return email
+    }
+}
+
+struct GroupTrack: Codable, Sendable, Identifiable, Hashable {
+    let trackIdTimestamp: String
+    let trackId: String?
+    let trackName: String?
+    let artistName: String?
+    let albumName: String?
+    let imageUrl: String?
+    let addedBy: String?
+    let addedAt: String?
+    let listenedBy: [String]?
+
+    var id: String { trackIdTimestamp }
+
+    var image: URL? {
+        guard let s = imageUrl else { return nil }
+        return URL(string: s)
+    }
+}
+
+/// POST /groups/create response — server returns the new group.
+struct GroupCreateResponse: Codable, Sendable {
+    let success: Bool?
+    let group: XomifyGroup?
+    let groupId: String?
+}
+
+/// Simple success ack.
+struct SuccessResponse: Codable, Sendable {
+    let success: Bool?
+}
+
+/// POST /groups/song-status response.
+struct SongStatusResponse: Codable, Sendable {
+    let success: Bool?
+    let listened: Bool?
+    let listenedBy: [String]?
+}
+
+// MARK: - Ratings
+
+struct TrackRating: Codable, Sendable, Identifiable, Hashable {
+    let email: String
+    let trackId: String
+    let trackName: String?
+    let artistName: String?
+    let rating: Int
+    let review: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    var id: String { trackId }
+}
+
+struct RatingsAllResponse: Codable, Sendable {
+    let email: String?
+    let ratings: [TrackRating]?
+    let totalCount: Int?
+}
