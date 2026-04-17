@@ -236,6 +236,20 @@ struct PlaylistsResponse: Codable, Sendable {
     let offset: Int
 }
 
+/// A page of /playlists/{id}/tracks. `track` is optional because Spotify can
+/// return `null` for removed/unplayable tracks.
+struct PlaylistTracksResponse: Codable, Sendable {
+    let items: [PlaylistTrackItem]?
+    let total: Int?
+    let limit: Int?
+    let offset: Int?
+}
+
+struct PlaylistTrackItem: Codable, Sendable {
+    let track: SpotifyTrack?
+    let addedAt: String?
+}
+
 // MARK: - Time Range
 
 enum TimeRange: String, CaseIterable, Sendable {

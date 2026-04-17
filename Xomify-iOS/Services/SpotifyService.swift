@@ -233,6 +233,32 @@ actor SpotifyService {
         )
     }
     
+    /// Get a single page of playlist tracks.
+    func getPlaylistTracks(playlistId: String, limit: Int = 50, offset: Int = 0) async throws -> PlaylistTracksResponse {
+        try await network.spotifyGet(
+            "/playlists/\(playlistId)/tracks?limit=\(limit)&offset=\(offset)"
+        )
+    }
+
+    /// Fetch every playlist track, paginating in 50-chunk pages.
+    func getAllPlaylistTracks(playlistId: String) async throws -> [SpotifyTrack] {
+        var all: [SpotifyTrack] = []
+        var offset = 0
+        let pageSize = 50
+
+        while true {
+            let page = try await getPlaylistTracks(playlistId: playlistId, limit: pageSize, offset: offset)
+            let tracks = (page.items ?? []).compactMap { $0.track }
+            all.append(contentsOf: tracks)
+
+            let total = page.total ?? 0
+            offset += pageSize
+            if offset >= total || tracks.isEmpty { break }
+        }
+
+        return all
+    }
+
     // MARK: - Search
     
     /// Search Spotify
