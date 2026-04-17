@@ -7,40 +7,54 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
+            // Feed
+            FeedView()
+                .tabItem {
+                    Label("Feed", systemImage: "sparkles")
+                }
+                .tag(0)
+
             // Home/Profile
             ProfileView()
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
-                .tag(0)
-            
+                .tag(1)
+
             // Top Items
             TopItemsView()
                 .tabItem {
                     Label("Top", systemImage: "chart.bar.fill")
                 }
-                .tag(1)
-            
+                .tag(2)
+
             // Release Radar
             ReleaseRadarView()
                 .tabItem {
                     Label("Releases", systemImage: "antenna.radiowaves.left.and.right")
                 }
-                .tag(2)
-            
+                .tag(3)
+
             // Wrapped
             WrappedView()
                 .tabItem {
                     Label("Wrapped", systemImage: "gift.fill")
                 }
-                .tag(3)
-            
+                .tag(4)
+
             // Playlist Builder
             PlaylistBuilderTabView()
                 .tabItem {
                     Label("Builder", systemImage: "music.note.list")
                 }
-                .tag(4)
+                .tag(5)
+
+            // More (Friends, Groups, Invites, Ratings, etc.)
+            MoreView()
+                .tabItem {
+                    Label("More", systemImage: "ellipsis.circle")
+                }
+                .tag(6)
         }
         .tint(Color.xomifyGreen)
     }

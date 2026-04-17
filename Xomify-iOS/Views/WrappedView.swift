@@ -73,6 +73,22 @@ struct WrappedView: View {
             .background(Color.xomifyDark.ignoresSafeArea())
             .navigationTitle("Wrapped")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let wrap = currentWrap {
+                        ShareLink(
+                            item: URL(string: "https://xomify.xomware.com/wrapped")!,
+                            subject: Text("My \(wrap.displayName) Wrap"),
+                            message: Text("My top tracks from \(wrap.displayName)")
+                        ) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .simultaneousGesture(TapGesture().onEnded {
+                            Task { await publishWrappedShare() }
+                        })
+                    }
+                }
+            }
             .task {
                 await loadData()
             }
@@ -85,6 +101,47 @@ struct WrappedView: View {
             .sheet(isPresented: $playlistBuilder.isShowing) {
                 PlaylistBuilderView()
             }
+        }
+    }
+
+    // MARK: - Share to Feed
+
+    private func publishWrappedShare() async {
+        guard let wrap = currentWrap else { return }
+
+        do {
+            let user = try await spotifyService.getCurrentUser()
+            guard let email = user.email, !email.isEmpty else {
+                print("⚠️ Wrapped share: no email")
+                return
+            }
+
+            // Build lightweight top track summaries from whatever we have loaded.
+            // TODO: If tracks haven't been loaded (wrong tab/term), this will be empty —
+            // the web version eagerly loads the short-term song list. Working-but-thin
+            // beats broken-but-complete for now.
+            let topTracks: [[String: Any]] = tracks.prefix(5).map { track in
+                [
+                    "name": track.name,
+                    "artist": track.artistNames
+                ]
+            }
+
+            let payload: [String: Any] = [
+                "month": wrap.displayName,
+                "monthKey": wrap.monthKey,
+                "topTracks": topTracks
+            ]
+
+            _ = try await xomifyService.createShare(
+                email: email,
+                type: .wrapped,
+                payload: payload,
+                caption: "My top tracks from \(wrap.displayName)"
+            )
+            print("✅ Wrapped: shared to feed")
+        } catch {
+            print("❌ Wrapped: share failed - \(error)")
         }
     }
     
