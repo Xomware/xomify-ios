@@ -2,134 +2,120 @@ name: Deploy to TestFlight
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   workflow_dispatch:
     inputs:
-      testflight_notes:
-        description: 'Release notes for TestFlight'
+      release_notes:
+        description: 'Release notes for this build'
         required: false
-        default: 'Automated build'
-
-env:
-  XCODE_VERSION: '16.1'
+        default: 'Automated TestFlight build'
 
 jobs:
   deploy:
     name: Build & Upload to TestFlight
-    runs-on: macos-latest
+    runs-on: macos-15
+    timeout-minutes: 45
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Set up secrets config
+      - name: Write secrets.xcconfig
         run: |
           cat > Xomify-iOS/secrets.xcconfig << XCCONFIG
           SPOTIFY_CLIENT_ID = ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_REDIRECT_URI = ${{ secrets.SPOTIFY_REDIRECT_URI }}
           XCCONFIG
 
-      - name: Import Code Signing Certificates
-        uses: Apple-Actions/import-codesign-certs@v2
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12 }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      - name: Write App Store Connect API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_P8" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
 
-      - name: Download Provisioning Profiles
+      - name: Compute build number
+        id: build_number
         run: |
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" | base64 -D > ~/Library/MobileDevice/Provisioning\ Profiles/xomify-ios.mobileprovision
-          
-      - name: Build Archive
+          BUILD_NUMBER=$(date +%Y%m%d%H%M)
+          echo "value=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Build number: $BUILD_NUMBER"
+
+      - name: Archive
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
         run: |
+          set -o pipefail
           xcodebuild archive \
             -project Xomify-iOS.xcodeproj \
             -scheme Xomify-iOS \
-            -destination generic/platform=iOS \
-            -archivePath "build/Xomify-iOS.xcarchive" \
             -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Xomify-iOS.xcarchive" \
             -allowProvisioningUpdates \
-            CODE_SIGN_IDENTITY="${{ secrets.APPLE_CODE_SIGN_IDENTITY }}" \
-            PROVISIONING_PROFILE="${{ secrets.APPLE_PROVISIONING_PROFILE_UUID }}" \
-            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
-            | xcpretty || true
+            -authenticationKeyID "$ASC_API_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_API_ISSUER_ID" \
+            -authenticationKeyPath "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8" \
+            CURRENT_PROJECT_VERSION=${{ steps.build_number.outputs.value }}
 
       - name: Create ExportOptions.plist
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          cat > ExportOptions.plist << EOF
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>destination</key>
-              <string>upload</string>
+              <string>export</string>
               <key>method</key>
-              <string>app-store</string>
+              <string>app-store-connect</string>
               <key>signingStyle</key>
               <string>automatic</string>
               <key>stripSwiftSymbols</key>
               <true/>
               <key>teamID</key>
-              <string>${{ secrets.APPLE_TEAM_ID }}</string>
+              <string>${TEAM_ID}</string>
+              <key>uploadSymbols</key>
+              <true/>
           </dict>
           </plist>
-          EOF
+          PLIST
 
       - name: Export IPA
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
         run: |
+          set -o pipefail
           xcodebuild -exportArchive \
-            -archivePath "build/Xomify-iOS.xcarchive" \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath "build/" \
-            | xcpretty || true
+            -archivePath "$RUNNER_TEMP/Xomify-iOS.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyID "$ASC_API_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_API_ISSUER_ID" \
+            -authenticationKeyPath "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8"
 
       - name: Upload to TestFlight
-        run: |
-          xcrun altool \
-            --upload-app \
-            --file "build/Xomify-iOS.ipa" \
-            --username "${{ secrets.APPLE_ID }}" \
-            --password "${{ secrets.APPLE_APP_PASSWORD }}" \
-            --team-id "${{ secrets.APPLE_TEAM_ID }}"
-
-      - name: Create Release Notes
-        if: success()
-        run: |
-          cat > release-notes.txt << EOF
-          Release: Automated TestFlight Build
-          Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          Commit: ${{ github.sha }}
-          Commit Message: ${{ github.event.head_commit.message }}
-          Build Number: ${{ github.run_number }}
-          Release Notes: ${{ github.event.inputs.testflight_notes }}
-          EOF
-
-      - name: Upload Release Notes
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-notes
-          path: release-notes.txt
-          retention-days: 90
-
-      - name: Notify Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          payload: |
-            {
-              "text": "Xomify iOS TestFlight Deployment ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Xomify iOS TestFlight Deployment*\nStatus: `${{ job.status }}`\nBuild: #${{ github.run_number }}\nCommit: `${{ github.sha }}`"
-                  }
-                }
-              ]
-            }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          IPA_PATH=$(find "$RUNNER_TEMP/export" -name "*.ipa" | head -1)
+          echo "Uploading: $IPA_PATH"
+          xcrun altool --upload-app \
+            -f "$IPA_PATH" \
+            -t ios \
+            --apiKey "$ASC_API_KEY_ID" \
+            --apiIssuer "$ASC_API_ISSUER_ID"
+
+      - name: Cleanup API key
+        if: always()
+        run: rm -f ~/.appstoreconnect/private_keys/*.p8
