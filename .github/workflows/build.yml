@@ -15,7 +15,7 @@ jobs:
 
       - name: Set up secrets config
         run: |
-          cat > Xomify-iOS/secrets.xcconfig << XCCONFIG
+          cat > secrets.xcconfig << XCCONFIG
           SPOTIFY_CLIENT_ID = ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_REDIRECT_URI = ${{ secrets.SPOTIFY_REDIRECT_URI }}
           XCCONFIG
