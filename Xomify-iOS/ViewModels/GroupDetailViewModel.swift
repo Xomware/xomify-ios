@@ -16,13 +16,18 @@ final class GroupDetailViewModel {
     var isRefreshing = false
     var errorMessage: String?
 
-    /// User email inputs to add a member (typed inline).
+    /// User email inputs to add a member (typed inline / by-email fallback).
     var addMemberEmail: String = ""
     var isAddingMember = false
 
     /// Spotify URL input for adding by URL.
     var addSongUrl: String = ""
     var isAddingSong = false
+
+    /// Accepted-friends cache used by the add-member sheet picker.
+    var friends: [Friend] = []
+    var isLoadingFriends = false
+    var friendsError: String?
 
     private let xomify = XomifyService.shared
 
@@ -60,6 +65,23 @@ final class GroupDetailViewModel {
         isRefreshing = false
     }
 
+    // MARK: - Friends (for add-member picker)
+
+    func loadFriends() async {
+        guard !userEmail.isEmpty else { return }
+        isLoadingFriends = true
+        friendsError = nil
+        defer { isLoadingFriends = false }
+
+        do {
+            let response = try await xomify.getAllFriends(email: userEmail)
+            friends = response.accepted ?? []
+        } catch {
+            friendsError = error.localizedDescription
+            print("❌ GroupDetail: loadFriends failed - \(error)")
+        }
+    }
+
     // MARK: - Members
 
     func addMember() async {
@@ -78,6 +100,59 @@ final class GroupDetailViewModel {
         }
     }
 
+    /// Batch-add members via the friend picker. Optimistically inserts a
+    /// skeleton row per email, rolls back the skeleton on a per-email failure,
+    /// and finishes with a `refresh()` so server-canonical display names and
+    /// `joinedAt` land. Partial failures are reported via `errorMessage`.
+    func addMembers(_ emails: [String]) async {
+        let clean = emails
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !clean.isEmpty else { return }
+
+        var succeeded = 0
+        var failures: [String] = []
+
+        for email in clean {
+            // Optimistic insert (skip duplicates).
+            let alreadyPresent = members.contains { $0.email == email }
+            if !alreadyPresent {
+                members.append(GroupMember(
+                    email: email,
+                    displayName: nil,
+                    joinedAt: nil,
+                    isOwner: false
+                ))
+            }
+
+            do {
+                _ = try await xomify.addMember(
+                    email: userEmail,
+                    groupId: groupId,
+                    memberEmail: email
+                )
+                succeeded += 1
+            } catch {
+                // Roll back the skeleton we inserted.
+                if !alreadyPresent {
+                    members.removeAll { $0.email == email && $0.displayName == nil && $0.joinedAt == nil }
+                }
+                failures.append(email)
+                print("❌ GroupDetail: addMembers failed for \(email) - \(error)")
+            }
+        }
+
+        if succeeded == clean.count {
+            // Pull canonical rows (display names, joinedAt).
+            await refresh()
+        } else if succeeded > 0 {
+            errorMessage = "Added \(succeeded) of \(clean.count) — \(failures.count) failed."
+            await refresh()
+        } else {
+            errorMessage = "Couldn't add any members. Please try again."
+        }
+    }
+
     func removeMember(_ member: GroupMember) async {
         do {
             _ = try await xomify.removeMember(
@@ -89,6 +164,37 @@ final class GroupDetailViewModel {
         } catch {
             errorMessage = "Failed to remove member: \(error.localizedDescription)"
             print("❌ GroupDetail: removeMember failed - \(error)")
+        }
+    }
+
+    // MARK: - Leave / Delete (pessimistic)
+
+    /// Non-owner leave. Returns `true` on success so the view can dismiss.
+    @discardableResult
+    func leave() async -> Bool {
+        guard !userEmail.isEmpty, !groupId.isEmpty else { return false }
+        do {
+            _ = try await xomify.leaveGroup(email: userEmail, groupId: groupId)
+            return true
+        } catch {
+            errorMessage = "Failed to leave group: \(error.localizedDescription)"
+            print("❌ GroupDetail: leave failed - \(error)")
+            return false
+        }
+    }
+
+    /// Owner-only delete. Caller MUST verify `group?.ownerEmail == userEmail`
+    /// before invoking. Returns `true` on success.
+    @discardableResult
+    func delete() async -> Bool {
+        guard !userEmail.isEmpty, !groupId.isEmpty else { return false }
+        do {
+            _ = try await xomify.removeGroup(email: userEmail, groupId: groupId)
+            return true
+        } catch {
+            errorMessage = "Failed to delete group: \(error.localizedDescription)"
+            print("❌ GroupDetail: delete failed - \(error)")
+            return false
         }
     }
 
