@@ -15,24 +15,24 @@ actor XomifyService {
     
     /// Get user enrollment status and wraps
     func getUserData(email: String) async throws -> WrappedDataResponse {
-        try await network.xomifyGet("/wrapped/data", queryParams: ["email": email])
+        try await network.xomifyGet("/wrapped/all", queryParams: ["email": email])
     }
-    
+
     /// Get user table data
     func getUserTableData(email: String) async throws -> XomifyUser {
-        try await network.xomifyGet("/user/user-table", queryParams: ["email": email])
+        try await network.xomifyGet("/user/data", queryParams: ["email": email])
     }
-    
+
     /// Enroll or update user enrollments
     func updateEnrollments(
         email: String,
         activeWrapped: Bool,
         activeReleaseRadar: Bool
     ) async throws {
-        let _: EmptyResponse = try await network.xomifyPost("/user/user-table", body: [
+        let _: EmptyResponse = try await network.xomifyPost("/user/update", body: [
             "email": email,
-            "activeWrapped": activeWrapped,
-            "activeReleaseRadar": activeReleaseRadar
+            "wrappedEnrolled": activeWrapped,
+            "releaseRadarEnrolled": activeReleaseRadar
         ])
     }
     
@@ -54,9 +54,9 @@ actor XomifyService {
     
     // MARK: - Wrapped
     
-    /// Get all wraps from wrapped/data endpoint
+    /// Get all wraps
     func getWraps(email: String) async throws -> [MonthlyWrap] {
-        let response: WrappedDataResponse = try await network.xomifyGet("/wrapped/data", queryParams: ["email": email])
+        let response: WrappedDataResponse = try await network.xomifyGet("/wrapped/all", queryParams: ["email": email])
         return response.wraps ?? []
     }
     
