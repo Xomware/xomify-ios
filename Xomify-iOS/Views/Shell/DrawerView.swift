@@ -117,19 +117,19 @@ struct DrawerView: View {
         case .profile:
             ProfileView()
         case .stats:
-            StatsStubView()
+            StatsView()
         case .following:
-            FollowingStubView()
+            FollowingContent()
         case .friends:
             FriendsView()
         case .groups:
             GroupsView()
         case .ratingsHistory:
-            RatingsHistoryStubView()
+            RatingsHistoryView()
         case .settings:
-            SettingsStubView()
+            SettingsView()
         case .helpAbout:
-            HelpAboutStubView()
+            HelpAboutView()
         }
     }
 }
