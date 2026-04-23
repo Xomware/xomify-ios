@@ -1,6 +1,18 @@
 import SwiftUI
 
+/// Public wrapper — owns its own `NavigationStack` for standalone presentation.
+/// When composed inside another `NavigationStack` (e.g. the drawer's Stats screen),
+/// use ``TopItemsContent`` directly to avoid nested stacks.
 struct TopItemsView: View {
+    var body: some View {
+        NavigationStack {
+            TopItemsContent()
+        }
+    }
+}
+
+/// Bare body — no wrapping `NavigationStack`. Safe to embed anywhere.
+struct TopItemsContent: View {
     @State private var viewModel = TopItemsViewModel()
     @State private var selectedCategory = 0 // 0: Tracks, 1: Artists, 2: Genres
     @State private var selectedTerm: TimeRange = .shortTerm
@@ -8,88 +20,86 @@ struct TopItemsView: View {
     @State private var isSavingPlaylist = false
     @State private var playlistSaveMessage: String?
     @State private var savedPlaylistUrl: URL?
-    
+
     @Bindable private var playlistBuilder = PlaylistBuilderManager.shared
-    
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                VStack(spacing: 0) {
-                    // Category selector
-                    categorySelector
-                    
-                    // Term selector
-                    termSelector
-                    
-                    // Content
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .padding(.top, 40)
-                            } else {
-                                switch selectedCategory {
-                                case 0:
-                                    tracksContent
-                                case 1:
-                                    artistsContent
-                                case 2:
-                                    genresContent
-                                default:
-                                    EmptyView()
-                                }
+        ZStack {
+            VStack(spacing: 0) {
+                // Category selector
+                categorySelector
+
+                // Term selector
+                termSelector
+
+                // Content
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .padding(.top, 40)
+                        } else {
+                            switch selectedCategory {
+                            case 0:
+                                tracksContent
+                            case 1:
+                                artistsContent
+                            case 2:
+                                genresContent
+                            default:
+                                EmptyView()
                             }
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 12)
-                        .padding(.bottom, 100) // Space for floating button
                     }
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                    .padding(.bottom, 100) // Space for floating button
                 }
-                
-                // Floating playlist builder button
-                VStack {
+            }
+
+            // Floating playlist builder button
+            VStack {
+                Spacer()
+                HStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        PlaylistBuilderFloatingButton()
-                            .padding(.trailing, 20)
-                            .padding(.bottom, 20)
-                    }
+                    PlaylistBuilderFloatingButton()
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 20)
                 }
             }
-            .background(Color.xomifyDark.ignoresSafeArea())
-            .navigationTitle("Top Items")
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                await viewModel.loadData()
-            }
-            .refreshable {
-                await viewModel.loadData()
-            }
-            .sheet(isPresented: $playlistBuilder.isShowing) {
-                PlaylistBuilderView()
-            }
-            .alert("Playlist Created!", isPresented: .init(
-                get: { playlistSaveMessage != nil },
-                set: { if !$0 { playlistSaveMessage = nil; savedPlaylistUrl = nil } }
-            )) {
-                if let url = savedPlaylistUrl {
-                    Button("Open in Spotify") {
-                        UIApplication.shared.open(url)
-                        playlistSaveMessage = nil
-                        savedPlaylistUrl = nil
-                    }
-                }
-                Button("OK", role: .cancel) {
+        }
+        .background(Color.xomifyDark.ignoresSafeArea())
+        .navigationTitle("Top Items")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.loadData()
+        }
+        .refreshable {
+            await viewModel.loadData()
+        }
+        .sheet(isPresented: $playlistBuilder.isShowing) {
+            PlaylistBuilderView()
+        }
+        .alert("Playlist Created!", isPresented: .init(
+            get: { playlistSaveMessage != nil },
+            set: { if !$0 { playlistSaveMessage = nil; savedPlaylistUrl = nil } }
+        )) {
+            if let url = savedPlaylistUrl {
+                Button("Open in Spotify") {
+                    UIApplication.shared.open(url)
                     playlistSaveMessage = nil
                     savedPlaylistUrl = nil
                 }
-            } message: {
-                Text(playlistSaveMessage ?? "")
             }
+            Button("OK", role: .cancel) {
+                playlistSaveMessage = nil
+                savedPlaylistUrl = nil
+            }
+        } message: {
+            Text(playlistSaveMessage ?? "")
         }
     }
-    
+
     private var categorySelector: some View {
         HStack(spacing: 8) {
             categoryButton(title: "Tracks", icon: "music.note", index: 0)
@@ -100,7 +110,7 @@ struct TopItemsView: View {
         .padding(.vertical, 8)
         .background(Color.xomifyCard)
     }
-    
+
     private func categoryButton(title: String, icon: String, index: Int) -> some View {
         Button {
             withAnimation { selectedCategory = index }
@@ -115,11 +125,11 @@ struct TopItemsView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(selectedCategory == index ? Color.xomifyPurple.opacity(0.3) : Color.clear)
-            .foregroundColor(selectedCategory == index ? .xomifyPurple : .gray)
+            .foregroundStyle(selectedCategory == index ? Color.xomifyPurple : Color.gray)
             .cornerRadius(10)
         }
     }
-    
+
     private var termSelector: some View {
         HStack(spacing: 8) {
             ForEach(TimeRange.allCases, id: \.self) { term in
@@ -132,7 +142,7 @@ struct TopItemsView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(selectedTerm == term ? Color.xomifyGreen : Color.white.opacity(0.05))
-                        .foregroundColor(selectedTerm == term ? .black : .gray)
+                        .foregroundStyle(selectedTerm == term ? Color.black : Color.gray)
                         .cornerRadius(20)
                 }
             }
@@ -140,9 +150,9 @@ struct TopItemsView: View {
         .padding(.horizontal)
         .padding(.vertical, 12)
     }
-    
+
     // MARK: - Tracks Content
-    
+
     private var tracksContent: some View {
         let tracks = getTracks(for: selectedTerm)
         return VStack(spacing: 12) {
@@ -150,13 +160,13 @@ struct TopItemsView: View {
             if !tracks.isEmpty {
                 saveToPlaylistButton(tracks: tracks, term: selectedTerm)
             }
-            
+
             ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
                 trackRow(track, rank: index + 1)
             }
         }
     }
-    
+
     private func saveToPlaylistButton(tracks: [SpotifyTrack], term: TimeRange) -> some View {
         HStack(spacing: 12) {
             // Add all to builder
@@ -172,10 +182,10 @@ struct TopItemsView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(Color.xomifyPurple.opacity(0.2))
-                .foregroundColor(.xomifyPurple)
+                .foregroundStyle(Color.xomifyPurple)
                 .cornerRadius(20)
             }
-            
+
             // Save directly to Spotify playlist
             Button {
                 Task {
@@ -197,34 +207,34 @@ struct TopItemsView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(Color.xomifyGreen)
-                .foregroundColor(.black)
+                .foregroundStyle(Color.black)
                 .cornerRadius(20)
             }
             .disabled(isSavingPlaylist)
-            
+
             Spacer()
         }
         .padding(.bottom, 8)
     }
-    
+
     private func saveTracksToPlaylist(tracks: [SpotifyTrack], term: TimeRange) async {
         isSavingPlaylist = true
-        
+
         let spotifyService = SpotifyService.shared
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM yyyy"
         let dateString = dateFormatter.string(from: Date())
-        
+
         let playlistName = "Top Songs - \(term.displayName) (\(dateString))"
         let description = "Your top \(tracks.count) songs - \(term.displayName.lowercased()) • Created with Xomify"
-        
+
         do {
             // Get user ID
             let user = try await spotifyService.getCurrentUser()
             guard let userId = user.id else {
                 throw NSError(domain: "TopItems", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not get user ID"])
             }
-            
+
             // Create playlist
             let playlist = try await spotifyService.createPlaylist(
                 userId: userId,
@@ -232,13 +242,13 @@ struct TopItemsView: View {
                 description: description,
                 isPublic: false
             )
-            
+
             // Add tracks
             let trackUris = tracks.compactMap { $0.uri }
             if !trackUris.isEmpty {
                 try await spotifyService.addTracksToPlaylist(playlistId: playlist.id, trackUris: trackUris)
             }
-            
+
             // Upload cover image
             let coverImage = XomifyConstants.xomifyCoverBase64
             if !coverImage.isEmpty && coverImage != "PASTE_YOUR_BASE64_IMAGE_HERE" {
@@ -248,25 +258,25 @@ struct TopItemsView: View {
                     print("⚠️ TopItems: Cover upload failed - \(error)")
                 }
             }
-            
+
             playlistSaveMessage = "Created '\(playlistName)' with \(tracks.count) tracks!"
             if let urlString = playlist.externalUrls?["spotify"] {
                 savedPlaylistUrl = URL(string: urlString)
             }
-            
+
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
-            
+
         } catch {
             playlistSaveMessage = "Failed: \(error.localizedDescription)"
-            
+
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)
         }
-        
+
         isSavingPlaylist = false
     }
-    
+
     private func getTracks(for term: TimeRange) -> [SpotifyTrack] {
         switch term {
         case .shortTerm: return viewModel.shortTermTracks
@@ -274,16 +284,16 @@ struct TopItemsView: View {
         case .longTerm: return viewModel.longTermTracks
         }
     }
-    
+
     private func trackRow(_ track: SpotifyTrack, rank: Int) -> some View {
         HStack(spacing: 12) {
             // Rank
             Text("\(rank)")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.xomifyGreen)
+                .foregroundStyle(Color.xomifyGreen)
                 .frame(width: 30)
-            
+
             // Album art - tap to go to album
             if let album = track.album {
                 NavigationLink(destination: AlbumView(albumId: album.id)) {
@@ -304,59 +314,59 @@ struct TopItemsView: View {
                 .frame(width: 50, height: 50)
                 .cornerRadius(6)
             }
-            
+
             // Track info
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.name)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
-                
+
                 // Artist names - tap to go to first artist
                 if let firstArtist = track.artists.first, let artistId = firstArtist.id {
                     NavigationLink(destination: ArtistView(artistId: artistId)) {
                         Text(track.artistNames)
                             .font(.caption)
-                            .foregroundColor(.xomifyPurple)
+                            .foregroundStyle(Color.xomifyPurple)
                             .lineLimit(1)
                     }
                 } else {
                     Text(track.artistNames)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                         .lineLimit(1)
                 }
             }
-            
+
             Spacer()
-            
+
             // Add to playlist builder
             AddToPlaylistButton(track: track)
-            
+
             // Play button
             Button {
                 playTrack(track)
             } label: {
                 Image(systemName: "play.circle.fill")
                     .font(.title2)
-                    .foregroundColor(.xomifyGreen)
+                    .foregroundStyle(Color.xomifyGreen)
             }
         }
         .padding(12)
         .background(Color.white.opacity(0.03))
         .cornerRadius(10)
     }
-    
+
     // MARK: - Artists Content
-    
+
     private var artistsContent: some View {
         let artists = getArtists(for: selectedTerm)
         return ForEach(Array(artists.enumerated()), id: \.element.id) { index, artist in
             artistRow(artist, rank: index + 1)
         }
     }
-    
+
     private func getArtists(for term: TimeRange) -> [SpotifyArtist] {
         switch term {
         case .shortTerm: return viewModel.shortTermArtists
@@ -364,7 +374,7 @@ struct TopItemsView: View {
         case .longTerm: return viewModel.longTermArtists
         }
     }
-    
+
     private func artistRow(_ artist: SpotifyArtist, rank: Int) -> some View {
         NavigationLink(destination: ArtistView(artistId: artist.id ?? "")) {
             HStack(spacing: 12) {
@@ -372,9 +382,9 @@ struct TopItemsView: View {
                 Text("\(rank)")
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundColor(.xomifyPurple)
+                    .foregroundStyle(Color.xomifyPurple)
                     .frame(width: 30)
-                
+
                 // Artist image
                 AsyncImage(url: artist.imageUrl) { image in
                     image.resizable()
@@ -383,25 +393,25 @@ struct TopItemsView: View {
                 }
                 .frame(width: 50, height: 50)
                 .clipShape(Circle())
-                
+
                 // Artist info
                 VStack(alignment: .leading, spacing: 4) {
                     Text(artist.name)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .lineLimit(1)
-                    
+
                     if let genres = artist.genres, !genres.isEmpty {
                         Text(genres.prefix(2).joined(separator: ", "))
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                             .lineLimit(1)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Popularity
                 if let popularity = artist.popularity {
                     HStack(spacing: 4) {
@@ -410,29 +420,29 @@ struct TopItemsView: View {
                         Text("\(popularity)")
                             .font(.caption)
                     }
-                    .foregroundColor(.yellow.opacity(0.8))
+                    .foregroundStyle(.yellow.opacity(0.8))
                 }
-                
+
                 // Chevron
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.gray)
             }
             .padding(12)
             .background(Color.white.opacity(0.03))
             .cornerRadius(10)
         }
     }
-    
+
     // MARK: - Genres Content
-    
+
     private var genresContent: some View {
         let genres = getGenres(for: selectedTerm)
         return ForEach(Array(genres.enumerated()), id: \.element.name) { index, genre in
             genreRow(genre, rank: index + 1, maxCount: genres.first?.count ?? 1)
         }
     }
-    
+
     private func getGenres(for term: TimeRange) -> [(name: String, count: Int)] {
         switch term {
         case .shortTerm: return viewModel.shortTermGenres
@@ -440,23 +450,23 @@ struct TopItemsView: View {
         case .longTerm: return viewModel.longTermGenres
         }
     }
-    
+
     private func genreRow(_ genre: (name: String, count: Int), rank: Int, maxCount: Int) -> some View {
         HStack(spacing: 12) {
             // Rank
             Text("\(rank)")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.blue)
+                .foregroundStyle(.blue)
                 .frame(width: 30)
-            
+
             // Genre info
             VStack(alignment: .leading, spacing: 8) {
                 Text(genre.name.capitalized)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
-                
+                    .foregroundStyle(.white)
+
                 // Progress bar
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -464,7 +474,7 @@ struct TopItemsView: View {
                             .fill(Color.white.opacity(0.1))
                             .frame(height: 6)
                             .cornerRadius(3)
-                        
+
                         Rectangle()
                             .fill(LinearGradient(colors: [.xomifyPurple, .xomifyGreen], startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * CGFloat(genre.count) / CGFloat(maxCount), height: 6)
@@ -473,14 +483,14 @@ struct TopItemsView: View {
                 }
                 .frame(height: 6)
             }
-            
+
             Spacer()
-            
+
             // Count
             Text("\(genre.count)")
                 .font(.caption)
                 .fontWeight(.semibold)
-                .foregroundColor(.xomifyGreen)
+                .foregroundStyle(Color.xomifyGreen)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(Color.xomifyGreen.opacity(0.15))
@@ -490,9 +500,9 @@ struct TopItemsView: View {
         .background(Color.white.opacity(0.03))
         .cornerRadius(10)
     }
-    
+
     // MARK: - Playback
-    
+
     private func playTrack(_ track: SpotifyTrack) {
         // Open in Spotify app via URI (best experience)
         if let uri = track.uri, let url = URL(string: uri) {
