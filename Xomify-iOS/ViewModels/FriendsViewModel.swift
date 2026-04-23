@@ -139,6 +139,9 @@ final class FriendsViewModel {
             incoming.removeAll { $0.targetEmail == targetEmail }
             accepted.append(friend)
             updateDiscoverFlags(for: targetEmail, isFriend: true)
+            // Value-moment: first accepted friend request is a solid signal the
+            // user wants to engage — prompt for push permission if we haven't.
+            Task { await NotificationsService.shared.requestPermissionIfNeeded() }
         } catch {
             errorMessage = "Failed to accept: \(error.localizedDescription)"
             print("❌ Friends: accept failed - \(error)")
@@ -251,6 +254,9 @@ final class FriendsViewModel {
 
         do {
             let response = try await xomify.acceptInvite(email: userEmail, inviteCode: code)
+            // Value-moment: accepting a deep-link invite = user just crossed a
+            // meaningful threshold. Prompt for push permission if we haven't.
+            Task { await NotificationsService.shared.requestPermissionIfNeeded() }
             // Remove the accepted row from the pending list.
             if let senderEmail = incomingInvites.first(where: { $0.inviteCode == code })?.senderEmail {
                 incomingInvites.removeAll { $0.inviteCode == code }

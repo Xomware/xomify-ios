@@ -466,4 +466,39 @@ actor XomifyService {
             return nil
         }
     }
+
+    // MARK: - Notifications (APNs)
+    //
+    // Thin wrappers over the deployed `notifications_register` /
+    // `notifications_unregister` lambdas. Body shape is camelCase and matches
+    // the Python handlers exactly.
+
+    /// Upsert the user's APNs device token + push preferences. Idempotent —
+    /// safe to call on every cold launch when the APNs token refreshes.
+    @discardableResult
+    func registerPushToken(
+        email: String,
+        deviceToken: String,
+        queueNotificationsEnabled: Bool,
+        digestEnabled: Bool
+    ) async throws -> SuccessResponse {
+        try await network.xomifyPost("/notifications/register", body: [
+            "email": email,
+            "deviceToken": deviceToken,
+            "queueNotificationsEnabled": queueNotificationsEnabled,
+            "digestEnabled": digestEnabled
+        ])
+    }
+
+    /// Delete the user's APNs device token from the backend. Called on sign-out.
+    @discardableResult
+    func unregisterPushToken(
+        email: String,
+        deviceToken: String
+    ) async throws -> SuccessResponse {
+        try await network.xomifyPost("/notifications/unregister", body: [
+            "email": email,
+            "deviceToken": deviceToken
+        ])
+    }
 }

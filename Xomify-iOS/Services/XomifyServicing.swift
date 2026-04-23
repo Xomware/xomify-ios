@@ -39,6 +39,25 @@ protocol XomifyServicing: Sendable {
     /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
     @discardableResult
     func declineInvite(email: String, inviteCode: String) async throws -> SuccessResponse
+
+    // MARK: - Notifications
+
+    /// Upsert an APNs device token + preference flags for the user.
+    /// Idempotent on `(email, deviceToken)` — safe to call on every cold launch.
+    @discardableResult
+    func registerPushToken(
+        email: String,
+        deviceToken: String,
+        queueNotificationsEnabled: Bool,
+        digestEnabled: Bool
+    ) async throws -> SuccessResponse
+
+    /// Delete a device token from the backend. Called on sign-out.
+    @discardableResult
+    func unregisterPushToken(
+        email: String,
+        deviceToken: String
+    ) async throws -> SuccessResponse
 }
 
 // Conformance on the real service — ensures production callers can keep using

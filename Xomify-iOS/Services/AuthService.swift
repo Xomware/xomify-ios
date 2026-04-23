@@ -342,17 +342,28 @@ final class AuthService: NSObject, Sendable {
     }
     
     // MARK: - Logout
-    
+
+    /// Synchronous logout — kept for existing call sites. For new call sites
+    /// prefer `logout()` (async) so the APNs token can be unregistered from the
+    /// backend before the Spotify access token is cleared.
     func logout() {
+        // Fire-and-forget: unregister the APNs device token with the backend.
+        // `NotificationsService.unregister()` internally resolves the current
+        // user email via Spotify, so we dispatch it *before* clearing tokens.
+        // It swallows errors — stale backend tokens get pruned on next 410.
+        Task { @MainActor in
+            await NotificationsService.shared.unregister()
+        }
+
         accessToken = nil
         refreshToken = nil
         tokenExpirationDate = nil
         isAuthenticated = false
-        
+
         KeychainHelper.delete(key: accessTokenKey)
         KeychainHelper.delete(key: refreshTokenKey)
         KeychainHelper.delete(key: expirationKey)
-        
+
         print("👋 Auth: Logged out")
     }
     

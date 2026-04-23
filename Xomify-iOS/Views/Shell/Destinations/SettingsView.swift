@@ -1,19 +1,15 @@
 import SwiftUI
+import UserNotifications
 
-/// Drawer-resident Settings screen. Covers notification toggles (stubbed until #9),
-/// version info, legal links, support email, and a destructive Sign out action.
+/// Drawer-resident Settings screen. Covers notification toggles, version info,
+/// legal links, support email, and a destructive Sign out action.
+///
+/// Notification toggles are mediated by `SettingsViewModel` (sub-feature #9 —
+/// `ios-notifications`) which mirrors them into `@AppStorage` and POSTs to
+/// `/notifications/register` as an upsert on each flip.
 struct SettingsView: View {
 
-    // MARK: - Persisted toggles
-    // Both keys are stub-wired. Real APNs registration + preferences sync to backend
-    // land in sub-feature #9 (`ios-notifications`).
-
-    @AppStorage("notifications.push.enabled")
-    private var pushEnabled: Bool = true
-
-    @AppStorage("notifications.digest.enabled")
-    private var digestEnabled: Bool = true
-
+    @State private var viewModel = SettingsViewModel()
     @State private var showSignOutConfirm = false
 
     private let supportEmailURL = URL(string: "mailto:support@xomware.com")
@@ -33,6 +29,9 @@ struct SettingsView: View {
         .background(Color.xomifyDark.ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.refreshAuthorizationStatus()
+        }
         .confirmationDialog(
             "Sign out of Xomify?",
             isPresented: $showSignOutConfirm,
@@ -49,24 +48,35 @@ struct SettingsView: View {
 
     private var notificationsSection: some View {
         Section {
-            // TODO(#9): wire to NotificationsService.registerDeviceToken once ios-notifications ships.
-            Toggle(isOn: $pushEnabled) {
+            Toggle(isOn: $viewModel.queueNotificationsEnabled) {
                 Label("Push notifications", systemImage: "bell.fill")
                     .foregroundStyle(.white)
             }
             .tint(Color.xomifyGreen)
+            .disabled(!viewModel.togglesEnabled)
+            .accessibilityHint("Queue-threshold push notifications")
 
-            // TODO(#9): wire to NotificationsService.updateDigestPreference once ios-notifications ships.
-            Toggle(isOn: $digestEnabled) {
+            Toggle(isOn: $viewModel.digestEnabled) {
                 Label("Weekly digest", systemImage: "envelope.fill")
                     .foregroundStyle(.white)
             }
             .tint(Color.xomifyGreen)
+            .disabled(!viewModel.togglesEnabled)
+            .accessibilityHint("Weekly digest push notifications")
+
+            if viewModel.authorizationStatus == .denied,
+               let url = viewModel.systemSettingsURL {
+                Link(destination: url) {
+                    Label("Open System Settings", systemImage: "gear")
+                        .foregroundStyle(Color.xomifyGreen)
+                }
+                .accessibilityHint("Opens the iOS Settings app to enable notifications")
+            }
         } header: {
             Text("Notifications")
                 .foregroundStyle(.gray)
         } footer: {
-            Text("Preferences take effect in a future update.")
+            Text(viewModel.statusFooter)
                 .font(.caption2)
                 .foregroundStyle(.gray)
         }

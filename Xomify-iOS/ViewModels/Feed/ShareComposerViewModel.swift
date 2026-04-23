@@ -238,6 +238,11 @@ final class ShareComposerViewModel {
                 genreTags: capturedGenres
             )
 
+            // Value-moment trigger for the APNs permission prompt — fire-and-forget.
+            // `NotificationsService` gates on `hasPromptedForPush` so this only
+            // ever surfaces the iOS dialog on the first successful share.
+            Task { await NotificationsService.shared.requestPermissionIfNeeded() }
+
             if let returned = response.share {
                 return returned
             }
