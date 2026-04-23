@@ -437,46 +437,20 @@ struct ReleaseRadarView: View {
     }
     
     // MARK: - Share to Feed
+    //
+    // The deployed `shares_create` contract is strictly track-denormalized —
+    // the legacy `release_radar` share type no longer exists. This tap only
+    // publishes the native iOS Share Sheet (via `ShareLink`); no additional
+    // feed write happens here.
+    // TODO(future): share the Release Radar's top track to the feed via
+    // `createShare` once we settle on a UX.
 
     private var shareCaption: String {
         "My Release Radar — \(viewModel.displayWeekName)"
     }
 
     private func publishReleaseRadarShare() async {
-        let week = viewModel.selectedWeek ?? viewModel.historyWeeks.first
-        guard let week = week else { return }
-        guard let email = viewModel.userEmail, !email.isEmpty else {
-            print("⚠️ ReleaseRadar share: no email")
-            return
-        }
-
-        let topReleases: [[String: Any]] = (week.releases ?? []).prefix(5).map { release in
-            var item: [String: Any] = [
-                "albumName": release.displayName,
-                "artistName": release.displayArtist
-            ]
-            if let type = release.albumType { item["albumType"] = type }
-            if let image = release.imageUrl { item["imageUrl"] = image }
-            return item
-        }
-
-        let payload: [String: Any] = [
-            "weekLabel": week.displayName,
-            "weekKey": week.weekKey,
-            "topReleases": topReleases
-        ]
-
-        do {
-            _ = try await XomifyService.shared.createShare(
-                email: email,
-                type: .releaseRadar,
-                payload: payload,
-                caption: shareCaption
-            )
-            print("✅ ReleaseRadar: shared to feed")
-        } catch {
-            print("❌ ReleaseRadar: share failed - \(error)")
-        }
+        // Intentionally a no-op under the new shares atom.
     }
 
     // MARK: - Week Picker
