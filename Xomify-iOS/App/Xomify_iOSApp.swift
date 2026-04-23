@@ -2,6 +2,10 @@ import SwiftUI
 
 @main
 struct Xomify_iOSApp: App {
+    /// APNs device-token registration + push-open dispatch.
+    /// Owned here so the app has a single delegate for the whole lifecycle.
+    @UIApplicationDelegateAdaptor(XomifyAppDelegate.self) private var appDelegate
+
     var body: some Scene {
         WindowGroup {
             ContentView()

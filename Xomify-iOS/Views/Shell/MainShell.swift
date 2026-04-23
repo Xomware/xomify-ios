@@ -70,6 +70,9 @@ struct MainShell: View {
         .environment(navStore)
         .ignoresSafeArea(edges: .bottom)
         .task {
+            // Share the nav store with the push pipeline so `didReceive` can
+            // tab-switch into Feed on push-open.
+            NotificationsService.shared.navigationStore = navStore
             await fetchAvatar()
         }
         .onChange(of: navStore.pendingDeepLink) { _, newValue in
