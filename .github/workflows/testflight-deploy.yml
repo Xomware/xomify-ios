@@ -28,7 +28,9 @@ jobs:
         run: |
           cat > secrets.xcconfig << XCCONFIG
           SPOTIFY_CLIENT_ID = ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_REDIRECT_URI = ${{ secrets.SPOTIFY_REDIRECT_URI }}
+          SPOTIFY_CLIENT_SECRET = ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          XOMIFY_API_ID = ${{ secrets.XOMIFY_API_ID }}
+          XOMIFY_API_TOKEN = ${{ secrets.XOMIFY_API_TOKEN }}
           XCCONFIG
 
       - name: Write App Store Connect API key
