@@ -115,44 +115,15 @@ struct WrappedContent: View {
     }
 
     // MARK: - Share to Feed
-
+    //
+    // The deployed `shares_create` contract is strictly track-denormalized —
+    // the legacy `wrapped` / `release_radar` share types no longer exist. This
+    // tap only publishes the native iOS Share Sheet (via `ShareLink`); no
+    // additional feed write happens here.
+    // TODO(future): share the Wrap's #1 track to the feed via `createShare`
+    // once we settle on a UX (confirm sheet? auto?).
     private func publishWrappedShare() async {
-        guard let wrap = currentWrap else { return }
-
-        do {
-            let user = try await spotifyService.getCurrentUser()
-            guard let email = user.email, !email.isEmpty else {
-                print("⚠️ Wrapped share: no email")
-                return
-            }
-
-            // Build lightweight top track summaries from whatever we have loaded.
-            // TODO: If tracks haven't been loaded (wrong tab/term), this will be empty —
-            // the web version eagerly loads the short-term song list. Working-but-thin
-            // beats broken-but-complete for now.
-            let topTracks: [[String: Any]] = tracks.prefix(5).map { track in
-                [
-                    "name": track.name,
-                    "artist": track.artistNames
-                ]
-            }
-
-            let payload: [String: Any] = [
-                "month": wrap.displayName,
-                "monthKey": wrap.monthKey,
-                "topTracks": topTracks
-            ]
-
-            _ = try await xomifyService.createShare(
-                email: email,
-                type: .wrapped,
-                payload: payload,
-                caption: "My top tracks from \(wrap.displayName)"
-            )
-            print("✅ Wrapped: shared to feed")
-        } catch {
-            print("❌ Wrapped: share failed - \(error)")
-        }
+        // Intentionally a no-op under the new shares atom.
     }
 
     // MARK: - Month Header

@@ -31,12 +31,14 @@ struct MainShell: View {
                     }
                     .tag(ShellTab.home)
 
-                    // Feed — placeholder until ios-feed (#5).
-                    FeedPlaceholderView()
-                        .tabItem {
-                            Label(ShellTab.feed.label, systemImage: ShellTab.feed.systemImage)
-                        }
-                        .tag(ShellTab.feed)
+                    // Feed — social feed tab (ios-feed #5).
+                    NavigationStack {
+                        FeedView()
+                    }
+                    .tabItem {
+                        Label(ShellTab.feed.label, systemImage: ShellTab.feed.systemImage)
+                    }
+                    .tag(ShellTab.feed)
 
                     // Releases.
                     NavigationStack {
@@ -69,6 +71,14 @@ struct MainShell: View {
         .ignoresSafeArea(edges: .bottom)
         .task {
             await fetchAvatar()
+        }
+        .onChange(of: navStore.pendingDeepLink) { _, newValue in
+            // FeedView's empty-state CTAs set `pendingDeepLink`; consume on
+            // the next runloop so the drawer animation runs cleanly.
+            guard newValue != nil else { return }
+            Task { @MainActor in
+                navStore.consumePendingDeepLink()
+            }
         }
     }
 

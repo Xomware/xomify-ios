@@ -90,6 +90,37 @@ actor NetworkService {
     func spotifyPost<T: Decodable>(_ endpoint: String, body: [String: Any]) async throws -> T {
         try await spotifyRequest(endpoint: endpoint, method: .post, body: body)
     }
+
+    /// POST request to Spotify that does not include a JSON body and does not
+    /// expect a JSON response. Used by endpoints like `/me/player/queue` where
+    /// parameters live in the query string and the server returns 204. Throws
+    /// `NetworkError.serverError` with the status code preserved on failure.
+    func spotifyPostNoBody(_ endpoint: String) async throws {
+        let token = try await getValidSpotifyToken()
+
+        guard let url = URL(string: "\(spotifyApiBaseUrl)\(endpoint)") else {
+            throw NetworkError.unknown(NSError(domain: "Invalid URL", code: 0))
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.unknown(NSError(domain: "Invalid response", code: 0))
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw NetworkError.unauthorized
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = String(data: data, encoding: .utf8) ?? "POST failed"
+            throw NetworkError.serverError(statusCode: httpResponse.statusCode, message: message)
+        }
+    }
     
     /// PUT request to Spotify (no response body)
     func spotifyPut(_ endpoint: String, body: [String: Any]) async throws {

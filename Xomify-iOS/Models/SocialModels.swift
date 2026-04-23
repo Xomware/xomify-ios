@@ -1,27 +1,11 @@
 import Foundation
 
-// MARK: - Share Type
-
-enum ShareType: String, Codable, Sendable {
-    case wrapped
-    case releaseRadar = "release_radar"
-    case track
-    case playlist
-}
-
-// MARK: - Reaction Action
-
-enum ReactionAction: String, Codable, Sendable {
-    case like
-    case fire
-    case love
-    case none
-}
-
 // MARK: - JSONValue
 //
-// Polymorphic JSON value for the backend's arbitrary `payload` shape.
-// Supports string / int / double / bool / array / dict / null.
+// Polymorphic JSON value kept for `FriendProfile` (backend returns arbitrarily
+// shaped top-songs / top-artists / top-genres / playlists blobs).
+// Share no longer uses this — the deployed `shares_feed` / `shares_create`
+// contract is fully denormalized to scalar fields.
 
 enum JSONValue: Codable, Sendable {
     case string(String)
@@ -131,42 +115,97 @@ enum JSONValue: Codable, Sendable {
     }
 }
 
-// MARK: - Share
+// MARK: - MoodTag
 
-struct Share: Codable, Identifiable, Sendable {
+/// Mood tags a sharer can attach to a share. Single enum, one per share.
+/// Raw values match the deployed `shares_create` contract.
+enum MoodTag: String, Codable, Sendable, CaseIterable, Identifiable {
+    case hype
+    case chill
+    case sad
+    case focus
+    case party
+    case romance
+    case nostalgic
+    case angry
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .hype:       return "Hype"
+        case .chill:      return "Chill"
+        case .sad:        return "Sad"
+        case .focus:      return "Focus"
+        case .party:      return "Party"
+        case .romance:    return "Romance"
+        case .nostalgic:  return "Nostalgic"
+        case .angry:      return "Angry"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .hype:       return "🔥"
+        case .chill:      return "😌"
+        case .sad:        return "💧"
+        case .focus:      return "🎯"
+        case .party:      return "🎉"
+        case .romance:    return "💗"
+        case .nostalgic:  return "🕰️"
+        case .angry:      return "😤"
+        }
+    }
+}
+
+// MARK: - Share
+//
+// Matches the deployed `shares_feed` / `shares_create` atom. Track fields are
+// denormalized so the feed can render without a follow-up Spotify fetch per card.
+
+struct Share: Codable, Identifiable, Sendable, Hashable {
     let shareId: String
-    let email: String
-    let type: ShareType
-    let payload: [String: JSONValue]?
+    let sharedBy: String
+    let sharedAt: String
+
+    // Denormalized track fields
+    let trackId: String
+    let trackUri: String
+    let trackName: String
+    let artistName: String
+    let albumName: String?
+    let albumArtUrl: String?
+
+    // Optional sharer metadata
     let caption: String?
-    let createdAt: String
-    let interactionCounts: [String: Int]?
+    let moodTag: MoodTag?
+    let genreTags: [String]?
+
+    // Server-side enrichment (per-viewer)
+    let queuedCount: Int
+    let ratedCount: Int
+    let viewerHasQueued: Bool
+    let viewerRating: Int?
+    let sharerRating: Int?
 
     var id: String { shareId }
 
-    /// Count for a specific reaction type. Backend keys: "like", "fire", "love".
-    func count(for reaction: ReactionAction) -> Int {
-        guard reaction != .none else { return 0 }
-        return interactionCounts?[reaction.rawValue] ?? 0
-    }
-
-    /// Parse createdAt ("2025-04-17 14:30:00" UTC) into a Date.
-    var createdAtDate: Date? {
+    /// Parse sharedAt ("2025-04-17 14:30:00" UTC) into a Date. Falls back to ISO8601.
+    var sharedAtDate: Date? {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "UTC")
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        if let date = formatter.date(from: createdAt) {
+        if let date = formatter.date(from: sharedAt) {
             return date
         }
-        // Fallback: ISO8601
         let iso = ISO8601DateFormatter()
-        return iso.date(from: createdAt)
+        return iso.date(from: sharedAt)
     }
 
     /// Short relative time string ("3h ago", "just now").
     var relativeTime: String {
-        guard let date = createdAtDate else { return "" }
+        guard let date = sharedAtDate else { return "" }
         let interval = Date().timeIntervalSince(date)
         if interval < 60 { return "just now" }
         if interval < 3_600 { return "\(Int(interval / 60))m ago" }
@@ -176,14 +215,139 @@ struct Share: Codable, Identifiable, Sendable {
         formatter.dateStyle = .medium
         return formatter.string(from: date)
     }
+
+    /// `URL` for album art if valid.
+    var albumArt: URL? {
+        guard let s = albumArtUrl, !s.isEmpty else { return nil }
+        return URL(string: s)
+    }
+
+    /// Custom decoding — enrichment fields are optional on the wire because the
+    /// backend may omit them for cold-cache responses. Default to safe zeros.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        shareId         = try c.decode(String.self, forKey: .shareId)
+        sharedBy        = try c.decode(String.self, forKey: .sharedBy)
+        sharedAt        = try c.decode(String.self, forKey: .sharedAt)
+        trackId         = try c.decode(String.self, forKey: .trackId)
+        trackUri        = try c.decode(String.self, forKey: .trackUri)
+        trackName       = try c.decode(String.self, forKey: .trackName)
+        artistName      = try c.decode(String.self, forKey: .artistName)
+        albumName       = try c.decodeIfPresent(String.self, forKey: .albumName)
+        albumArtUrl     = try c.decodeIfPresent(String.self, forKey: .albumArtUrl)
+        caption         = try c.decodeIfPresent(String.self, forKey: .caption)
+        moodTag         = try c.decodeIfPresent(MoodTag.self, forKey: .moodTag)
+        genreTags       = try c.decodeIfPresent([String].self, forKey: .genreTags)
+        queuedCount     = try c.decodeIfPresent(Int.self, forKey: .queuedCount) ?? 0
+        ratedCount      = try c.decodeIfPresent(Int.self, forKey: .ratedCount) ?? 0
+        viewerHasQueued = try c.decodeIfPresent(Bool.self, forKey: .viewerHasQueued) ?? false
+        viewerRating    = try c.decodeIfPresent(Int.self, forKey: .viewerRating)
+        sharerRating    = try c.decodeIfPresent(Int.self, forKey: .sharerRating)
+    }
+
+    /// Memberwise initializer for tests and optimistic-update copies.
+    init(
+        shareId: String,
+        sharedBy: String,
+        sharedAt: String,
+        trackId: String,
+        trackUri: String,
+        trackName: String,
+        artistName: String,
+        albumName: String? = nil,
+        albumArtUrl: String? = nil,
+        caption: String? = nil,
+        moodTag: MoodTag? = nil,
+        genreTags: [String]? = nil,
+        queuedCount: Int = 0,
+        ratedCount: Int = 0,
+        viewerHasQueued: Bool = false,
+        viewerRating: Int? = nil,
+        sharerRating: Int? = nil
+    ) {
+        self.shareId = shareId
+        self.sharedBy = sharedBy
+        self.sharedAt = sharedAt
+        self.trackId = trackId
+        self.trackUri = trackUri
+        self.trackName = trackName
+        self.artistName = artistName
+        self.albumName = albumName
+        self.albumArtUrl = albumArtUrl
+        self.caption = caption
+        self.moodTag = moodTag
+        self.genreTags = genreTags
+        self.queuedCount = queuedCount
+        self.ratedCount = ratedCount
+        self.viewerHasQueued = viewerHasQueued
+        self.viewerRating = viewerRating
+        self.sharerRating = sharerRating
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case shareId, sharedBy, sharedAt
+        case trackId, trackUri, trackName, artistName, albumName, albumArtUrl
+        case caption, moodTag, genreTags
+        case queuedCount, ratedCount, viewerHasQueued, viewerRating, sharerRating
+    }
+}
+
+// MARK: - Create Share Request
+
+/// Request body for POST `/shares/create`. Denormalized track fields + optional metadata.
+struct CreateShareRequest: Codable, Sendable {
+    let email: String
+    let trackId: String
+    let trackUri: String
+    let trackName: String
+    let artistName: String
+    let albumName: String?
+    let albumArtUrl: String?
+    let caption: String?
+    let moodTag: MoodTag?
+    let genreTags: [String]?
 }
 
 // MARK: - Feed Response
 
+/// Response for GET `/shares/feed`. `nextBefore` is the pagination cursor
+/// (the `sharedAt` of the last returned share) — null when exhausted.
 struct FeedResponse: Codable, Sendable {
-    let email: String?
-    let totalCount: Int?
     let shares: [Share]
+    let nextBefore: String?
+    let totalCount: Int?
+
+    init(shares: [Share], nextBefore: String? = nil, totalCount: Int? = nil) {
+        self.shares = shares
+        self.nextBefore = nextBefore
+        self.totalCount = totalCount
+    }
+}
+
+// MARK: - Cached Feed Wrapper
+
+/// On-disk cache envelope. Versioned so future shape changes can be detected
+/// and the cache invalidated silently on next launch.
+struct CachedFeed: Codable, Sendable {
+    static let currentVersion: Int = 1
+
+    let version: Int
+    let filterKey: String
+    let shares: [Share]
+    let cachedAt: String
+
+    init(filterKey: String, shares: [Share], cachedAt: String = Self.nowString()) {
+        self.version = Self.currentVersion
+        self.filterKey = filterKey
+        self.shares = shares
+        self.cachedAt = cachedAt
+    }
+
+    private static func nowString() -> String {
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        return iso.string(from: Date())
+    }
 }
 
 // MARK: - Share Create Response
@@ -191,11 +355,25 @@ struct FeedResponse: Codable, Sendable {
 struct ShareCreateResponse: Codable, Sendable {
     let success: Bool?
     let shareId: String?
+    let share: Share?
 }
 
 // MARK: - Reaction Response
+//
+// NOTE: Reactions are gated behind `FeatureFlags.reactionsEnabled`. The
+// response shape is kept so `XomifyService.reactToShare` can stay wired for
+// sub-feature 4 (`backend-interactions-and-notifications`).
 
 struct ReactionResponse: Codable, Sendable {
+    let success: Bool?
+}
+
+// MARK: - Share Interaction Response
+//
+// Placeholder for the upcoming `shares_interaction` endpoint (sub-feature 4).
+// Kept here so the interaction write-path compiles ahead of time.
+
+struct ShareInteractionResponse: Codable, Sendable {
     let success: Bool?
 }
 

@@ -68,43 +68,110 @@ actor XomifyService {
         ])
     }
 
-    // MARK: - Social
+    // MARK: - Social — Shares
+    //
+    // The deployed `shares_create` / `shares_feed` contract is fully
+    // track-denormalized. Share atoms carry the track fields on the row so the
+    // feed renders without a follow-up Spotify fetch per card.
 
-    /// Create a new share in the feed
+    /// Create a new share in the feed. Track fields are denormalized.
     @discardableResult
     func createShare(
         email: String,
-        type: ShareType,
-        payload: [String: Any],
-        caption: String? = nil
+        trackId: String,
+        trackUri: String,
+        trackName: String,
+        artistName: String,
+        albumName: String? = nil,
+        albumArtUrl: String? = nil,
+        caption: String? = nil,
+        moodTag: MoodTag? = nil,
+        genreTags: [String]? = nil
     ) async throws -> ShareCreateResponse {
         var body: [String: Any] = [
             "email": email,
-            "type": type.rawValue,
-            "payload": payload
+            "trackId": trackId,
+            "trackUri": trackUri,
+            "trackName": trackName,
+            "artistName": artistName
         ]
-        if let caption = caption {
-            body["caption"] = caption
-        }
+        if let albumName = albumName { body["albumName"] = albumName }
+        if let albumArtUrl = albumArtUrl { body["albumArtUrl"] = albumArtUrl }
+        if let caption = caption, !caption.isEmpty { body["caption"] = caption }
+        if let moodTag = moodTag { body["moodTag"] = moodTag.rawValue }
+        if let genreTags = genreTags, !genreTags.isEmpty { body["genreTags"] = genreTags }
+
         return try await network.xomifyPost("/shares/create", body: body)
     }
 
-    /// Get the social feed for a user
-    func getFeed(email: String) async throws -> FeedResponse {
-        try await network.xomifyGet("/shares/feed", queryParams: ["email": email])
+    /// Fetch the social feed for a user. Supports optional group scoping and
+    /// keyset pagination via `before` (the `sharedAt` of the last received share).
+    func getFeed(
+        email: String,
+        groupId: String? = nil,
+        limit: Int = 50,
+        before: String? = nil
+    ) async throws -> FeedResponse {
+        var params: [String: String] = [
+            "email": email,
+            "limit": String(limit)
+        ]
+        if let groupId = groupId { params["groupId"] = groupId }
+        if let before = before { params["before"] = before }
+        return try await network.xomifyGet("/shares/feed", queryParams: params)
     }
 
-    /// React to a share (like / fire / love / none to remove)
+    /// Delete a share (author only). Backend expects composite key via body.
+    @discardableResult
+    func deleteShare(
+        email: String,
+        shareId: String,
+        sharedAt: String
+    ) async throws -> SuccessResponse {
+        try await network.xomifyPost("/shares/delete", body: [
+            "email": email,
+            "shareId": shareId,
+            "sharedAt": sharedAt
+        ])
+    }
+
+    /// Queue a share's track and mark the viewer as having queued it.
+    /// Sub-feature 4 (`backend-interactions-and-notifications`) ships the
+    /// `/shares/interaction` endpoint; until then this still succeeds as a
+    /// best-effort write-through.
+    @discardableResult
+    func interactWithShare(
+        shareId: String,
+        email: String,
+        sharedAt: String,
+        interaction: String,
+        rating: Int? = nil
+    ) async throws -> ShareInteractionResponse {
+        var body: [String: Any] = [
+            "shareId": shareId,
+            "email": email,
+            "sharedAt": sharedAt,
+            "interaction": interaction
+        ]
+        if let rating = rating { body["rating"] = rating }
+        return try await network.xomifyPost("/shares/interaction", body: body)
+    }
+
+    /// React to a share. Gated behind `FeatureFlags.reactionsEnabled` in the
+    /// UI — backend endpoint is being built by sub-feature 4.
+    /// TODO(sub-feature-4): this stays wired so the flag flip is zero-effort.
     @discardableResult
     func reactToShare(
         shareId: String,
         email: String,
-        action: ReactionAction
+        sharedAt: String,
+        reaction: String
     ) async throws -> ReactionResponse {
         try await network.xomifyPost("/shares/react", body: [
             "shareId": shareId,
             "email": email,
-            "action": action.rawValue
+            "sharedAt": sharedAt,
+            "reaction": reaction
         ])
     }
 
