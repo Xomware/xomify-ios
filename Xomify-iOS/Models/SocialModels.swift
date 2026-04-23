@@ -217,6 +217,61 @@ struct InviteAcceptResponse: Codable, Sendable {
     let friendEmail: String?
 }
 
+// MARK: - Pending Invite
+
+/// A single deep-link invite that has been sent to the current user and is
+/// awaiting their accept/decline action. Distinct from `Friend` which represents
+/// an accepted social connection or an in-app friend request.
+struct PendingInvite: Codable, Sendable, Identifiable, Hashable {
+    let inviteCode: String
+    let senderEmail: String
+    let senderDisplayName: String?
+    let senderAvatar: String?
+    let createdAt: String?
+    let expiresAt: String?
+
+    var id: String { inviteCode }
+
+    /// Human-facing sender label.
+    var label: String {
+        if let name = senderDisplayName, !name.isEmpty { return name }
+        return senderEmail
+    }
+
+    /// Parse createdAt into a Date (best-effort).
+    var createdAtDate: Date? {
+        guard let createdAt else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let date = formatter.date(from: createdAt) {
+            return date
+        }
+        return ISO8601DateFormatter().date(from: createdAt)
+    }
+
+    /// Short relative time string ("3h ago", "just now").
+    var relativeTime: String {
+        guard let date = createdAtDate else { return "" }
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 { return "just now" }
+        if interval < 3_600 { return "\(Int(interval / 60))m ago" }
+        if interval < 86_400 { return "\(Int(interval / 3_600))h ago" }
+        if interval < 604_800 { return "\(Int(interval / 86_400))d ago" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
+    }
+}
+
+/// Response for `GET /invites/pending?email=...`.
+struct PendingInvitesResponse: Codable, Sendable {
+    let email: String?
+    let invites: [PendingInvite]?
+    let totalCount: Int?
+}
+
 // MARK: - Friends
 
 /// A single friend / friend-request row in any bucket.
