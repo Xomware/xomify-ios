@@ -30,6 +30,13 @@ protocol XomifyServiceProtocol: Sendable {
         before: String?
     ) async throws -> FeedResponse
 
+    func getSharesByUser(
+        email: String,
+        targetEmail: String,
+        limit: Int,
+        before: String?
+    ) async throws -> FeedResponse
+
     // MARK: - Groups (for filter chips)
 
     func listGroups(email: String) async throws -> GroupsListResponse

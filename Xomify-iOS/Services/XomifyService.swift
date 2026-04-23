@@ -121,6 +121,27 @@ actor XomifyService {
         return try await network.xomifyGet("/shares/feed", queryParams: params)
     }
 
+    /// Fetch shares authored by a specific user. Both `email` (the caller) and
+    /// `targetEmail` (the author) are required — backend keeps the caller for
+    /// future friendship gating and enrichment.
+    ///
+    /// Response shape is identical to `/shares/feed` — reuse `FeedResponse`.
+    /// `nextBefore` is the pagination cursor (ISO8601 `createdAt`).
+    func getSharesByUser(
+        email: String,
+        targetEmail: String,
+        limit: Int = 50,
+        before: String? = nil
+    ) async throws -> FeedResponse {
+        var params: [String: String] = [
+            "email": email,
+            "targetEmail": targetEmail,
+            "limit": String(limit)
+        ]
+        if let before = before { params["before"] = before }
+        return try await network.xomifyGet("/shares/user", queryParams: params)
+    }
+
     /// Delete a share (author only). Backend expects composite key via body.
     @discardableResult
     func deleteShare(
