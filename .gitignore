@@ -78,3 +78,12 @@ playground.xcworkspace
 # Personal Claude overrides (not shared)
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Sibling project guard — never track XomFit (fitness app lives in xomfit-ios repo)
+Xomfit/
+XomFit/
+Xomfit.xcodeproj/
+XomFit.xcodeproj/
+XomFitWatch/
+XomFitTests/
+XomFitUITests/
