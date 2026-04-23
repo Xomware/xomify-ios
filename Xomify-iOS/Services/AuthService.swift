@@ -439,10 +439,6 @@ private struct SpotifyUserProfile: Codable {
     }
 }
 
-private struct SpotifyImage: Codable {
-    let url: String
-}
-
 // MARK: - Auth Errors
 
 enum AuthError: Error, LocalizedError {
