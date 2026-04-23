@@ -6,8 +6,7 @@ import Foundation
 /// remote-config or A/B testing — this is deliberately dumb and grep-able.
 enum FeatureFlags {
 
-    /// Reactions UI on share cards. Wired to the eventual `/shares/react`
-    /// endpoint that sub-feature 4 (`backend-interactions-and-notifications`)
-    /// is building. Keep `false` until that endpoint is deployed.
-    static let reactionsEnabled: Bool = false
+    /// Reactions UI on share cards. Wired to `/shares/react` from
+    /// `backend-interactions-and-notifications` (PR #131, shipped).
+    static let reactionsEnabled: Bool = true
 }
