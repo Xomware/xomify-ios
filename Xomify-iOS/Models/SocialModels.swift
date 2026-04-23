@@ -503,6 +503,10 @@ struct FriendProfile: Codable, Sendable {
     let followingCount: Int?
     let playlistCount: Int?
     let friendsCount: Int?
+    /// Count of shares authored by this user. Optional: backend contract
+    /// `ios-profile-redesign-contract.md` adds this in a follow-up; until it
+    /// ships, header falls back to 3 stats instead of 4.
+    let shareCount: Int?
     let topSongs: [String: JSONValue]?
     let topArtists: [String: JSONValue]?
     let topGenres: [String: JSONValue]?

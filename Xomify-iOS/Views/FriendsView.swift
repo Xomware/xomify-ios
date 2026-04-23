@@ -238,7 +238,7 @@ struct FriendsView: View {
                     LazyVStack(spacing: 8) {
                         ForEach(filteredFriends, id: \.targetEmail) { friend in
                             NavigationLink {
-                                FriendProfileView(profileEmail: friend.targetEmail, viewerEmail: viewModel.userEmail)
+                                ProfileView(context: .other(email: friend.targetEmail))
                             } label: {
                                 friendRow(friend, trailing: {
                                     AnyView(
