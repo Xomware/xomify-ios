@@ -233,17 +233,18 @@ final class AuthService: NSObject, Sendable {
         
         print("📤 Auth: Saving refresh token to Xomify backend...")
         
-        let url = URL(string: "\(xomifyApiUrl)/user/user-table")!
+        let url = URL(string: "\(xomifyApiUrl)/user/update")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(xomifyApiToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         let body: [String: Any] = [
             "email": userProfile.email,
             "userId": userProfile.id,
             "displayName": userProfile.displayName ?? userProfile.email,
-            "refreshToken": refresh
+            "refreshToken": refresh,
+            "avatar": userProfile.images?.first?.url ?? ""
         ]
         
         do {
@@ -428,12 +429,18 @@ private struct SpotifyUserProfile: Codable {
     let id: String
     let email: String
     let displayName: String?
-    
+    let images: [SpotifyImage]?
+
     enum CodingKeys: String, CodingKey {
         case id
         case email
         case displayName = "display_name"
+        case images
     }
+}
+
+private struct SpotifyImage: Codable {
+    let url: String
 }
 
 // MARK: - Auth Errors
