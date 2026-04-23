@@ -24,13 +24,32 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Write secrets.xcconfig
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Fetch app config from SSM and write secrets.xcconfig
         run: |
+          set -euo pipefail
+
+          SPOTIFY_CLIENT_ID=$(aws ssm get-parameter --name /xomify/spotify/CLIENT_ID --with-decryption --query 'Parameter.Value' --output text)
+          SPOTIFY_CLIENT_SECRET=$(aws ssm get-parameter --name /xomify/spotify/CLIENT_SECRET --with-decryption --query 'Parameter.Value' --output text)
+          XOMIFY_API_ID=$(aws ssm get-parameter --name /xomify/api/API_ID --with-decryption --query 'Parameter.Value' --output text)
+          XOMIFY_API_TOKEN=$(aws ssm get-parameter --name /xomify/api/API_AUTH_TOKEN --with-decryption --query 'Parameter.Value' --output text)
+
+          echo "::add-mask::$SPOTIFY_CLIENT_ID"
+          echo "::add-mask::$SPOTIFY_CLIENT_SECRET"
+          echo "::add-mask::$XOMIFY_API_ID"
+          echo "::add-mask::$XOMIFY_API_TOKEN"
+
           cat > secrets.xcconfig << XCCONFIG
-          SPOTIFY_CLIENT_ID = ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET = ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-          XOMIFY_API_ID = ${{ secrets.XOMIFY_API_ID }}
-          XOMIFY_API_TOKEN = ${{ secrets.XOMIFY_API_TOKEN }}
+          SPOTIFY_CLIENT_ID = $SPOTIFY_CLIENT_ID
+          SPOTIFY_CLIENT_SECRET = $SPOTIFY_CLIENT_SECRET
+          XOMIFY_API_ID = $XOMIFY_API_ID
+          XOMIFY_API_TOKEN = $XOMIFY_API_TOKEN
           XCCONFIG
 
       - name: Write App Store Connect API key
