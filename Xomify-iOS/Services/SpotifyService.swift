@@ -1,15 +1,37 @@
 import Foundation
 
+/// Errors surfaced by `SpotifyService` calls that map one-to-one to a
+/// user-facing recovery action (e.g. "open Spotify and play something first").
+enum SpotifyServiceError: LocalizedError, Sendable, Equatable {
+    /// Spotify Premium account required for the requested action.
+    case premiumRequired
+    /// No active Spotify device to route the action to.
+    case noActiveDevice
+    /// Fell through a status code we don't have a specific recovery for.
+    case unexpected(statusCode: Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .premiumRequired:
+            return "Spotify Premium is required for this action."
+        case .noActiveDevice:
+            return "Open Spotify on a device and play something first."
+        case .unexpected(let code):
+            return "Spotify returned status \(code)."
+        }
+    }
+}
+
 /// Service for Spotify API calls
 /// Mirrors your Angular SpotifyService
 actor SpotifyService {
-    
+
     // MARK: - Singleton
-    
+
     static let shared = SpotifyService()
-    
+
     private let network = NetworkService.shared
-    
+
     private init() {}
     
     // MARK: - User Profile
@@ -290,6 +312,34 @@ actor SpotifyService {
     func searchAlbums(query: String, limit: Int = 20) async throws -> [SpotifyAlbum] {
         let response = try await search(query: query, types: ["album"], limit: limit)
         return response.albums?.items ?? []
+    }
+
+    // MARK: - Player
+
+    /// Queue a track on the user's active Spotify device. Requires a Premium
+    /// account and an active device (otherwise throws `.premiumRequired` /
+    /// `.noActiveDevice`).
+    ///
+    /// Docs: https://developer.spotify.com/documentation/web-api/reference/add-to-queue
+    func queueTrack(uri: String) async throws {
+        guard let encoded = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            throw SpotifyServiceError.unexpected(statusCode: 0)
+        }
+
+        let endpoint = "/me/player/queue?uri=\(encoded)"
+
+        do {
+            try await network.spotifyPostNoBody(endpoint)
+        } catch let error as NetworkService.NetworkError {
+            if case .serverError(let code, _) = error {
+                switch code {
+                case 403: throw SpotifyServiceError.premiumRequired
+                case 404: throw SpotifyServiceError.noActiveDevice
+                default:  throw SpotifyServiceError.unexpected(statusCode: code)
+                }
+            }
+            throw error
+        }
     }
 }
 
