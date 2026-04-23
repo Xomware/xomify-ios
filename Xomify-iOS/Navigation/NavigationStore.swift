@@ -1,40 +1,19 @@
 import SwiftUI
 
-// MARK: - ShellTab
+// MARK: - SidebarDestination
 
-enum ShellTab: Hashable, CaseIterable {
-    case home, feed, releases, builder
-
-    var label: String {
-        switch self {
-        case .home:     "Home"
-        case .feed:     "Feed"
-        case .releases: "Releases"
-        case .builder:  "Builder"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .home:     "house.fill"
-        case .feed:     "sparkles"
-        case .releases: "antenna.radiowaves.left.and.right"
-        case .builder:  "music.note.list"
-        }
-    }
-}
-
-// MARK: - DrawerDestination
-
-enum DrawerDestination: Hashable {
-    case profile
-    case stats
-    case following
-    case friends
+/// All top-level destinations reachable from the sidebar drawer.
+/// This is the sole primary-navigation enum — `ShellTab` has been removed.
+enum SidebarDestination: Hashable {
+    case feed
+    case wrapped
+    case releaseRadar
+    case ratings
     case groups
-    case ratingsHistory
+    case friends
+    case profile
     case settings
-    case helpAbout
+    case builder
 }
 
 // MARK: - NavigationStore
@@ -42,19 +21,23 @@ enum DrawerDestination: Hashable {
 @Observable
 @MainActor
 final class NavigationStore {
-    var selectedTab: ShellTab = .home
+
+    /// The currently visible full-screen destination. Defaults to Feed on cold launch.
+    var currentDestination: SidebarDestination = .feed
+
     var isDrawerOpen: Bool = false
-    var drawerPath: [DrawerDestination] = []
 
-    // MARK: - Feed integration (ios-feed)
+    // MARK: - Feed integration
 
-    /// Toggled by the Feed tab's FAB and by composer dismissal.
+    /// Toggled by the Feed screen's FAB and by composer dismissal.
     var composerSheetPresented: Bool = false
 
-    /// Set by the Feed empty-state CTAs. `MainShell` observes this, opens the
-    /// drawer, and consumes the value via `consumePendingDeepLink()` on the
-    /// next runloop so the drawer animation and path push don't race.
-    var pendingDeepLink: DrawerDestination?
+    /// Set by the Feed empty-state CTAs. `MainShell` observes this and calls
+    /// `consumePendingDeepLink()` on the next runloop so the drawer animation
+    /// and destination switch don't race.
+    var pendingDeepLink: SidebarDestination?
+
+    // MARK: - Drawer control
 
     func openDrawer() {
         withAnimation(.easeInOut(duration: 0.25)) {
@@ -65,28 +48,32 @@ final class NavigationStore {
     func closeDrawer() {
         withAnimation(.easeInOut(duration: 0.25)) {
             isDrawerOpen = false
-            drawerPath.removeAll()
         }
     }
 
-    func navigate(to destination: DrawerDestination) {
-        drawerPath.append(destination)
+    /// Select a sidebar destination. Sets `currentDestination` and closes the
+    /// drawer in a single animation block so the dismiss + content swap happen
+    /// together without an intermediate flash.
+    func select(_ destination: SidebarDestination) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            currentDestination = destination
+            isDrawerOpen = false
+        }
     }
 
-    // MARK: - Deep link intent
+    // MARK: - Deep-link intent
 
-    /// Request a drawer deep link. The observer (`MainShell`) is responsible
-    /// for opening the drawer and pushing the destination on the path.
-    func requestDeepLink(_ destination: DrawerDestination) {
+    /// Request a navigation deep link. The observer (`MainShell`) is responsible
+    /// for consuming it via `consumePendingDeepLink()` on the next runloop.
+    func requestDeepLink(_ destination: SidebarDestination) {
         pendingDeepLink = destination
     }
 
-    /// Consume the pending deep link, opening the drawer + pushing the
-    /// destination. No-op when no link is pending.
+    /// Consume the pending deep link, switching to the destination.
+    /// No-op when no link is pending.
     func consumePendingDeepLink() {
         guard let destination = pendingDeepLink else { return }
         pendingDeepLink = nil
-        openDrawer()
-        drawerPath.append(destination)
+        select(destination)
     }
 }

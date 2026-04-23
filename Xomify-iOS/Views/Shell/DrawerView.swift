@@ -1,27 +1,34 @@
 import SwiftUI
 
-/// Slide-out navigation drawer. Overlays leading edge of the screen.
-/// Width: min(80% of screen width, 320pt) per plan spec.
+/// Slide-out navigation drawer. Overlays the leading edge of the screen.
+/// Width: min(80 % of screen width, 320 pt).
+///
+/// The drawer is a pure menu: each row calls `navStore.select(_:)` which
+/// sets `currentDestination` on `NavigationStore` AND closes the drawer in
+/// a single animation. No inner `NavigationStack` lives here — destination
+/// views render full-bleed inside `MainShell`.
 struct DrawerView: View {
     @Environment(NavigationStore.self) private var navStore
 
     // MARK: - Drawer entries
 
-    private struct DrawerEntry {
-        let destination: DrawerDestination
+    private struct DrawerEntry: Identifiable {
+        let destination: SidebarDestination
         let label: String
         let systemImage: String
+        var id: SidebarDestination { destination }
     }
 
     private let entries: [DrawerEntry] = [
-        .init(destination: .profile,        label: "Profile",         systemImage: "person.fill"),
-        .init(destination: .stats,          label: "Stats",           systemImage: "chart.bar.fill"),
-        .init(destination: .following,      label: "Following",       systemImage: "music.mic"),
-        .init(destination: .friends,        label: "Friends",         systemImage: "person.2.fill"),
-        .init(destination: .groups,         label: "Groups",          systemImage: "person.3.fill"),
-        .init(destination: .ratingsHistory, label: "Ratings History", systemImage: "star.fill"),
-        .init(destination: .settings,       label: "Settings",        systemImage: "gearshape.fill"),
-        .init(destination: .helpAbout,      label: "Help & About",    systemImage: "questionmark.circle.fill"),
+        .init(destination: .feed,         label: "Feed",            systemImage: "sparkles"),
+        .init(destination: .wrapped,      label: "Wrapped",         systemImage: "chart.bar.fill"),
+        .init(destination: .releaseRadar, label: "Release Radar",   systemImage: "antenna.radiowaves.left.and.right"),
+        .init(destination: .ratings,      label: "Ratings",         systemImage: "star.fill"),
+        .init(destination: .groups,       label: "Groups",          systemImage: "person.3.fill"),
+        .init(destination: .friends,      label: "Friends",         systemImage: "person.2.fill"),
+        .init(destination: .profile,      label: "Profile",         systemImage: "person.fill"),
+        .init(destination: .settings,     label: "Settings",        systemImage: "gearshape.fill"),
+        .init(destination: .builder,      label: "Playlist Builder", systemImage: "music.note.list"),
     ]
 
     // MARK: - Layout constants
@@ -46,90 +53,46 @@ struct DrawerView: View {
     // MARK: - Drawer panel
 
     private var drawerPanel: some View {
-        NavigationStack(path: Binding(
-            get: { navStore.drawerPath },
-            set: { navStore.drawerPath = $0 }
-        )) {
-            List {
-                // App name header inside drawer.
-                Section {
-                    Text("Xomify")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                }
+        List {
+            // App name header inside the drawer.
+            Section {
+                Text("Xomify")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
 
-                // Navigation entries.
-                Section {
-                    ForEach(entries, id: \.destination) { entry in
-                        Button {
-                            navStore.navigate(to: entry.destination)
-                        } label: {
-                            Label {
-                                Text(entry.label)
-                                    .foregroundStyle(.white)
-                                    .accessibilityLabel(entry.label)
-                            } icon: {
-                                Image(systemName: entry.systemImage)
-                                    .foregroundStyle(Color.xomifyGreen)
-                                    .accessibilityHidden(true)
-                            }
-                        }
-                        .listRowBackground(Color.xomifyCard)
-                    }
-                }
-
-                // Sign out at the bottom.
-                Section {
-                    Button(role: .destructive) {
-                        navStore.closeDrawer()
-                        AuthService.shared.logout()
+            // Navigation entries.
+            Section {
+                ForEach(entries) { entry in
+                    Button {
+                        navStore.select(entry.destination)
                     } label: {
                         Label {
-                            Text("Sign out")
-                                .accessibilityLabel("Sign out")
+                            Text(entry.label)
+                                .foregroundStyle(.white)
                         } icon: {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            Image(systemName: entry.systemImage)
+                                .foregroundStyle(Color.xomifyGreen)
                                 .accessibilityHidden(true)
                         }
                     }
-                    .listRowBackground(Color.xomifyCard)
+                    // 44 pt minimum touch target via explicit frame on the row.
+                    .frame(minHeight: 44)
+                    .accessibilityLabel(entry.label)
+                    .listRowBackground(
+                        navStore.currentDestination == entry.destination
+                            ? Color.xomifyGreen.opacity(0.15)
+                            : Color.xomifyCard
+                    )
                 }
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Color.xomifyDark)
-            .navigationDestination(for: DrawerDestination.self) { destination in
-                destinationView(for: destination)
-            }
         }
-        .frame(width: drawerWidth)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .background(Color.xomifyDark)
-    }
-
-    // MARK: - Destination routing
-
-    @ViewBuilder
-    private func destinationView(for destination: DrawerDestination) -> some View {
-        switch destination {
-        case .profile:
-            ProfileView()
-        case .stats:
-            StatsView()
-        case .following:
-            FollowingContent()
-        case .friends:
-            FriendsView()
-        case .groups:
-            GroupsView()
-        case .ratingsHistory:
-            RatingsHistoryView()
-        case .settings:
-            SettingsView()
-        case .helpAbout:
-            HelpAboutView()
-        }
+        .frame(width: drawerWidth)
     }
 }
