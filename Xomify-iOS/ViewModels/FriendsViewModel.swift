@@ -1,7 +1,12 @@
 import Foundation
 
-/// ViewModel for the Friends screen. Three buckets: accepted friends, requests
-/// (incoming + outgoing), and a discovery list of all other users.
+/// ViewModel for the Friends screen. Four buckets:
+/// - accepted friends,
+/// - requests (incoming + outgoing in-app friend requests),
+/// - discovery list of other users,
+/// - incoming deep-link invites awaiting accept/decline.
+///
+/// Also owns invite-mint state for the "Invite a Friend" CTA.
 @Observable
 @MainActor
 final class FriendsViewModel {
@@ -15,14 +20,31 @@ final class FriendsViewModel {
     var outgoing: [Friend] = []   // requested (me -> others)
     var discover: [SearchResult] = []
 
+    /// Deep-link invites the user has received. Sourced from the backend
+    /// `/invites/pending` endpoint once it lands; renders as an empty list
+    /// until then.
+    var incomingInvites: [PendingInvite] = []
+
     var isLoading = false
     var isRefreshing = false
     var errorMessage: String?
 
-    /// Actions currently in flight, keyed by target email. Prevents double-taps.
+    // Invite-mint state for the Invite-a-Friend CTA.
+    var isMintingInvite = false
+    var lastMintedInvite: URL?
+    var inviteMintError: String?
+
+    /// Actions currently in flight, keyed by target email or invite code.
+    /// Prevents double-taps.
     var inFlight: Set<String> = []
 
-    private let xomify = XomifyService.shared
+    private let xomify: any XomifyServicing
+
+    // MARK: - Init
+
+    init(xomify: any XomifyServicing = XomifyService.shared) {
+        self.xomify = xomify
+    }
 
     // MARK: - Load
 
@@ -39,19 +61,35 @@ final class FriendsViewModel {
 
         async let friendsBucket = xomify.getAllFriends(email: email)
         async let allUsers = xomify.listUsers(email: email)
+        async let pendingInvites = loadPendingInvitesResult(email: email)
 
         do {
-            let (friendsResp, usersResp) = try await (friendsBucket, allUsers)
+            let (friendsResp, usersResp, invitesResp) = try await (friendsBucket, allUsers, pendingInvites)
             accepted = friendsResp.accepted ?? []
             incoming = friendsResp.pending ?? []
             outgoing = friendsResp.requested ?? []
             discover = (usersResp.users ?? []).filter { $0.email != email }
+            incomingInvites = invitesResp
         } catch {
             errorMessage = error.localizedDescription
             print("❌ Friends: load failed - \(error)")
         }
 
         isLoading = false
+    }
+
+    /// Defensive wrapper around `listPendingInvites` — the backend endpoint is
+    /// pending, so any error is swallowed here to avoid nuking the whole load.
+    /// Returns an empty list on failure.
+    private func loadPendingInvitesResult(email: String) async -> [PendingInvite] {
+        do {
+            let response = try await xomify.listPendingInvites(email: email)
+            return response.invites ?? []
+        } catch {
+            // Endpoint not yet deployed — render an empty list. Not a fatal error.
+            print("ℹ️ Friends: listPendingInvites unavailable - \(error.localizedDescription)")
+            return []
+        }
     }
 
     func refresh() async {
@@ -61,7 +99,7 @@ final class FriendsViewModel {
         isRefreshing = false
     }
 
-    // MARK: - Actions
+    // MARK: - Friend actions
 
     func request(_ target: SearchResult) async {
         let targetEmail = target.email
@@ -153,6 +191,117 @@ final class FriendsViewModel {
         } catch {
             errorMessage = "Failed to remove: \(error.localizedDescription)"
             print("❌ Friends: remove failed - \(error)")
+        }
+    }
+
+    // MARK: - Invite mint
+
+    /// Mint a fresh invite code + share URL for the current user. Updates
+    /// `lastMintedInvite` on success, which the view observes to present the
+    /// iOS share sheet.
+    func mintInvite() async {
+        guard !userEmail.isEmpty else {
+            inviteMintError = "Please log in first"
+            return
+        }
+        guard !isMintingInvite else { return }
+        isMintingInvite = true
+        inviteMintError = nil
+        lastMintedInvite = nil
+
+        do {
+            let response = try await xomify.createInvite(email: userEmail)
+            guard let shareUrl = response.shareUrl, let url = URL(string: shareUrl) else {
+                inviteMintError = "Invite minted but URL was missing"
+                isMintingInvite = false
+                return
+            }
+            lastMintedInvite = url
+        } catch {
+            inviteMintError = "Failed to create invite: \(error.localizedDescription)"
+            print("❌ Friends: mintInvite failed - \(error)")
+        }
+
+        isMintingInvite = false
+    }
+
+    /// Clear the last minted invite — call after the share sheet has been
+    /// dismissed so the sheet can re-present cleanly on a future mint.
+    func clearMintedInvite() {
+        lastMintedInvite = nil
+    }
+
+    // MARK: - Incoming invite actions
+
+    /// Accept an incoming deep-link invite by code.
+    func acceptInvite(_ invite: PendingInvite) async {
+        await acceptInvite(code: invite.inviteCode)
+    }
+
+    /// Accept a deep-link invite by its raw code. Used by both the in-app
+    /// Invites list and the Universal-Link-triggered auto-accept flow.
+    func acceptInvite(code: String) async {
+        guard !userEmail.isEmpty else {
+            errorMessage = "Please log in first"
+            return
+        }
+        guard !inFlight.contains(code) else { return }
+        inFlight.insert(code)
+        defer { inFlight.remove(code) }
+
+        do {
+            let response = try await xomify.acceptInvite(email: userEmail, inviteCode: code)
+            // Remove the accepted row from the pending list.
+            if let senderEmail = incomingInvites.first(where: { $0.inviteCode == code })?.senderEmail {
+                incomingInvites.removeAll { $0.inviteCode == code }
+                // Optimistically promote the sender to accepted if we can
+                // reflect the friendship without a full refetch.
+                if let friendEmail = response.friendEmail ?? Optional(senderEmail) {
+                    let exists = accepted.contains { $0.targetEmail == friendEmail }
+                    if !exists {
+                        accepted.append(Friend(
+                            email: userEmail,
+                            friendEmail: friendEmail,
+                            displayName: nil,
+                            avatar: nil,
+                            status: "accepted",
+                            direction: "incoming",
+                            createdAt: ISO8601DateFormatter().string(from: Date()),
+                            mutualCount: nil
+                        ))
+                    }
+                }
+            } else {
+                // Code came from a deep link — we may have no row to remove,
+                // that's fine; just trigger a refresh to resync state.
+                await refresh()
+            }
+        } catch {
+            errorMessage = "Failed to accept invite: \(error.localizedDescription)"
+            print("❌ Friends: acceptInvite failed - \(error)")
+        }
+    }
+
+    /// Decline an incoming deep-link invite.
+    func declineInvite(_ invite: PendingInvite) async {
+        let code = invite.inviteCode
+        guard !inFlight.contains(code) else { return }
+        inFlight.insert(code)
+        defer { inFlight.remove(code) }
+
+        // Optimistic removal — restore on failure.
+        let snapshot = incomingInvites
+        incomingInvites.removeAll { $0.inviteCode == code }
+
+        do {
+            _ = try await xomify.declineInvite(email: userEmail, inviteCode: code)
+        } catch {
+            // Restore the row and surface the error — but only if the failure
+            // wasn't "endpoint missing" (404/5xx). We still clear client-side
+            // because the row has no other way out; flag via errorMessage.
+            incomingInvites = snapshot.filter { $0.inviteCode != code }
+            errorMessage = "Decline not yet supported: \(error.localizedDescription)"
+            print("ℹ️ Friends: declineInvite failed - \(error)")
         }
     }
 

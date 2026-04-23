@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Friends screen: three segmented tabs (Friends / Requests / Find).
+/// Friends screen: four segmented tabs (Friends / Requests / Invites / Find).
 struct FriendsView: View {
 
     @State private var viewModel = FriendsViewModel()
@@ -9,11 +9,19 @@ struct FriendsView: View {
     @State private var selectedTab: Tab = .friends
     @State private var searchText: String = ""
 
+    /// Friend queued for removal; drives the confirmation dialog.
+    @State private var friendPendingRemoval: Friend?
+
+    /// Whether the iOS share sheet is currently presented for a minted invite.
+    @State private var isShareSheetPresented: Bool = false
+
     private let spotifyService = SpotifyService.shared
+    private let inviteCoordinator = InviteCoordinator.shared
 
     enum Tab: String, CaseIterable, Identifiable {
         case friends = "Friends"
         case requests = "Requests"
+        case invites = "Invites"
         case find = "Find"
         var id: String { rawValue }
     }
@@ -30,22 +38,84 @@ struct FriendsView: View {
         }
         .navigationTitle("Friends")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Task { await viewModel.refresh() }
-                } label: {
-                    if viewModel.isRefreshing {
-                        ProgressView()
-                    } else {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                }
-                .disabled(viewModel.isRefreshing || isLoadingUser)
-            }
-        }
+        .toolbar { toolbarContent }
         .task { await loadUserAndData() }
         .tint(Color.xomifyGreen)
+        .confirmationDialog(
+            removalConfirmationTitle,
+            isPresented: Binding(
+                get: { friendPendingRemoval != nil },
+                set: { if !$0 { friendPendingRemoval = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: friendPendingRemoval
+        ) { friend in
+            Button("Remove", role: .destructive) {
+                Task {
+                    await viewModel.remove(friend)
+                    friendPendingRemoval = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                friendPendingRemoval = nil
+            }
+        } message: { friend in
+            Text("\(friend.label) will no longer be your friend on Xomify.")
+        }
+        .sheet(isPresented: $isShareSheetPresented, onDismiss: {
+            viewModel.clearMintedInvite()
+        }) {
+            if let url = viewModel.lastMintedInvite {
+                InviteShareSheet(url: url)
+                    .presentationDetents([.medium])
+            }
+        }
+        .onChange(of: viewModel.lastMintedInvite) { _, new in
+            // Auto-present the share sheet as soon as the mint lands.
+            isShareSheetPresented = new != nil
+        }
+    }
+
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                Task { await viewModel.mintInvite() }
+            } label: {
+                if viewModel.isMintingInvite {
+                    ProgressView()
+                } else {
+                    Label("Invite a Friend", systemImage: "person.badge.plus")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+            }
+            .accessibilityLabel("Invite a friend")
+            .disabled(viewModel.isMintingInvite || isLoadingUser)
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                Task { await viewModel.refresh() }
+            } label: {
+                if viewModel.isRefreshing {
+                    ProgressView()
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            }
+            .accessibilityLabel("Refresh")
+            .disabled(viewModel.isRefreshing || isLoadingUser)
+        }
+    }
+
+    private var removalConfirmationTitle: String {
+        if let friend = friendPendingRemoval {
+            return "Remove \(friend.label)?"
+        }
+        return "Remove friend?"
     }
 
     // MARK: - Tab picker
@@ -67,6 +137,9 @@ struct FriendsView: View {
         case .requests:
             let total = viewModel.incoming.count + viewModel.outgoing.count
             return total == 0 ? "Requests" : "Requests (\(total))"
+        case .invites:
+            let total = viewModel.incomingInvites.count
+            return total == 0 ? "Invites" : "Invites (\(total))"
         case .find:
             return "Find"
         }
@@ -76,22 +149,23 @@ struct FriendsView: View {
 
     private var searchField: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundColor(.gray)
+            Image(systemName: "magnifyingglass").foregroundStyle(Color.gray)
             TextField("Search by name or email", text: $searchText)
-                .foregroundColor(.white)
+                .foregroundStyle(Color.white)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.gray)
                 }
+                .accessibilityLabel("Clear search")
             }
         }
         .padding()
         .background(Color.white.opacity(0.05))
-        .cornerRadius(10)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .padding(.horizontal)
     }
 
@@ -101,12 +175,16 @@ struct FriendsView: View {
     private var content: some View {
         if isLoadingUser || viewModel.isLoading {
             loadingState
-        } else if let error = viewModel.errorMessage, viewModel.accepted.isEmpty, viewModel.discover.isEmpty {
+        } else if let error = viewModel.errorMessage,
+                  viewModel.accepted.isEmpty,
+                  viewModel.discover.isEmpty,
+                  viewModel.incomingInvites.isEmpty {
             errorState(error)
         } else {
             switch selectedTab {
             case .friends:  friendsList
             case .requests: requestsList
+            case .invites:  invitesList
             case .find:     findList
             }
         }
@@ -115,7 +193,7 @@ struct FriendsView: View {
     private var loadingState: some View {
         VStack(spacing: 12) {
             ProgressView().tint(.xomifyGreen)
-            Text("Loading...").font(.caption).foregroundColor(.gray)
+            Text("Loading...").font(.caption).foregroundStyle(Color.gray)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -124,9 +202,9 @@ struct FriendsView: View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 50))
-                .foregroundColor(.orange.opacity(0.7))
-            Text("Error").font(.headline).foregroundColor(.white)
-            Text(message).font(.caption).foregroundColor(.gray)
+                .foregroundStyle(Color.orange.opacity(0.7))
+            Text("Error").font(.headline).foregroundStyle(Color.white)
+            Text(message).font(.caption).foregroundStyle(Color.gray)
                 .multilineTextAlignment(.center)
             Button {
                 Task { await loadUserAndData() }
@@ -136,8 +214,8 @@ struct FriendsView: View {
                     .fontWeight(.medium)
                     .padding(.horizontal, 24).padding(.vertical, 10)
                     .background(Color.xomifyPurple)
-                    .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .foregroundStyle(Color.white)
+                    .clipShape(Capsule())
             }
         }
         .padding(.horizontal, 40)
@@ -154,7 +232,7 @@ struct FriendsView: View {
         Group {
             if filteredFriends.isEmpty {
                 emptyTab(icon: "person.2", title: "No Friends Yet",
-                         message: "Invite a friend from the Invites page to get started.")
+                         message: "Tap Invite a Friend in the top bar to share a link, or use Find to add existing users.")
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
@@ -165,12 +243,14 @@ struct FriendsView: View {
                                 friendRow(friend, trailing: {
                                     AnyView(
                                         Button(role: .destructive) {
-                                            Task { await viewModel.remove(friend) }
+                                            friendPendingRemoval = friend
                                         } label: {
                                             Image(systemName: "person.badge.minus")
-                                                .foregroundColor(.red)
+                                                .foregroundStyle(Color.red)
+                                                .frame(minWidth: 44, minHeight: 44)
                                         }
                                         .buttonStyle(.borderless)
+                                        .accessibilityLabel("Remove \(friend.label)")
                                     )
                                 })
                             }
@@ -215,10 +295,11 @@ struct FriendsView: View {
                                                     .fontWeight(.semibold)
                                                     .padding(.horizontal, 12).padding(.vertical, 6)
                                                     .background(Color.xomifyGreen)
-                                                    .foregroundColor(.black)
-                                                    .cornerRadius(12)
+                                                    .foregroundStyle(Color.black)
+                                                    .clipShape(Capsule())
                                             }
                                             .buttonStyle(.plain)
+                                            .accessibilityLabel("Accept \(friend.label)")
 
                                             Button {
                                                 Task { await viewModel.reject(friend) }
@@ -228,10 +309,11 @@ struct FriendsView: View {
                                                     .fontWeight(.semibold)
                                                     .padding(.horizontal, 12).padding(.vertical, 6)
                                                     .background(Color.white.opacity(0.1))
-                                                    .foregroundColor(.white)
-                                                    .cornerRadius(12)
+                                                    .foregroundStyle(Color.white)
+                                                    .clipShape(Capsule())
                                             }
                                             .buttonStyle(.plain)
+                                            .accessibilityLabel("Reject \(friend.label)")
                                         }
                                     )
                                 })
@@ -251,10 +333,11 @@ struct FriendsView: View {
                                                 .fontWeight(.semibold)
                                                 .padding(.horizontal, 12).padding(.vertical, 6)
                                                 .background(Color.white.opacity(0.1))
-                                                .foregroundColor(.white)
-                                                .cornerRadius(12)
+                                                .foregroundStyle(Color.white)
+                                                .clipShape(Capsule())
                                         }
                                         .buttonStyle(.plain)
+                                        .accessibilityLabel("Cancel request to \(friend.label)")
                                     )
                                 })
                             }
@@ -264,6 +347,90 @@ struct FriendsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Invites tab
+
+    private var filteredInvites: [PendingInvite] {
+        filter(viewModel.incomingInvites, by: searchText) { $0.label + " " + $0.senderEmail }
+    }
+
+    private var invitesList: some View {
+        Group {
+            if filteredInvites.isEmpty {
+                emptyTab(icon: "envelope.badge", title: "No Invites",
+                         message: "Deep-link invites from other users appear here.")
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(filteredInvites) { invite in
+                            inviteRow(invite)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
+    }
+
+    private func inviteRow(_ invite: PendingInvite) -> some View {
+        HStack(spacing: 12) {
+            avatarCircle(label: invite.label)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(invite.label)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.white)
+                    .lineLimit(1)
+                Text(invite.senderEmail)
+                    .font(.caption2)
+                    .foregroundStyle(Color.gray)
+                    .lineLimit(1)
+                if !invite.relativeTime.isEmpty {
+                    Text(invite.relativeTime)
+                        .font(.caption2)
+                        .foregroundStyle(Color.gray.opacity(0.7))
+                }
+            }
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Button {
+                    Task { await viewModel.acceptInvite(invite) }
+                } label: {
+                    Text("Accept")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color.xomifyGreen)
+                        .foregroundStyle(Color.black)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Accept invite from \(invite.label)")
+                .disabled(viewModel.inFlight.contains(invite.inviteCode))
+
+                Button {
+                    Task { await viewModel.declineInvite(invite) }
+                } label: {
+                    Text("Decline")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color.white.opacity(0.1))
+                        .foregroundStyle(Color.white)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Decline invite from \(invite.label)")
+                .disabled(viewModel.inFlight.contains(invite.inviteCode))
+            }
+        }
+        .padding(12)
+        .background(Color.xomifyCard)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Find tab
@@ -298,11 +465,11 @@ struct FriendsView: View {
                 Text(user.label)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundStyle(Color.white)
                     .lineLimit(1)
                 Text(user.email)
                     .font(.caption2)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(Color.gray)
                     .lineLimit(1)
             }
 
@@ -324,16 +491,17 @@ struct FriendsView: View {
                     .fontWeight(.semibold)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Color.xomifyPurple)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .foregroundStyle(Color.white)
+                    .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Add \(user.label)")
                 .disabled(viewModel.inFlight.contains(user.email))
             }
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(10)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Row builders
@@ -346,11 +514,11 @@ struct FriendsView: View {
                 Text(friend.label)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundStyle(Color.white)
                     .lineLimit(1)
                 Text(friend.targetEmail)
                     .font(.caption2)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(Color.gray)
                     .lineLimit(1)
             }
 
@@ -360,7 +528,7 @@ struct FriendsView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(10)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func avatarCircle(label: String) -> some View {
@@ -371,7 +539,7 @@ struct FriendsView: View {
             Text(String(label.prefix(1)).uppercased())
                 .font(.subheadline)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundStyle(Color.white)
         }
     }
 
@@ -381,15 +549,15 @@ struct FriendsView: View {
             .fontWeight(.semibold)
             .padding(.horizontal, 10).padding(.vertical, 4)
             .background(color.opacity(0.2))
-            .foregroundColor(color)
-            .cornerRadius(10)
+            .foregroundStyle(color)
+            .clipShape(Capsule())
     }
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(.caption)
             .fontWeight(.semibold)
-            .foregroundColor(.gray)
+            .foregroundStyle(Color.gray)
             .padding(.top, 4)
     }
 
@@ -397,11 +565,11 @@ struct FriendsView: View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 40))
-                .foregroundColor(.gray.opacity(0.5))
-            Text(title).font(.headline).foregroundColor(.white)
+                .foregroundStyle(Color.gray.opacity(0.5))
+            Text(title).font(.headline).foregroundStyle(Color.white)
             Text(message)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundStyle(Color.gray)
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 40)
@@ -429,10 +597,79 @@ struct FriendsView: View {
             }
             userEmail = email
             await viewModel.load(email: email)
+            // If a deep-link invite was captured before we finished auth, route
+            // into the Invites tab and auto-accept.
+            if let pendingCode = inviteCoordinator.consume() {
+                selectedTab = .invites
+                await viewModel.acceptInvite(code: pendingCode)
+            }
         } catch {
             viewModel.errorMessage = "Failed to load profile: \(error.localizedDescription)"
         }
         isLoadingUser = false
+    }
+}
+
+// MARK: - Invite share sheet
+
+/// Small wrapper that presents a `ShareLink`-style share sheet for a minted
+/// invite URL. Kept separate so the sheet can be driven by `@State` on the
+/// parent view.
+private struct InviteShareSheet: View {
+    let url: URL
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "link")
+                .font(.system(size: 40))
+                .foregroundStyle(Color.xomifyGreen)
+                .padding(.top, 24)
+
+            Text("Invite a Friend")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(Color.white)
+
+            Text("Send this link to anyone you want to add as a friend on Xomify.")
+                .font(.subheadline)
+                .foregroundStyle(Color.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Text(url.absoluteString)
+                .font(.caption)
+                .foregroundStyle(Color.white)
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.xomifyCard)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .textSelection(.enabled)
+                .padding(.horizontal, 24)
+
+            ShareLink(
+                item: url,
+                subject: Text("Join me on Xomify"),
+                message: Text("Accept my invite to connect on Xomify: \(url.absoluteString)")
+            ) {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Share")
+                }
+                .font(.headline)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(LinearGradient.xomifyGradient)
+                .foregroundStyle(Color.white)
+                .clipShape(Capsule())
+            }
+            .padding(.horizontal, 24)
+            .accessibilityLabel("Share invite link")
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.xomifyDark)
     }
 }
 

@@ -121,6 +121,24 @@ actor XomifyService {
         ])
     }
 
+    /// List deep-link invites awaiting accept/decline for this user.
+    /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
+    /// Until the backend ships, this will raise a server error; the UI renders
+    /// an empty state against that failure.
+    func listPendingInvites(email: String) async throws -> PendingInvitesResponse {
+        try await network.xomifyGet("/invites/pending", queryParams: ["email": email])
+    }
+
+    /// Decline a deep-link invite.
+    /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
+    @discardableResult
+    func declineInvite(email: String, inviteCode: String) async throws -> SuccessResponse {
+        try await network.xomifyPost("/invites/decline", body: [
+            "email": email,
+            "inviteCode": inviteCode
+        ])
+    }
+
     // MARK: - Friends
 
     /// Send a friend request.
