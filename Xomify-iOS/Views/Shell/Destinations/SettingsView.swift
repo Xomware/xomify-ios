@@ -1,24 +1,26 @@
 import SwiftUI
 import UserNotifications
 
-/// Drawer-resident Settings screen. Covers notification toggles, version info,
-/// legal links, support email, and a destructive Sign out action.
-///
-/// Notification toggles are mediated by `SettingsViewModel` (sub-feature #9 —
-/// `ios-notifications`) which mirrors them into `@AppStorage` and POSTs to
-/// `/notifications/register` as an upsert on each flip.
+/// Settings screen. Sections:
+///   **Notifications** — push opt-ins (queue-threshold, weekly digest).
+///   **Features**      — Xomify feature-enrollment toggles (Wrapped, Release Radar).
+///   **Account**       — Country, Subscription, User ID rows + Open Spotify Profile link.
+///   **About**         — Version / build info, Help & About sub-rows, legal links.
+///   **Danger Zone**   — Sign-out with confirmation dialog.
 struct SettingsView: View {
 
     @State private var viewModel = SettingsViewModel()
     @State private var showSignOutConfirm = false
 
     private let supportEmailURL = URL(string: "mailto:support@xomware.com")
-    private let privacyURL = URL(string: "https://xomify.xomware.com/privacy")
-    private let termsURL = URL(string: "https://xomify.xomware.com/terms")
+    private let privacyURL      = URL(string: "https://xomify.xomware.com/privacy")
+    private let termsURL        = URL(string: "https://xomify.xomware.com/terms")
 
     var body: some View {
         List {
             notificationsSection
+            featuresSection
+            accountSection
             aboutSection
             legalSection
             supportSection
@@ -30,7 +32,7 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await viewModel.refreshAuthorizationStatus()
+            await viewModel.load()
         }
         .confirmationDialog(
             "Sign out of Xomify?",
@@ -38,13 +40,13 @@ struct SettingsView: View {
             titleVisibility: .visible
         ) {
             Button("Sign out", role: .destructive) {
-                AuthService.shared.logout()
+                viewModel.logout()
             }
             Button("Cancel", role: .cancel) {}
         }
     }
 
-    // MARK: - Sections
+    // MARK: - Notifications
 
     private var notificationsSection: some View {
         Section {
@@ -55,6 +57,7 @@ struct SettingsView: View {
             .tint(Color.xomifyGreen)
             .disabled(!viewModel.togglesEnabled)
             .accessibilityHint("Queue-threshold push notifications")
+            .frame(minHeight: 44)
 
             Toggle(isOn: $viewModel.digestEnabled) {
                 Label("Weekly digest", systemImage: "envelope.fill")
@@ -63,6 +66,7 @@ struct SettingsView: View {
             .tint(Color.xomifyGreen)
             .disabled(!viewModel.togglesEnabled)
             .accessibilityHint("Weekly digest push notifications")
+            .frame(minHeight: 44)
 
             if viewModel.authorizationStatus == .denied,
                let url = viewModel.systemSettingsURL {
@@ -70,6 +74,7 @@ struct SettingsView: View {
                     Label("Open System Settings", systemImage: "gear")
                         .foregroundStyle(Color.xomifyGreen)
                 }
+                .frame(minHeight: 44)
                 .accessibilityHint("Opens the iOS Settings app to enable notifications")
             }
         } header: {
@@ -83,6 +88,142 @@ struct SettingsView: View {
         .listRowBackground(Color.xomifyCard)
     }
 
+    // MARK: - Features (enrollment)
+
+    private var featuresSection: some View {
+        Section {
+            enrollmentRow(
+                title: "Monthly Wrapped",
+                description: "Monthly insights about your listening habits.",
+                icon: "chart.bar.fill",
+                iconGradient: [.xomifyGreen, Color(red: 23/255, green: 183/255, blue: 91/255)],
+                isEnrolled: viewModel.isWrappedEnrolled,
+                isUpdating: viewModel.isUpdatingEnrollment
+            ) {
+                Task { await viewModel.toggleWrappedEnrollment() }
+            }
+
+            enrollmentRow(
+                title: "Release Radar",
+                description: "New releases from your favorite artists.",
+                icon: "antenna.radiowaves.left.and.right",
+                iconGradient: [.xomifyPurple, Color(red: 122/255, green: 8/255, blue: 150/255)],
+                isEnrolled: viewModel.isReleaseRadarEnrolled,
+                isUpdating: viewModel.isUpdatingEnrollment
+            ) {
+                Task { await viewModel.toggleReleaseRadarEnrollment() }
+            }
+        } header: {
+            Text("Features")
+                .foregroundStyle(.gray)
+        }
+        .listRowBackground(Color.xomifyCard)
+    }
+
+    private func enrollmentRow(
+        title: String,
+        description: String,
+        icon: String,
+        iconGradient: [Color],
+        isEnrolled: Bool,
+        isUpdating: Bool,
+        onToggle: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(LinearGradient(
+                        colors: iconGradient,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(width: 48, height: 48)
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(.white)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+                    .lineLimit(2)
+                if isEnrolled {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark").font(.caption2).accessibilityHidden(true)
+                        Text("Enrolled").font(.caption2).fontWeight(.medium)
+                    }
+                    .foregroundStyle(Color.xomifyGreen)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.xomifyGreen.opacity(0.15))
+                    .clipShape(Capsule())
+                    .padding(.top, 2)
+                }
+            }
+
+            Spacer()
+
+            Toggle("", isOn: Binding(get: { isEnrolled }, set: { _ in onToggle() }))
+                .labelsHidden()
+                .tint(.xomifyGreen)
+                .disabled(isUpdating)
+                .accessibilityLabel("\(title) enrollment")
+        }
+        .padding(.vertical, 8)
+        .frame(minHeight: 44)
+    }
+
+    // MARK: - Account
+
+    @ViewBuilder
+    private var accountSection: some View {
+        Section {
+            accountRow(icon: "globe",      title: "Country",      value: viewModel.country)
+            accountRow(icon: "music.note", title: "Subscription", value: viewModel.accountType)
+            accountRow(icon: "person",     title: "User ID",      value: viewModel.userId)
+
+            if let url = viewModel.spotifyProfileUrl {
+                Link(destination: url) {
+                    Label("Open Spotify Profile", systemImage: "arrow.up.right.square")
+                        .foregroundStyle(Color.xomifyGreen)
+                }
+                .frame(minHeight: 44)
+                .accessibilityLabel("Open Spotify Profile")
+                .accessibilityHint("Opens your profile in the Spotify app or website")
+            }
+        } header: {
+            Text("Account")
+                .foregroundStyle(.gray)
+        }
+        .listRowBackground(Color.xomifyCard)
+    }
+
+    private func accountRow(icon: String, title: String, value: String) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(Color.xomifyGreen)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            Text(title)
+                .foregroundStyle(.white)
+            Spacer()
+            Text(value.isEmpty ? "—" : value)
+                .foregroundStyle(.gray)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .frame(minHeight: 44)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value.isEmpty ? "unknown" : value)")
+    }
+
+    // MARK: - About
+
     private var aboutSection: some View {
         Section {
             HStack {
@@ -94,6 +235,7 @@ struct SettingsView: View {
                     .foregroundStyle(.gray)
                     .accessibilityLabel("Version \(Self.versionString)")
             }
+            .frame(minHeight: 44)
 
             HStack {
                 Label("Build", systemImage: "hammer.fill")
@@ -104,12 +246,15 @@ struct SettingsView: View {
                     .foregroundStyle(.gray)
                     .accessibilityLabel("Build \(Self.buildString)")
             }
+            .frame(minHeight: 44)
         } header: {
             Text("About")
                 .foregroundStyle(.gray)
         }
         .listRowBackground(Color.xomifyCard)
     }
+
+    // MARK: - Legal
 
     @ViewBuilder
     private var legalSection: some View {
@@ -119,12 +264,14 @@ struct SettingsView: View {
                     Label("Privacy Policy", systemImage: "lock.fill")
                         .foregroundStyle(.white)
                 }
+                .frame(minHeight: 44)
             }
             if let termsURL {
                 Link(destination: termsURL) {
                     Label("Terms of Service", systemImage: "doc.text.fill")
                         .foregroundStyle(.white)
                 }
+                .frame(minHeight: 44)
             }
         } header: {
             Text("Legal")
@@ -132,6 +279,8 @@ struct SettingsView: View {
         }
         .listRowBackground(Color.xomifyCard)
     }
+
+    // MARK: - Support
 
     @ViewBuilder
     private var supportSection: some View {
@@ -141,6 +290,7 @@ struct SettingsView: View {
                     Label("Email support", systemImage: "envelope.badge.fill")
                         .foregroundStyle(.white)
                 }
+                .frame(minHeight: 44)
             }
         } header: {
             Text("Support")
@@ -149,6 +299,8 @@ struct SettingsView: View {
         .listRowBackground(Color.xomifyCard)
     }
 
+    // MARK: - Danger Zone
+
     private var dangerSection: some View {
         Section {
             Button(role: .destructive) {
@@ -156,6 +308,7 @@ struct SettingsView: View {
             } label: {
                 Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
             }
+            .frame(minHeight: 44)
             .accessibilityHint("Signs you out of Xomify")
         }
         .listRowBackground(Color.xomifyCard)

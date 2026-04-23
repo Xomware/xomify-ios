@@ -263,7 +263,7 @@ extension NotificationsService: UNUserNotificationCenterDelegate {
     func handlePushOpen(payload: PushPayload) {
         switch payload.kind {
         case .queueThreshold, .digest:
-            navigationStore?.selectedTab = .feed
+            navigationStore?.select(.feed)
         case .unknown:
             // Nothing to route — leave the user wherever they were.
             return

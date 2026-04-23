@@ -1,7 +1,11 @@
 import SwiftUI
 
-/// Signed-in root view. Replaces MainTabView.
-/// ZStack layout: persistent HeaderBar + 4-tab TabView, with DrawerView + DrawerScrim overlaid.
+/// Signed-in root view. Hosts a full-screen `NavigationStack` whose root
+/// switches on `navStore.currentDestination`. The slide-out `DrawerView` and
+/// its `DrawerScrim` are overlaid above the content column.
+///
+/// Architecture: the drawer is a pure menu — it mutates `currentDestination`
+/// via `navStore.select(_:)` and never hosts its own navigation stack.
 struct MainShell: View {
 
     // MARK: - State
@@ -13,71 +17,35 @@ struct MainShell: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            // Primary content: header + tab bar.
+            // Primary content: header bar + full-screen destination.
             VStack(spacing: 0) {
                 HeaderBar(avatarURL: avatarURL)
                     .environment(navStore)
 
-                TabView(selection: Binding(
-                    get: { navStore.selectedTab },
-                    set: { navStore.selectedTab = $0 }
-                )) {
-                    // Home — routes to ProfileView (existing Home screen).
-                    NavigationStack {
-                        ProfileView()
-                    }
-                    .tabItem {
-                        Label(ShellTab.home.label, systemImage: ShellTab.home.systemImage)
-                    }
-                    .tag(ShellTab.home)
-
-                    // Feed — social feed tab (ios-feed #5).
-                    NavigationStack {
-                        FeedView()
-                    }
-                    .tabItem {
-                        Label(ShellTab.feed.label, systemImage: ShellTab.feed.systemImage)
-                    }
-                    .tag(ShellTab.feed)
-
-                    // Releases.
-                    NavigationStack {
-                        ReleaseRadarView()
-                    }
-                    .tabItem {
-                        Label(ShellTab.releases.label, systemImage: ShellTab.releases.systemImage)
-                    }
-                    .tag(ShellTab.releases)
-
-                    // Builder.
-                    PlaylistBuilderTabView()
-                        .tabItem {
-                            Label(ShellTab.builder.label, systemImage: ShellTab.builder.systemImage)
-                        }
-                        .tag(ShellTab.builder)
+                NavigationStack {
+                    destinationRoot
                 }
-                .tint(Color.xomifyGreen)
             }
 
-            // Scrim — renders above content, below drawer.
+            // Scrim — above content, below drawer.
             DrawerScrim()
                 .environment(navStore)
 
-            // Drawer — slides in from leading edge.
+            // Drawer — slides in from the leading edge.
             DrawerView()
                 .environment(navStore)
         }
         .environment(navStore)
         .ignoresSafeArea(edges: .bottom)
         .task {
-            // Share the nav store with the push pipeline so `didReceive` can
-            // tab-switch into Feed on push-open.
+            // Share the nav store with the push pipeline so push-open handlers
+            // can call `select(.feed)`.
             NotificationsService.shared.navigationStore = navStore
             await fetchAvatar()
         }
         .onChange(of: navStore.pendingDeepLink) { _, newValue in
-            // FeedView's empty-state CTAs set `pendingDeepLink`; consume on
-            // the next runloop so the drawer animation runs cleanly.
+            // Feed empty-state CTAs set `pendingDeepLink`; consume on the next
+            // runloop so the drawer animation runs cleanly.
             guard newValue != nil else { return }
             Task { @MainActor in
                 navStore.consumePendingDeepLink()
@@ -85,18 +53,42 @@ struct MainShell: View {
         }
     }
 
+    // MARK: - Destination root
+
+    @ViewBuilder
+    private var destinationRoot: some View {
+        switch navStore.currentDestination {
+        case .feed:
+            FeedView()
+        case .wrapped:
+            WrappedView()
+        case .releaseRadar:
+            ReleaseRadarView()
+        case .ratings:
+            RatingsHistoryView()
+        case .groups:
+            GroupsView()
+        case .friends:
+            FriendsView()
+        case .profile:
+            ProfileView()
+        case .settings:
+            SettingsView()
+        case .builder:
+            PlaylistBuilderTabView()
+        }
+    }
+
     // MARK: - Avatar fetch
 
-    /// Fetches the current user profile for the header avatar.
-    /// Non-blocking — placeholder shown until resolved.
+    /// Fetches the current user's profile image URL for the header bar.
+    /// Non-blocking — placeholder is shown until the request resolves.
     private func fetchAvatar() async {
         do {
             let user = try await SpotifyService.shared.getCurrentUser()
-            await MainActor.run {
-                avatarURL = user.profileImageUrl
-            }
+            avatarURL = user.profileImageUrl
         } catch {
-            // Silently fall back to SF symbol placeholder — non-critical.
+            // Silently fall back to the SF symbol placeholder — non-critical.
         }
     }
 }
