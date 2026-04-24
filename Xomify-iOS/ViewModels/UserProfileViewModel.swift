@@ -5,12 +5,14 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
     case shares
     case ratings
     case taste
+    case playlists
 
     var title: String {
         switch self {
-        case .shares:  return "Posts"
-        case .ratings: return "Ratings"
-        case .taste:   return "Taste"
+        case .shares:    return "Posts"
+        case .ratings:   return "Ratings"
+        case .taste:     return "Taste"
+        case .playlists: return "Playlists"
         }
     }
 }
@@ -67,6 +69,17 @@ final class UserProfileViewModel {
 
     private var _sharesVM: SharesByUserViewModel?
     private var _ratingsVM: RatingsViewModel?
+    private var _playlistsVM: ProfilePlaylistsViewModel?
+
+    /// Tabs visible for this profile's context. `.playlists` surfaces the
+    /// signed-in user's Spotify playlists — we don't have a reliable fetch
+    /// path for other users yet, so hide the tab for `.other`.
+    var visibleTabs: [ProfileTab] {
+        switch context {
+        case .me:    return [.shares, .ratings, .taste, .playlists]
+        case .other: return [.shares, .ratings, .taste]
+        }
+    }
 
     /// `SharesByUserViewModel` scoped to the author (self or other). Created
     /// on first access and kept alive for the lifetime of this VM.
@@ -86,6 +99,15 @@ final class UserProfileViewModel {
         if let existing = _ratingsVM { return existing }
         let vm = RatingsViewModel()
         _ratingsVM = vm
+        return vm
+    }
+
+    /// Lazy accessor for the Playlists tab view model. Only meaningful for
+    /// `.me` — callers should gate on `visibleTabs` before asking.
+    func playlistsViewModel() -> ProfilePlaylistsViewModel {
+        if let existing = _playlistsVM { return existing }
+        let vm = ProfilePlaylistsViewModel()
+        _playlistsVM = vm
         return vm
     }
 

@@ -8,15 +8,21 @@ struct ProfileTabPicker: View {
     @Binding var selection: ProfileTab
 
     private let namespace: Namespace.ID
+    private let tabs: [ProfileTab]
 
-    init(selection: Binding<ProfileTab>, namespace: Namespace.ID) {
+    init(
+        selection: Binding<ProfileTab>,
+        namespace: Namespace.ID,
+        tabs: [ProfileTab] = ProfileTab.allCases
+    ) {
         self._selection = selection
         self.namespace = namespace
+        self.tabs = tabs
     }
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(ProfileTab.allCases, id: \.self) { tab in
+            ForEach(tabs, id: \.self) { tab in
                 tabButton(tab)
             }
         }
