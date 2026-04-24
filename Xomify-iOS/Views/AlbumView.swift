@@ -48,6 +48,9 @@ struct AlbumView: View {
         .background(Color.xomifyDark.ignoresSafeArea())
         .navigationTitle(album?.name ?? "Album")
         .navigationBarTitleDisplayMode(.inline)
+        // Pushed from tabs that hide the system nav bar. Re-assert visibility
+        // so the back button renders.
+        .toolbar(.visible, for: .navigationBar)
         .task {
             await loadAlbum()
         }

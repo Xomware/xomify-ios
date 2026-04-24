@@ -19,6 +19,10 @@ struct ProfileView: View {
         }
         .navigationTitle(viewModel.displayName.isEmpty ? "Profile" : viewModel.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        // Force the system nav bar visible so pushed destinations (friend
+        // profile from FriendsView) surface the default back button even
+        // though the parent tab view (`.toolbar(.hidden)`) suppresses it.
+        .toolbar(.visible, for: .navigationBar)
         .task {
             await viewModel.loadHeader()
         }
