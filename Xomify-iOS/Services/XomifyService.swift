@@ -270,20 +270,21 @@ actor XomifyService {
     }
 
     /// Bucketed list of friends (accepted / requested / pending / blocked).
+    /// Hits `/friends/list?email=` — the real user-scoped endpoint.
+    /// `/friends/all` is a full-table scan helper and must not be used here.
     func getAllFriends(email: String) async throws -> FriendsAllResponse {
-        try await network.xomifyGet("/friends/all", queryParams: ["email": email])
+        try await network.xomifyGet("/friends/list", queryParams: ["email": email])
     }
 
-    /// Discovery list: every other user on the platform with per-user status.
+    /// Discovery list: every other user on the platform. `/user/all` returns a
+    /// bare JSON array; the backend filters self out server-side when `email`
+    /// is passed.
     func listUsers(email: String) async throws -> UserListResponse {
-        // The backend returns `{ users: [...], totalCount }` or a bare array.
-        // Try the dict shape first; fall back to array if needed.
-        do {
-            return try await network.xomifyGet("/friends/list", queryParams: ["email": email])
-        } catch {
-            let users: [SearchResult] = try await network.xomifyGet("/friends/list", queryParams: ["email": email])
-            return UserListResponse(users: users, totalCount: users.count)
-        }
+        let users: [SearchResult] = try await network.xomifyGet(
+            "/user/all",
+            queryParams: ["email": email]
+        )
+        return UserListResponse(users: users, totalCount: users.count)
     }
 
     /// Incoming friend requests only (subset of /friends/all).

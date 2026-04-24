@@ -58,24 +58,26 @@ struct MainShell: View {
     @ViewBuilder
     private var destinationRoot: some View {
         switch navStore.currentDestination {
+        case .profile:
+            ProfileView()
         case .feed:
             FeedView()
+        case .musicTaste:
+            TopItemsView()
         case .wrapped:
             WrappedView()
         case .releaseRadar:
             ReleaseRadarView()
         case .ratings:
             RatingsHistoryView()
-        case .groups:
-            GroupsView()
         case .friends:
             FriendsView()
-        case .profile:
-            ProfileView()
-        case .settings:
-            SettingsView()
+        case .groups:
+            GroupsView()
         case .builder:
             PlaylistBuilderTabView()
+        case .settings:
+            SettingsView()
         }
     }
 
