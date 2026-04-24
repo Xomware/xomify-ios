@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Shared controller that powers every "Add to Spotify queue" button in the app.
 ///
@@ -56,10 +57,54 @@ final class QueueActionController {
             } else {
                 toast = "Queued on Spotify"
             }
+        } catch SpotifyServiceError.noActiveDevice {
+            handleNoDevice(uri: uri, action: "queue")
         } catch let error as SpotifyServiceError {
             toast = error.errorDescription
         } catch {
             toast = error.localizedDescription
+        }
+    }
+
+    /// Start playback on the user's active Spotify device. Falls back to
+    /// deep-linking into the Spotify app when no device is active so the user
+    /// can trivially resume a session.
+    func play(uri: String, trackName: String? = nil) async {
+        guard !uri.isEmpty else {
+            toast = "Couldn't play — missing track URI."
+            return
+        }
+        guard !inFlight.contains(uri) else { return }
+
+        inFlight.insert(uri)
+        defer { inFlight.remove(uri) }
+
+        do {
+            try await spotifyService.playTrack(uri: uri)
+            if let name = trackName, !name.isEmpty {
+                toast = "Playing \(name)"
+            } else {
+                toast = "Playing on Spotify"
+            }
+        } catch SpotifyServiceError.noActiveDevice {
+            handleNoDevice(uri: uri, action: "play")
+        } catch let error as SpotifyServiceError {
+            toast = error.errorDescription
+        } catch {
+            toast = error.localizedDescription
+        }
+    }
+
+    /// When the Web API reports no active device, the user simply hasn't
+    /// opened Spotify yet. Deep-link them into the track page so Spotify
+    /// launches and they can tap Play — the next action will then hit a
+    /// live device.
+    private func handleNoDevice(uri: String, action: String) {
+        if let url = URL(string: uri), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+            toast = "Open Spotify to finish the \(action)."
+        } else {
+            toast = SpotifyServiceError.noActiveDevice.errorDescription
         }
     }
 }

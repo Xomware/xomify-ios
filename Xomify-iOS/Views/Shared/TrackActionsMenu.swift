@@ -4,8 +4,10 @@ import UIKit
 /// Unified track action menu. One ellipsis button that exposes every
 /// action users can perform on a track across the app:
 ///
-/// - **Play now** — opens the track in the Spotify app.
+/// - **Play now** — starts playback on the active Spotify device via the Web
+///   API. Falls back to deep-linking into Spotify when no device is active.
 /// - **Add to queue** — routes to `QueueActionController.shared`.
+/// - **Open in Spotify** — deep-links into the Spotify app/web player.
 /// - **Add to Playlist Builder** — stashes the track in `PlaylistBuilderManager`.
 /// - **Share to Feed** — presents `ShareComposerView` pre-seeded with the track.
 ///
@@ -31,10 +33,11 @@ struct TrackActionsMenu: View {
     var body: some View {
         Menu {
             Button {
-                playNow()
+                Task { await queueAction.play(uri: resolvedUri, trackName: track.name) }
             } label: {
                 Label("Play now", systemImage: "play.circle.fill")
             }
+            .disabled(resolvedUri.isEmpty || queueAction.isQueuing(uri: resolvedUri))
 
             Button {
                 Task { await queueAction.queue(uri: resolvedUri, trackName: track.name) }
@@ -45,6 +48,12 @@ struct TrackActionsMenu: View {
                 )
             }
             .disabled(resolvedUri.isEmpty || queueAction.isQueuing(uri: resolvedUri))
+
+            Button {
+                openInSpotify()
+            } label: {
+                Label("Open in Spotify", systemImage: "arrow.up.right.square")
+            }
 
             Button {
                 playlistBuilder.addTrack(track)
@@ -112,7 +121,7 @@ struct TrackActionsMenu: View {
         track.uri ?? "spotify:track:\(track.id)"
     }
 
-    private func playNow() {
+    private func openInSpotify() {
         if let uri = track.uri, let url = URL(string: uri) {
             UIApplication.shared.open(url)
         } else if let urlString = track.externalUrls?["spotify"], let url = URL(string: urlString) {
