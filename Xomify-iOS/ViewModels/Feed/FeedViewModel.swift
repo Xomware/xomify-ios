@@ -33,6 +33,86 @@ enum FeedFilter: Hashable, Sendable {
     }
 }
 
+// MARK: - FeedRefinement
+
+/// Client-side refinement on top of the currently loaded shares. These are
+/// pure filtering + sorting knobs — the backend feed query itself doesn't
+/// change when the user flips them. That's intentional: refinement runs
+/// locally so switching a filter is instant and round-trip free.
+struct FeedRefinement: Equatable, Sendable {
+
+    /// Time window for `sharedAt`. Nothing outside the window renders.
+    enum DateWindow: String, CaseIterable, Identifiable, Sendable {
+        case anytime
+        case today
+        case past7Days
+        case past30Days
+
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .anytime:     return "Anytime"
+            case .today:       return "Today"
+            case .past7Days:   return "Past 7 days"
+            case .past30Days:  return "Past 30 days"
+            }
+        }
+
+        /// Lower-bound `Date` the window admits; `nil` for `.anytime`.
+        fileprivate func minDate(now: Date = Date()) -> Date? {
+            let cal = Calendar.current
+            switch self {
+            case .anytime:    return nil
+            case .today:      return cal.startOfDay(for: now)
+            case .past7Days:  return cal.date(byAdding: .day, value: -7, to: now)
+            case .past30Days: return cal.date(byAdding: .day, value: -30, to: now)
+            }
+        }
+    }
+
+    enum SortOrder: String, CaseIterable, Identifiable, Sendable {
+        case newest
+        case oldest
+
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .newest: return "Newest first"
+            case .oldest: return "Oldest first"
+            }
+        }
+    }
+
+    /// Selected authors (emails). Empty set = no author filter.
+    var authors: Set<String> = []
+    var dateWindow: DateWindow = .anytime
+    /// When true, hide shares the viewer has already queued on Spotify.
+    var onlyUnlistened: Bool = false
+    var sortOrder: SortOrder = .newest
+
+    /// True when any non-default refinement is active. Drives the "Filters"
+    /// chip accent so the user can tell at a glance.
+    var isActive: Bool {
+        !authors.isEmpty || dateWindow != .anytime || onlyUnlistened || sortOrder != .newest
+    }
+
+    /// Short summary for the chip label when active.
+    var activeCount: Int {
+        var n = 0
+        if !authors.isEmpty { n += 1 }
+        if dateWindow != .anytime { n += 1 }
+        if onlyUnlistened { n += 1 }
+        if sortOrder != .newest { n += 1 }
+        return n
+    }
+
+    mutating func reset() {
+        self = FeedRefinement()
+    }
+}
+
 // MARK: - SharerIdentity
 
 /// Resolved display name + avatar for a share author. Feed batches these
@@ -64,6 +144,10 @@ final class FeedViewModel {
 
     var selectedFilter: FeedFilter = .friends
     var groups: [XomifyGroup] = []
+
+    /// Client-side refinement (date window, authors, unlistened, sort).
+    /// Bound by the refinement sheet; consumed by `filteredShares`.
+    var refinement: FeedRefinement = FeedRefinement()
 
     /// displayName + avatar keyed by email. Populated on bootstrap from the
     /// viewer's own profile + all accepted friends. Falls back to email when
@@ -310,6 +394,47 @@ final class FeedViewModel {
     func prependShareAndRefresh(_ share: Share) async {
         shares.insert(share, at: 0)
         await refresh()
+    }
+
+    // MARK: - Refinement
+
+    /// Shares after the current refinement (date window, authors,
+    /// unlistened, sort) is applied. The raw `shares` array is preserved
+    /// so pagination continues to work against the full list.
+    var filteredShares: [Share] {
+        let window = refinement.dateWindow.minDate()
+        let authors = refinement.authors
+        let onlyUnlistened = refinement.onlyUnlistened
+
+        var result = shares.filter { share in
+            if !authors.isEmpty, !authors.contains(share.sharedBy) {
+                return false
+            }
+            if onlyUnlistened, share.viewerHasQueued {
+                return false
+            }
+            if let minDate = window, let shareDate = share.sharedAtDate, shareDate < minDate {
+                return false
+            }
+            return true
+        }
+
+        if refinement.sortOrder == .oldest {
+            result.sort { ($0.sharedAtDate ?? .distantPast) < ($1.sharedAtDate ?? .distantPast) }
+        }
+
+        return result
+    }
+
+    /// Distinct authors visible in the currently loaded shares — powers the
+    /// author picker so users only see people who've actually posted.
+    var availableAuthors: [String] {
+        let unique = Set(shares.map { $0.sharedBy })
+        return unique.sorted { a, b in
+            identity(for: a).displayName.localizedCaseInsensitiveCompare(
+                identity(for: b).displayName
+            ) == .orderedAscending
+        }
     }
 
     // MARK: - Share deletion
