@@ -23,105 +23,216 @@ struct ProfileTasteTab: View {
     }
 }
 
-// MARK: - Self taste summary (top-3 per category, per term)
+// MARK: - Self taste summary (auto-rotating top-3 per category, per term)
 
+/// Auto-rotates through 9 stages — (category × term) — cross-fading every
+/// ~6 seconds: 1mo tracks → 1mo artists → 1mo genres → 6mo tracks … → 1yr
+/// genres → loop. Tap anywhere on the card to advance manually.
 private struct SelfTasteSummary: View {
     let onSeeAll: () -> Void
 
     @State private var viewModel = TopItemsViewModel()
-    @State private var selectedTerm: TimeRange = .shortTerm
+    @State private var stage: Int = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// 9 stages, ordered by term then category. Matches Dom's spec:
+    /// "top 3 tracks, artists, genres for 1 month, then same for 6 months then 1 year then back".
+    private static let stages: [Stage] = [
+        .init(term: .shortTerm,  kind: .tracks),
+        .init(term: .shortTerm,  kind: .artists),
+        .init(term: .shortTerm,  kind: .genres),
+        .init(term: .mediumTerm, kind: .tracks),
+        .init(term: .mediumTerm, kind: .artists),
+        .init(term: .mediumTerm, kind: .genres),
+        .init(term: .longTerm,   kind: .tracks),
+        .init(term: .longTerm,   kind: .artists),
+        .init(term: .longTerm,   kind: .genres)
+    ]
+
+    private var currentStage: Stage { Self.stages[stage % Self.stages.count] }
+
+    private func termLabel(_ term: TimeRange) -> String {
+        switch term {
+        case .shortTerm:  return "1 month"
+        case .mediumTerm: return "6 months"
+        case .longTerm:   return "1 year"
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Picker("Time range", selection: $selectedTerm) {
-                Text("4 weeks").tag(TimeRange.shortTerm)
-                Text("6 months").tag(TimeRange.mediumTerm)
-                Text("All time").tag(TimeRange.longTerm)
-            }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Taste time range")
+        VStack(alignment: .leading, spacing: 14) {
+            header
 
-            if viewModel.isLoading && tracks.isEmpty && artists.isEmpty {
+            if viewModel.isLoading && allEmpty {
                 VStack {
-                    ProgressView().tint(.xomifyGreen)
+                    XomifyLoaderPulse(size: 48)
                 }
-                .frame(maxWidth: .infinity, minHeight: 160)
+                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
-                trackSection(title: "Top Tracks", tracks: tracks)
-                artistSection(title: "Top Artists", artists: artists)
-                section(title: "Top Genres", items: genres.map(\.name))
-
-                Button(action: onSeeAll) {
-                    HStack(spacing: 6) {
-                        Text("See all")
-                            .fontWeight(.semibold)
-                        Image(systemName: "arrow.right")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.xomifyPurple, Color.xomifyGreen],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .accessibilityHint("Opens the full Music Taste screen")
+                stageCard
+                    .frame(maxWidth: .infinity, minHeight: 260, alignment: .top)
+                    .onTapGesture { advance() }
+                progressIndicator
+                seeAllButton
             }
         }
         .padding(.horizontal)
         .task { await viewModel.loadData() }
+        .task { await autoAdvanceLoop() }
     }
 
-    // MARK: Term-scoped slices (top 3 each)
+    // MARK: Header + progress
 
-    private var tracks: [SpotifyTrack] {
-        Array(tracksForSelectedTerm.prefix(3))
+    private var header: some View {
+        HStack(spacing: 8) {
+            Text(currentStage.kindLabel)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .contentTransition(.opacity)
+                .id("kind-\(stage)")
+            Text("·").foregroundStyle(.white.opacity(0.4))
+            Text(termLabel(currentStage.term))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white.opacity(0.7))
+                .contentTransition(.opacity)
+                .id("term-\(stage)")
+            Spacer(minLength: 0)
+        }
     }
 
-    private var artists: [SpotifyArtist] {
-        Array(artistsForSelectedTerm.prefix(3))
+    private var progressIndicator: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<Self.stages.count, id: \.self) { idx in
+                Capsule()
+                    .fill(idx == (stage % Self.stages.count)
+                          ? Color.xomifyGreen
+                          : Color.white.opacity(0.18))
+                    .frame(width: idx == (stage % Self.stages.count) ? 18 : 6, height: 4)
+                    .animation(.easeInOut(duration: 0.3), value: stage)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
-    private var genres: [(name: String, count: Int)] {
-        Array(genresForSelectedTerm.prefix(3))
+    // MARK: Stage card — cross-fades via .id + transition
+
+    @ViewBuilder
+    private var stageCard: some View {
+        Group {
+            switch currentStage.kind {
+            case .tracks:
+                trackSection(tracks: Array(tracks(for: currentStage.term).prefix(3)))
+            case .artists:
+                artistSection(artists: Array(artists(for: currentStage.term).prefix(3)))
+            case .genres:
+                genreSection(items: Array(genres(for: currentStage.term).prefix(3)).map(\.name))
+            }
+        }
+        .id(stage)
+        .transition(.asymmetric(
+            insertion: .opacity.animation(.easeIn(duration: 0.45)),
+            removal: .opacity.animation(.easeOut(duration: 0.25))
+        ))
     }
 
-    private var tracksForSelectedTerm: [SpotifyTrack] {
-        switch selectedTerm {
+    private var seeAllButton: some View {
+        Button(action: onSeeAll) {
+            HStack(spacing: 6) {
+                Text("See all")
+                    .fontWeight(.semibold)
+                Image(systemName: "arrow.right")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    colors: [Color.xomifyPurple, Color.xomifyGreen],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .accessibilityHint("Opens the full Music Taste screen")
+    }
+
+    // MARK: Rotation
+
+    private func advance() {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            stage = (stage + 1) % Self.stages.count
+        }
+    }
+
+    private func autoAdvanceLoop() async {
+        while !Task.isCancelled {
+            let delay: UInt64 = reduceMotion ? 8_000_000_000 : 6_000_000_000
+            try? await Task.sleep(nanoseconds: delay)
+            if Task.isCancelled { return }
+            advance()
+        }
+    }
+
+    // MARK: Data slices
+
+    private var allEmpty: Bool {
+        viewModel.shortTermTracks.isEmpty && viewModel.shortTermArtists.isEmpty
+        && viewModel.mediumTermTracks.isEmpty && viewModel.mediumTermArtists.isEmpty
+    }
+
+    private func tracks(for term: TimeRange) -> [SpotifyTrack] {
+        switch term {
         case .shortTerm:  return viewModel.shortTermTracks
         case .mediumTerm: return viewModel.mediumTermTracks
         case .longTerm:   return viewModel.longTermTracks
         }
     }
 
-    private var artistsForSelectedTerm: [SpotifyArtist] {
-        switch selectedTerm {
+    private func artists(for term: TimeRange) -> [SpotifyArtist] {
+        switch term {
         case .shortTerm:  return viewModel.shortTermArtists
         case .mediumTerm: return viewModel.mediumTermArtists
         case .longTerm:   return viewModel.longTermArtists
         }
     }
 
-    private var genresForSelectedTerm: [(name: String, count: Int)] {
-        switch selectedTerm {
+    private func genres(for term: TimeRange) -> [(name: String, count: Int)] {
+        switch term {
         case .shortTerm:  return viewModel.shortTermGenres
         case .mediumTerm: return viewModel.mediumTermGenres
         case .longTerm:   return viewModel.longTermGenres
         }
     }
 
+    // MARK: Stage definition
+
+    private struct Stage {
+        let term: TimeRange
+        let kind: Kind
+
+        enum Kind {
+            case tracks, artists, genres
+        }
+
+        var kindLabel: String {
+            switch kind {
+            case .tracks:  return "Top Tracks"
+            case .artists: return "Top Artists"
+            case .genres:  return "Top Genres"
+            }
+        }
+    }
+
     // MARK: Section
 
     @ViewBuilder
-    private func section(title: String, items: [String]) -> some View {
-        if !items.isEmpty {
+    private func genreSection(items: [String]) -> some View {
+        if items.isEmpty {
+            emptyStageState(symbol: "music.note.list", label: "No genres yet")
+        } else {
             VStack(alignment: .leading, spacing: 10) {
-                sectionHeader(title)
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     HStack(spacing: 12) {
                         indexLabel(index)
@@ -141,10 +252,11 @@ private struct SelfTasteSummary: View {
     }
 
     @ViewBuilder
-    private func trackSection(title: String, tracks: [SpotifyTrack]) -> some View {
-        if !tracks.isEmpty {
+    private func trackSection(tracks: [SpotifyTrack]) -> some View {
+        if tracks.isEmpty {
+            emptyStageState(symbol: "music.note", label: "No tracks yet")
+        } else {
             VStack(alignment: .leading, spacing: 10) {
-                sectionHeader(title)
                 ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
                     trackRow(track: track, index: index)
                 }
@@ -153,15 +265,28 @@ private struct SelfTasteSummary: View {
     }
 
     @ViewBuilder
-    private func artistSection(title: String, artists: [SpotifyArtist]) -> some View {
-        if !artists.isEmpty {
+    private func artistSection(artists: [SpotifyArtist]) -> some View {
+        if artists.isEmpty {
+            emptyStageState(symbol: "person.2", label: "No artists yet")
+        } else {
             VStack(alignment: .leading, spacing: 10) {
-                sectionHeader(title)
                 ForEach(Array(artists.enumerated()), id: \.offset) { index, artist in
                     artistRow(artist: artist, index: index)
                 }
             }
         }
+    }
+
+    private func emptyStageState(symbol: String, label: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: symbol)
+                .font(.system(size: 28))
+                .foregroundStyle(.gray.opacity(0.55))
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.gray)
+        }
+        .frame(maxWidth: .infinity, minHeight: 140)
     }
 
     private func trackRow(track: SpotifyTrack, index: Int) -> some View {
