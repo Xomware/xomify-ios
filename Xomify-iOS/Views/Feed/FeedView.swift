@@ -5,6 +5,7 @@ struct FeedView: View {
 
     @Environment(NavigationStore.self) private var navStore
     @State private var viewModel = FeedViewModel()
+    @State private var showingRefinement = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -17,7 +18,10 @@ struct FeedView: View {
                     systemImage: "sparkles"
                 )
 
-                FilterChipsView(viewModel: viewModel)
+                FilterChipsView(
+                    viewModel: viewModel,
+                    onTapRefine: { showingRefinement = true }
+                )
 
                 mainContent
             }
@@ -45,6 +49,10 @@ struct FeedView: View {
                 Task { await viewModel.prependShareAndRefresh(share) }
             }
         }
+        .sheet(isPresented: $showingRefinement) {
+            FeedRefinementSheet(viewModel: viewModel) { showingRefinement = false }
+                .presentationDetents([.medium, .large])
+        }
     }
 
     // MARK: - Content
@@ -63,15 +71,48 @@ struct FeedView: View {
             .overlay(alignment: .bottomTrailing) {
                 ComposerFAB { openComposer() }
             }
+        } else if viewModel.filteredShares.isEmpty {
+            filteredEmptyState
         } else {
             feedList
         }
     }
 
+    private var filteredEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 40))
+                .foregroundStyle(Color.xomifyPurple.opacity(0.7))
+                .accessibilityHidden(true)
+            Text("No posts match your filters")
+                .font(.headline)
+                .foregroundStyle(.white)
+            Text("Try widening the date window or clearing authors.")
+                .font(.caption)
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Button {
+                viewModel.refinement.reset()
+            } label: {
+                Text("Clear filters")
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 44)
+                    .background(Color.white.opacity(0.08))
+                    .foregroundStyle(.white)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var feedList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(viewModel.shares) { share in
+                ForEach(viewModel.filteredShares) { share in
                     ShareCardView(
                         share: share,
                         viewerEmail: viewModel.userEmail,
