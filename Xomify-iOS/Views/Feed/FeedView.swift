@@ -113,15 +113,24 @@ struct FeedView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.filteredShares) { share in
-                    ShareCardView(
-                        share: share,
-                        viewerEmail: viewModel.userEmail,
-                        sharerIdentity: viewModel.identity(for: share.sharedBy),
-                        onDelete: {
-                            Task { await viewModel.deleteShare(share) }
-                        }
-                    )
-                    .padding(.horizontal, 16)
+                    NavigationLink {
+                        ShareDetailView(
+                            share: share,
+                            viewerEmail: viewModel.userEmail,
+                            sharerIdentity: viewModel.identity(for: share.sharedBy)
+                        )
+                    } label: {
+                        ShareCardView(
+                            share: share,
+                            viewerEmail: viewModel.userEmail,
+                            sharerIdentity: viewModel.identity(for: share.sharedBy),
+                            onDelete: {
+                                Task { await viewModel.deleteShare(share) }
+                            }
+                        )
+                        .padding(.horizontal, 16)
+                    }
+                    .buttonStyle(.plain)
                     .onAppear {
                         if share.id == viewModel.shares.last?.id {
                             Task { await viewModel.loadMore() }
