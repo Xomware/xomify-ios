@@ -26,7 +26,9 @@ struct ProfileHeaderView: View {
 
     private var avatar: some View {
         Group {
-            if let url = viewModel.avatarURL {
+            if isInitialLoading {
+                Circle().fill(Color.gray.opacity(0.2))
+            } else if let url = viewModel.avatarURL {
                 AsyncImage(url: url) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
@@ -97,18 +99,26 @@ struct ProfileHeaderView: View {
 
     private var statsRow: some View {
         HStack(spacing: 0) {
-            if let shares = viewModel.shareCount {
-                statItem(value: shares, label: "Shares", color: .xomifyGreen)
+            if isInitialLoading {
+                skeletonStat
                 divider
-            }
-            if let ratings = viewModel.ratingCount {
-                statItem(value: ratings, label: "Ratings", color: .xomifyPurple)
+                skeletonStat
                 divider
-            }
-            if let friends = viewModel.friendCount {
-                statItem(value: friends, label: "Friends", color: .xomifyGreen)
-            } else if let followers = viewModel.followersCount {
-                statItem(value: followers, label: "Followers", color: .xomifyGreen)
+                skeletonStat
+            } else {
+                if let shares = viewModel.shareCount {
+                    statItem(value: shares, label: "Shares", color: .xomifyGreen)
+                    divider
+                }
+                if let ratings = viewModel.ratingCount {
+                    statItem(value: ratings, label: "Ratings", color: .xomifyPurple)
+                    divider
+                }
+                if let friends = viewModel.friendCount {
+                    statItem(value: friends, label: "Friends", color: .xomifyGreen)
+                } else if let followers = viewModel.followersCount {
+                    statItem(value: followers, label: "Followers", color: .xomifyGreen)
+                }
             }
         }
         .padding(.vertical, 12)
@@ -116,6 +126,26 @@ struct ProfileHeaderView: View {
         .background(Color.xomifyCard)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .frame(maxWidth: .infinity)
+    }
+
+    /// True on first load, before any header field has populated. Drives
+    /// skeleton placeholders in the stats row so the layout doesn't jump
+    /// when real values arrive.
+    private var isInitialLoading: Bool {
+        viewModel.isLoading && viewModel.displayName.isEmpty
+    }
+
+    private var skeletonStat: some View {
+        VStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Color.gray.opacity(0.25))
+                .frame(width: 28, height: 16)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Color.gray.opacity(0.18))
+                .frame(width: 44, height: 8)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityHidden(true)
     }
 
     private var divider: some View {

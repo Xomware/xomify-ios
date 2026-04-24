@@ -50,6 +50,8 @@ private struct OtherTasteView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .accessibilityLabel("Taste time range")
+            .accessibilityHint("Switches between last 4 weeks, last 6 months, and all time")
 
             let artistNames = names(from: viewModel.friendProfileTopArtists, term: selectedTerm)
             let songNames = names(from: viewModel.friendProfileTopSongs, term: selectedTerm)
@@ -105,6 +107,8 @@ private struct OtherTasteView: View {
             .padding(.horizontal, 8)
             .background(Color.xomifyCard)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(label)
     }
 
     // MARK: - JSON → names

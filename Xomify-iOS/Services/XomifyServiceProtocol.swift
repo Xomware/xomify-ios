@@ -37,6 +37,13 @@ protocol XomifyServiceProtocol: Sendable {
         before: String?
     ) async throws -> FeedResponse
 
+    // MARK: - Friend profile (used by UserProfileViewModel)
+
+    func getFriendProfile(
+        email: String,
+        profileEmail: String
+    ) async throws -> FriendProfile
+
     // MARK: - Groups (for filter chips)
 
     func listGroups(email: String) async throws -> GroupsListResponse
