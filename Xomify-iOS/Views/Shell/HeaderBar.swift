@@ -12,11 +12,11 @@ struct HeaderBar: View {
 
     var body: some View {
         ZStack {
-            // Wordmark — centered absolutely over the full bar.
-            Text("Xomify")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
+            // Banner logo — replaces the old "Xomify" text wordmark.
+            Image("banner-logo")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 28)
                 .accessibilityLabel("Xomify")
                 .accessibilityAddTraits(.isHeader)
 

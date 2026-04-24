@@ -12,6 +12,8 @@ struct MainShell: View {
 
     @State private var navStore = NavigationStore()
     @State private var avatarURL: URL? = nil
+    @State private var displayName: String? = nil
+    @State private var userEmail: String? = nil
 
     // MARK: - Body
 
@@ -32,8 +34,12 @@ struct MainShell: View {
                 .environment(navStore)
 
             // Drawer — slides in from the leading edge.
-            DrawerView()
-                .environment(navStore)
+            DrawerView(
+                avatarURL: avatarURL,
+                displayName: displayName,
+                email: userEmail
+            )
+            .environment(navStore)
         }
         .environment(navStore)
         .ignoresSafeArea(edges: .bottom)
@@ -83,14 +89,17 @@ struct MainShell: View {
 
     // MARK: - Avatar fetch
 
-    /// Fetches the current user's profile image URL for the header bar.
-    /// Non-blocking — placeholder is shown until the request resolves.
+    /// Fetches the current user's profile image URL and display info for the
+    /// header bar + drawer profile card. Non-blocking — placeholders show
+    /// until the request resolves.
     private func fetchAvatar() async {
         do {
             let user = try await SpotifyService.shared.getCurrentUser()
             avatarURL = user.profileImageUrl
+            displayName = user.displayName
+            userEmail = user.email
         } catch {
-            // Silently fall back to the SF symbol placeholder — non-critical.
+            // Silently fall back — non-critical.
         }
     }
 }

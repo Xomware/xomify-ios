@@ -7,62 +7,105 @@ struct RatingsHistoryView: View {
     @State private var viewModel = RatingsHistoryViewModel()
 
     var body: some View {
-        Group {
-            if viewModel.isLoading && viewModel.ratings.isEmpty {
-                loadingState
-            } else if let error = viewModel.errorMessage, viewModel.ratings.isEmpty {
-                errorState(error)
-            } else if viewModel.ratings.isEmpty {
-                emptyState
-            } else {
-                list
+        VStack(spacing: 0) {
+            BrandGradientHeader(
+                "Ratings",
+                subtitle: subtitleText,
+                systemImage: "star.fill"
+            )
+
+            Group {
+                if viewModel.isLoading && viewModel.ratings.isEmpty {
+                    loadingState
+                } else if let error = viewModel.errorMessage, viewModel.ratings.isEmpty {
+                    errorState(error)
+                } else if viewModel.ratings.isEmpty {
+                    emptyState
+                } else {
+                    list
+                }
             }
         }
         .background(Color.xomifyDark.ignoresSafeArea())
-        .navigationTitle("Ratings History")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             if viewModel.ratings.isEmpty {
                 await viewModel.load()
             }
         }
-        .refreshable {
-            await viewModel.load()
-        }
+        .refreshable { await viewModel.load() }
     }
 
-    // MARK: - List
+    private var subtitleText: String {
+        let n = viewModel.ratings.count
+        guard n > 0 else { return "Your rated tracks live here" }
+        return "\(n) rated \(n == 1 ? "track" : "tracks")"
+    }
+
+    // MARK: - List (grouped by star count, high → low)
 
     private var list: some View {
-        List {
-            ForEach(viewModel.ratings) { rating in
-                Button {
-                    openInSpotify(trackId: rating.trackId)
-                } label: {
-                    RatingRow(rating: rating)
-                }
-                .listRowBackground(Color.xomifyCard)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        Task { await viewModel.delete(rating) }
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 24) {
+                ForEach(groupedByStars, id: \.stars) { group in
+                    VStack(alignment: .leading, spacing: 10) {
+                        starGroupHeader(stars: group.stars, count: group.ratings.count)
+                            .padding(.horizontal, 16)
+
+                        VStack(spacing: 10) {
+                            ForEach(group.ratings) { rating in
+                                Button {
+                                    openInSpotify(trackId: rating.trackId)
+                                } label: {
+                                    RatingCard(rating: rating)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        Task { await viewModel.delete(rating) }
+                                    } label: {
+                                        Label("Delete rating", systemImage: "trash")
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
                     }
                 }
             }
+            .padding(.vertical, 20)
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
+    }
+
+    private var groupedByStars: [(stars: Int, ratings: [TrackRating])] {
+        Dictionary(grouping: viewModel.ratings, by: { $0.rating })
+            .map { (stars: $0.key, ratings: $0.value) }
+            .sorted { $0.stars > $1.stars }
+    }
+
+    private func starGroupHeader(stars: Int, count: Int) -> some View {
+        HStack(spacing: 6) {
+            ForEach(0..<5, id: \.self) { i in
+                Image(systemName: i < stars ? "star.fill" : "star")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(i < stars ? Color.xomifyGreen : Color.white.opacity(0.25))
+            }
+            Text("\(count) \(count == 1 ? "track" : "tracks")")
+                .font(.xomifyCaption2)
+                .foregroundStyle(.white.opacity(0.7))
+                .padding(.leading, 6)
+        }
     }
 
     // MARK: - States
 
     private var loadingState: some View {
         VStack(spacing: 12) {
-            ProgressView()
-            Text("Loading ratings...")
-                .font(.caption)
-                .foregroundStyle(.gray)
+            ProgressView().tint(Color.xomifyGreen)
+            Text("Loading ratings…")
+                .font(.xomifyCaption)
+                .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -70,17 +113,20 @@ struct RatingsHistoryView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "star.slash")
-                .font(.system(size: 50))
-                .foregroundStyle(.gray.opacity(0.5))
+                .font(.system(size: 48, weight: .bold))
+                .foregroundStyle(
+                    LinearGradient(colors: [Color.xomifyPurple, Color.xomifyGreen],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
                 .accessibilityHidden(true)
 
             Text("No ratings yet")
-                .font(.headline)
+                .font(.xomifyTitle3)
                 .foregroundStyle(.white)
 
             Text("Rate a track from the feed or a share and it will show up here.")
-                .font(.caption)
-                .foregroundStyle(.gray)
+                .font(.xomifyCaption)
+                .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -90,17 +136,17 @@ struct RatingsHistoryView: View {
     private func errorState(_ message: String) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 50))
-                .foregroundStyle(.orange.opacity(0.7))
+                .font(.system(size: 48, weight: .bold))
+                .foregroundStyle(.orange.opacity(0.85))
                 .accessibilityHidden(true)
 
             Text("Couldn't load ratings")
-                .font(.headline)
+                .font(.xomifyTitle3)
                 .foregroundStyle(.white)
 
             Text(message)
-                .font(.caption)
-                .foregroundStyle(.gray)
+                .font(.xomifyCaption)
+                .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -108,13 +154,15 @@ struct RatingsHistoryView: View {
                 Task { await viewModel.load() }
             } label: {
                 Text("Try Again")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(Color.xomifyPurple)
+                    .font(.xomifySubheadline.weight(.semibold))
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(colors: [Color.xomifyPurple, Color.xomifyGreen],
+                                       startPoint: .leading, endPoint: .trailing)
+                    )
                     .foregroundStyle(.white)
-                    .cornerRadius(20)
+                    .clipShape(Capsule())
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -126,62 +174,99 @@ struct RatingsHistoryView: View {
         guard !trackId.isEmpty, let url = URL(string: "spotify:track:\(trackId)") else { return }
         UIApplication.shared.open(url) { success in
             if !success {
-                print("⚠️ RatingsHistory: could not open Spotify URL for \(trackId)")
+                print("RatingsHistory: could not open Spotify URL for \(trackId)")
             }
         }
     }
 }
 
-// MARK: - Row
+// MARK: - Card
 
-private struct RatingRow: View {
+private struct RatingCard: View {
     let rating: TrackRating
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(rating.trackName ?? "Unknown track")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-                .lineLimit(1)
+        HStack(spacing: 14) {
+            artworkTile
 
-            Text(rating.artistName ?? "Unknown artist")
-                .font(.caption)
-                .foregroundStyle(.gray)
-                .lineLimit(1)
-
-            if let review = rating.review, !review.isEmpty {
-                Text(review)
-                    .font(.caption2)
-                    .foregroundStyle(.gray.opacity(0.9))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(rating.trackName ?? "Unknown track")
+                    .font(.xomifySubheadline.weight(.semibold))
+                    .foregroundStyle(.white)
                     .lineLimit(1)
+
+                Text(rating.artistName ?? "Unknown artist")
+                    .font(.xomifyCaption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .lineLimit(1)
+
+                if let review = rating.review, !review.isEmpty {
+                    Text("“\(review)”")
+                        .font(.xomifyFootnote.italic())
+                        .foregroundStyle(.white.opacity(0.65))
+                        .lineLimit(2)
+                }
+
+                HStack(spacing: 6) {
+                    HStack(spacing: 1) {
+                        ForEach(0..<5, id: \.self) { i in
+                            Image(systemName: i < rating.rating ? "star.fill" : "star")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(Color.xomifyGreen)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    if let timestamp = rating.updatedAt ?? rating.createdAt,
+                       let relative = Self.relativeTime(from: timestamp) {
+                        Text(relative)
+                            .font(.xomifyCaption2)
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                .padding(.top, 2)
             }
 
-            HStack(spacing: 8) {
-                stars
-                Spacer()
-                if let timestamp = rating.updatedAt ?? rating.createdAt,
-                   let relative = Self.relativeTime(from: timestamp) {
-                    Text(relative)
-                        .font(.caption2)
-                        .foregroundStyle(.gray)
-                }
-            }
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .padding(12)
+        .background(
+            LinearGradient(
+                colors: [Color.xomifyCard, Color.xomifySecondary],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Double-tap to open in Spotify")
     }
 
-    private var stars: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<5, id: \.self) { index in
-                Image(systemName: index < rating.rating ? "star.fill" : "star")
-                    .font(.caption)
-                    .foregroundStyle(Color.xomifyGreen)
-                    .accessibilityHidden(true)
-            }
+    private var artworkTile: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.xomifyPurple, Color.xomifyGreen],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Image(systemName: "music.note")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: 52, height: 52)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(alignment: .bottomTrailing) {
+            Image(systemName: "star.fill")
+                .font(.caption2.weight(.black))
+                .foregroundStyle(.white)
+                .padding(4)
+                .background(Color.xomifyGreen, in: Circle())
+                .overlay(Circle().stroke(Color.xomifyDark, lineWidth: 2))
+                .offset(x: 6, y: 6)
         }
     }
 
