@@ -75,6 +75,10 @@ actor XomifyService {
     // feed renders without a follow-up Spotify fetch per card.
 
     /// Create a new share in the feed. Track fields are denormalized.
+    ///
+    /// `groupIds` + `isPublic` drive multi-target routing (xomify-backend#138).
+    /// Defaults preserve legacy behavior: public-only, no group targets.
+    /// Backend rejects `public=false` with empty `groupIds`.
     @discardableResult
     func createShare(
         email: String,
@@ -86,7 +90,9 @@ actor XomifyService {
         albumArtUrl: String? = nil,
         caption: String? = nil,
         moodTag: MoodTag? = nil,
-        genreTags: [String]? = nil
+        genreTags: [String]? = nil,
+        groupIds: [String]? = nil,
+        isPublic: Bool? = nil
     ) async throws -> ShareCreateResponse {
         var body: [String: Any] = [
             "email": email,
@@ -100,6 +106,8 @@ actor XomifyService {
         if let caption = caption, !caption.isEmpty { body["caption"] = caption }
         if let moodTag = moodTag { body["moodTag"] = moodTag.rawValue }
         if let genreTags = genreTags, !genreTags.isEmpty { body["genreTags"] = genreTags }
+        if let groupIds = groupIds, !groupIds.isEmpty { body["groupIds"] = groupIds }
+        if let isPublic = isPublic { body["public"] = isPublic }
 
         return try await network.xomifyPost("/shares/create", body: body)
     }
