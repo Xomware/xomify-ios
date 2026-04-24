@@ -40,19 +40,28 @@ struct ProfileSharesTab: View {
     private var sharesList: some View {
         LazyVStack(spacing: 12) {
             ForEach(viewModel.shares) { share in
-                ShareCardView(
-                    share: share,
-                    viewerEmail: viewerEmail,
-                    sharerIdentity: sharerIdentity,
-                    onDelete: context.isSelf ? {
-                        Task { await viewModel.deleteShare(share) }
-                    } : nil
-                )
-                    .onAppear {
-                        if share.id == viewModel.shares.last?.id {
-                            Task { await viewModel.loadMore() }
-                        }
+                NavigationLink {
+                    ShareDetailView(
+                        share: share,
+                        viewerEmail: viewerEmail,
+                        sharerIdentity: sharerIdentity
+                    )
+                } label: {
+                    ShareCardView(
+                        share: share,
+                        viewerEmail: viewerEmail,
+                        sharerIdentity: sharerIdentity,
+                        onDelete: context.isSelf ? {
+                            Task { await viewModel.deleteShare(share) }
+                        } : nil
+                    )
+                }
+                .buttonStyle(.plain)
+                .onAppear {
+                    if share.id == viewModel.shares.last?.id {
+                        Task { await viewModel.loadMore() }
                     }
+                }
             }
 
             if viewModel.isLoading {
