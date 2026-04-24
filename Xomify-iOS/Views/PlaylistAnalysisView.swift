@@ -225,15 +225,20 @@ struct PlaylistAnalysisView: View {
                 HStack(spacing: 12) {
                     ForEach(tracks) { track in
                         VStack(alignment: .leading, spacing: 6) {
-                            AsyncImage(url: track.imageUrl) { phase in
-                                switch phase {
-                                case .success(let img): img.resizable().scaledToFill()
-                                default:
-                                    LinearGradient.xomifyGradient
+                            ZStack(alignment: .topTrailing) {
+                                AsyncImage(url: track.imageUrl) { phase in
+                                    switch phase {
+                                    case .success(let img): img.resizable().scaledToFill()
+                                    default:
+                                        LinearGradient.xomifyGradient
+                                    }
                                 }
+                                .frame(width: 120, height: 120)
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                                TrackActionsMenu(track: track)
+                                    .padding(6)
                             }
-                            .frame(width: 120, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                             Text(track.name)
                                 .font(.caption.weight(.semibold))

@@ -244,22 +244,7 @@ struct AlbumView: View {
                 .font(.caption)
                 .foregroundColor(.gray)
             
-            QueueButton(
-                uri: track.uri ?? "spotify:track:\(track.id)",
-                trackName: track.name
-            )
-
-            // Add to playlist builder
-            AddToPlaylistButton(track: track)
-
-            // Play button
-            Button {
-                playTrack(track)
-            } label: {
-                Image(systemName: "play.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(.xomifyGreen)
-            }
+            TrackActionsMenu(track: track)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)

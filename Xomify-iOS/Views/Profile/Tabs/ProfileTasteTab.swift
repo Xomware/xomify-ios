@@ -579,11 +579,8 @@ private struct OtherTasteView: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
-                    if let uri = track.uri {
-                        QueueButton(uri: uri, trackName: track.name)
-                    }
-                    if let uri = track.uri {
-                        openButton(urlString: uri, label: "Open \(track.name) in Spotify")
+                    if let spotifyTrack = track.asSpotifyTrack {
+                        TrackActionsMenu(track: spotifyTrack)
                     }
                 }
                 .padding(.vertical, 8)
@@ -853,6 +850,52 @@ private struct OtherTasteView: View {
         let artistNames: String
         let imageUrl: URL?
         let uri: String?
+
+        /// Build a synthetic `SpotifyTrack` from the slim fields the taste
+        /// tab has available so the row can hand off to `TrackActionsMenu`.
+        /// Returns `nil` if we can't derive an id from the URI, since every
+        /// menu action needs either the id or uri.
+        var asSpotifyTrack: SpotifyTrack? {
+            guard let uri, let id = uri.split(separator: ":").last.map(String.init), !id.isEmpty else {
+                return nil
+            }
+            let syntheticArtist = SpotifyArtist(
+                id: nil,
+                name: artistNames,
+                uri: nil,
+                genres: nil,
+                popularity: nil,
+                followers: nil,
+                images: nil,
+                externalUrls: nil
+            )
+            let syntheticAlbum: SpotifyAlbum? = imageUrl.map { url in
+                SpotifyAlbum(
+                    id: "",
+                    name: "",
+                    uri: nil,
+                    albumType: nil,
+                    totalTracks: nil,
+                    releaseDate: nil,
+                    releaseDatePrecision: nil,
+                    images: [SpotifyImage(url: url.absoluteString, height: nil, width: nil)],
+                    artists: nil,
+                    externalUrls: nil
+                )
+            }
+            return SpotifyTrack(
+                id: id,
+                name: name,
+                uri: uri,
+                durationMs: 0,
+                explicit: nil,
+                popularity: nil,
+                previewUrl: nil,
+                album: syntheticAlbum,
+                artists: [syntheticArtist],
+                externalUrls: nil
+            )
+        }
     }
 
     private struct DisplayArtist {
