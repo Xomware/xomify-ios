@@ -20,9 +20,24 @@ final class GroupDetailViewModel {
     var addMemberEmail: String = ""
     var isAddingMember = false
 
-    /// Spotify URL input for adding by URL.
+    /// Spotify URL input for adding by URL (legacy paste-URL flow, still
+    /// supported as a fallback on the Add Song sheet).
     var addSongUrl: String = ""
     var isAddingSong = false
+
+    /// Search state for the Add Song sheet.
+    var songSearchQuery: String = ""
+    var songSearchResults: [SpotifyTrack] = []
+    var isSearchingSongs = false
+    var songSearchError: String?
+
+    /// Track IDs currently being added from the search results — used to
+    /// disable the individual row while the network call is in flight.
+    var addingTrackIds: Set<String> = []
+
+    /// Monotonic counter on search task IDs so a stale query response can't
+    /// overwrite results from a newer query.
+    private var songSearchToken: Int = 0
 
     /// Edit-group form state (owner-only).
     var isSavingEdit = false
@@ -33,6 +48,7 @@ final class GroupDetailViewModel {
     var friendsError: String?
 
     private let xomify = XomifyService.shared
+    private let spotify = SpotifyService.shared
 
     // MARK: - Load
 
@@ -249,6 +265,69 @@ final class GroupDetailViewModel {
     }
 
     // MARK: - Songs
+
+    /// Run a Spotify track search for the Add Song sheet. Guards against
+    /// stale completions — only the most recent query's results are applied.
+    func searchSongs() async {
+        let query = songSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
+            songSearchResults = []
+            songSearchError = nil
+            return
+        }
+
+        songSearchToken &+= 1
+        let token = songSearchToken
+        isSearchingSongs = true
+        songSearchError = nil
+
+        do {
+            let results = try await spotify.searchTracks(query: query, limit: 25)
+            guard token == songSearchToken else { return }
+            songSearchResults = results
+        } catch {
+            guard token == songSearchToken else { return }
+            songSearchError = error.localizedDescription
+            songSearchResults = []
+        }
+
+        if token == songSearchToken {
+            isSearchingSongs = false
+        }
+    }
+
+    /// Clear search state when the Add Song sheet closes.
+    func resetSongSearch() {
+        songSearchQuery = ""
+        songSearchResults = []
+        songSearchError = nil
+        addingTrackIds = []
+        isSearchingSongs = false
+    }
+
+    /// Add a track from a Spotify search result. Shows a per-row spinner
+    /// via `addingTrackIds` so the rest of the list stays tappable.
+    func addSong(_ track: SpotifyTrack) async {
+        guard !addingTrackIds.contains(track.id) else { return }
+        addingTrackIds.insert(track.id)
+        defer { addingTrackIds.remove(track.id) }
+
+        do {
+            _ = try await xomify.addSong(
+                email: userEmail,
+                groupId: groupId,
+                trackId: track.id,
+                trackName: track.name,
+                artistName: track.artistNames,
+                albumName: track.album?.name,
+                imageUrl: track.album?.images?.first?.url
+            )
+            await refresh()
+        } catch {
+            errorMessage = "Failed to add song: \(error.localizedDescription)"
+            print("❌ GroupDetail: addSong failed - \(error)")
+        }
+    }
 
     func addSongByUrl() async {
         let url = addSongUrl.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -76,6 +76,28 @@ final class SharesByUserViewModel {
         isRefreshing = false
     }
 
+    // MARK: - Deletion
+
+    /// Delete a share authored by the caller. Optimistic removal with
+    /// rollback on failure. No-op when the share isn't the caller's own.
+    func deleteShare(_ share: Share) async {
+        guard share.sharedBy == callerEmail else { return }
+        guard let index = shares.firstIndex(where: { $0.shareId == share.shareId }) else { return }
+
+        let removed = shares.remove(at: index)
+
+        do {
+            _ = try await xomifyService.deleteShare(
+                email: callerEmail,
+                shareId: share.shareId,
+                sharedAt: share.sharedAt
+            )
+        } catch {
+            shares.insert(removed, at: min(index, shares.count))
+            errorMessage = "Failed to delete post: \(error.localizedDescription)"
+        }
+    }
+
     /// Fetch the next page. No-op when already loading or no more pages.
     func loadMore() async {
         guard hasMorePages, !isLoading, !isRefreshing else { return }

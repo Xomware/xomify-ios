@@ -37,6 +37,12 @@ protocol XomifyServiceProtocol: Sendable {
         before: String?
     ) async throws -> FeedResponse
 
+    func deleteShare(
+        email: String,
+        shareId: String,
+        sharedAt: String
+    ) async throws -> SuccessResponse
+
     // MARK: - Friend profile (used by UserProfileViewModel)
 
     func getFriendProfile(

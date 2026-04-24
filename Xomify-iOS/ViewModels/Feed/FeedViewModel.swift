@@ -311,4 +311,29 @@ final class FeedViewModel {
         shares.insert(share, at: 0)
         await refresh()
     }
+
+    // MARK: - Share deletion
+
+    /// Delete a share authored by the current viewer. Optimistically removes
+    /// the row from the feed + cache, then hits the backend. On failure the
+    /// row is restored and an error surfaces.
+    func deleteShare(_ share: Share) async {
+        guard share.sharedBy == userEmail else { return }
+        guard let index = shares.firstIndex(where: { $0.shareId == share.shareId }) else { return }
+
+        let removed = shares.remove(at: index)
+        await cacheService.save(shares, forKey: selectedFilter.cacheKey)
+
+        do {
+            _ = try await xomifyService.deleteShare(
+                email: userEmail,
+                shareId: share.shareId,
+                sharedAt: share.sharedAt
+            )
+        } catch {
+            shares.insert(removed, at: min(index, shares.count))
+            await cacheService.save(shares, forKey: selectedFilter.cacheKey)
+            errorMessage = "Failed to delete post: \(error.localizedDescription)"
+        }
+    }
 }

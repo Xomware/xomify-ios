@@ -43,7 +43,10 @@ struct ProfileSharesTab: View {
                 ShareCardView(
                     share: share,
                     viewerEmail: viewerEmail,
-                    sharerIdentity: sharerIdentity
+                    sharerIdentity: sharerIdentity,
+                    onDelete: context.isSelf ? {
+                        Task { await viewModel.deleteShare(share) }
+                    } : nil
                 )
                     .onAppear {
                         if share.id == viewModel.shares.last?.id {
