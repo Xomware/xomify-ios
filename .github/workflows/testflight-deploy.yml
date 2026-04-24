@@ -266,10 +266,34 @@ jobs:
               )
               r.raise_for_status()
               data = r.json()["data"]
-              if not data:
-                  print(f"!! Beta group {name!r} not found — skipping. Create it in App Store Connect.")
-                  continue
-              group = data[0]
+              if data:
+                  group = data[0]
+              else:
+                  # Auto-create external beta group if missing. Testers still need
+                  # to be added in ASC UI; this just unblocks build assignment.
+                  print(f"Beta group {name!r} not found — creating as external group")
+                  cr = requests.post(
+                      f"{base}/betaGroups",
+                      headers={**headers, "Content-Type": "application/json"},
+                      json={
+                          "data": {
+                              "type": "betaGroups",
+                              "attributes": {
+                                  "name": name,
+                                  "publicLinkEnabled": False,
+                                  "publicLinkLimitEnabled": False,
+                              },
+                              "relationships": {
+                                  "app": {"data": {"type": "apps", "id": app_id}},
+                              },
+                          }
+                      },
+                  )
+                  if cr.status_code >= 400:
+                      print(f"!! Failed to create group {name!r}: {cr.status_code} {cr.text}", file=sys.stderr)
+                      continue
+                  group = cr.json()["data"]
+                  print(f"Created group {name!r} ({group['id']}) — add testers in App Store Connect")
               group_id = group["id"]
               if group["attributes"].get("isInternalGroup"):
                   print(f"Group {name!r} is internal — auto-receives all builds, skipping manual assignment")
