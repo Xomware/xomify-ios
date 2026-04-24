@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Ratings tab on `ProfileView`. Reuses `RatingsViewModel` parameterised by
 /// the context email. Hides delete on `.other` — viewers can't mutate
@@ -61,13 +62,7 @@ struct ProfileRatingsTab: View {
 
     private func ratingRow(_ rating: TrackRating) -> some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "music.note")
-                    .foregroundStyle(.white.opacity(0.7))
-            }
+            artworkTile(for: rating)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(rating.trackName ?? "Unknown")
@@ -84,19 +79,84 @@ struct ProfileRatingsTab: View {
 
             Spacer()
 
-            if context.isSelf {
-                Button(role: .destructive) {
-                    Task { await viewModel.delete(rating) }
+            Menu {
+                Button {
+                    Task { await queue(rating: rating) }
                 } label: {
-                    Image(systemName: "trash").foregroundStyle(.red)
+                    Label("Add to Spotify queue", systemImage: "text.badge.plus")
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Delete rating for \(rating.trackName ?? "track")")
+                Button {
+                    openInSpotify(trackId: rating.trackId)
+                } label: {
+                    Label("Open in Spotify", systemImage: "arrow.up.forward.app")
+                }
+                if context.isSelf {
+                    Divider()
+                    Button(role: .destructive) {
+                        Task { await viewModel.delete(rating) }
+                    } label: {
+                        Label("Delete rating", systemImage: "trash")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .frame(width: 32, height: 32)
+                    .background(Color.white.opacity(0.08), in: Circle())
             }
+            .accessibilityLabel("Actions for \(rating.trackName ?? "track")")
         }
         .padding(12)
         .background(Color.xomifyCard)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func artworkTile(for rating: TrackRating) -> some View {
+        if let url = viewModel.artworkByTrackId[rating.trackId] {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                default:
+                    artworkPlaceholder
+                }
+            }
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        } else {
+            artworkPlaceholder
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+    }
+
+    private var artworkPlaceholder: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.xomifyPurple.opacity(0.35), Color.xomifyGreen.opacity(0.25)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            Image(systemName: "music.note")
+                .foregroundStyle(.white.opacity(0.85))
+        }
+    }
+
+    // MARK: - Actions
+
+    private func openInSpotify(trackId: String) {
+        guard !trackId.isEmpty, let url = URL(string: "spotify:track:\(trackId)") else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private func queue(rating: TrackRating) async {
+        guard !rating.trackId.isEmpty else { return }
+        do {
+            try await SpotifyService.shared.queueTrack(uri: "spotify:track:\(rating.trackId)")
+        } catch {
+            print("ProfileRatingsTab: queue failed — \(error)")
+        }
     }
 
     // MARK: - States

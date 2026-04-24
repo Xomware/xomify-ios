@@ -83,6 +83,19 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     ) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
+
+    func getAllRatings(email: String) async throws -> RatingsAllResponse {
+        RatingsAllResponse(email: email, ratings: [], totalCount: 0)
+    }
+
+    func getAllFriends(email: String) async throws -> FriendsAllResponse {
+        FriendsAllResponse(
+            email: email,
+            accepted: [], requested: [], pending: [], blocked: [],
+            acceptedCount: 0, requestedCount: 0, pendingCount: 0, blockedCount: 0,
+            totalCount: 0
+        )
+    }
 }
 
 // MARK: - SpotifyCurrentUserProviding mock

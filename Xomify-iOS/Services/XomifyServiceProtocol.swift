@@ -58,6 +58,16 @@ protocol XomifyServiceProtocol: Sendable {
         rating: Int,
         review: String?
     ) async throws -> SuccessResponse
+
+    // MARK: - Self-profile counts
+
+    /// All ratings authored by the caller. Used by the self-profile header to
+    /// populate the Ratings stat without a dedicated counts endpoint.
+    func getAllRatings(email: String) async throws -> RatingsAllResponse
+
+    /// Full friends payload for the caller. Used by the self-profile header
+    /// (friend count) and the Friends drawer.
+    func getAllFriends(email: String) async throws -> FriendsAllResponse
 }
 
 extension XomifyService: XomifyServiceProtocol {}

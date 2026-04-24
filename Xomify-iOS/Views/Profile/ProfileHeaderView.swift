@@ -106,19 +106,11 @@ struct ProfileHeaderView: View {
                 divider
                 skeletonStat
             } else {
-                if let shares = viewModel.shareCount {
-                    statItem(value: shares, label: "Shares", color: .xomifyGreen)
-                    divider
-                }
-                if let ratings = viewModel.ratingCount {
-                    statItem(value: ratings, label: "Ratings", color: .xomifyPurple)
-                    divider
-                }
-                if let friends = viewModel.friendCount {
-                    statItem(value: friends, label: "Friends", color: .xomifyGreen)
-                } else if let followers = viewModel.followersCount {
-                    statItem(value: followers, label: "Followers", color: .xomifyGreen)
-                }
+                statItem(value: viewModel.friendCount ?? 0, label: "Friends", color: .xomifyGreen)
+                divider
+                statItem(value: viewModel.ratingCount ?? 0, label: "Ratings", color: .xomifyPurple)
+                divider
+                statItem(value: viewModel.shareCount ?? 0, label: "Posts", color: .xomifyGreen)
             }
         }
         .padding(.vertical, 12)

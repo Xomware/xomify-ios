@@ -12,6 +12,11 @@ final class RatingsHistoryViewModel {
     var isLoading = false
     var errorMessage: String?
 
+    /// Cover art URL per `trackId`. Resolved lazily after ratings load via
+    /// the Spotify `GET /tracks` batch endpoint. Views fall back to a gradient
+    /// placeholder when a key is missing.
+    var artworkByTrackId: [String: URL] = [:]
+
     // MARK: - Dependencies
 
     private let spotifyService = SpotifyService.shared
@@ -36,12 +41,32 @@ final class RatingsHistoryViewModel {
             let loaded = response.ratings ?? []
             ratings = loaded.sorted(by: Self.isMoreRecent)
             print("✅ RatingsHistory: loaded \(ratings.count) ratings")
+            await resolveArtwork()
         } catch {
             errorMessage = error.localizedDescription
             print("❌ RatingsHistory: load failed - \(error)")
         }
 
         isLoading = false
+    }
+
+    /// Fetch album art for every rated track via Spotify's batch tracks
+    /// endpoint. Skips ids already resolved. Best-effort — errors are logged
+    /// and the view falls back to gradient placeholders.
+    private func resolveArtwork() async {
+        let missing = ratings.map(\.trackId).filter { !$0.isEmpty && artworkByTrackId[$0] == nil }
+        guard !missing.isEmpty else { return }
+
+        do {
+            let tracks = try await spotifyService.getTracks(ids: missing)
+            for track in tracks {
+                if let url = track.imageUrl {
+                    artworkByTrackId[track.id] = url
+                }
+            }
+        } catch {
+            print("⚠️ RatingsHistory: artwork fetch failed - \(error)")
+        }
     }
 
     /// Optimistically remove a rating. On error, re-insert at original index and surface the message.

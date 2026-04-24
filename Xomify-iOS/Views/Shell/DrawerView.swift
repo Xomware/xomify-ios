@@ -27,8 +27,9 @@ struct DrawerView: View {
     }
 
     /// Primary entries (everything except Settings — pinned to the bottom).
+    /// Profile is reached via the profile card above this list, so it is not
+    /// duplicated as a row.
     private let primaryEntries: [DrawerEntry] = [
-        .init(destination: .profile,      label: "Profile",          systemImage: "person.crop.circle.fill"),
         .init(destination: .feed,         label: "Feed",             systemImage: "sparkles"),
         .init(destination: .musicTaste,   label: "Music Taste",      systemImage: "waveform"),
         .init(destination: .wrapped,      label: "Wrapped",          systemImage: "chart.bar.fill"),
