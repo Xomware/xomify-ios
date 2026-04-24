@@ -9,6 +9,7 @@ struct GroupDetailView: View {
     @State private var viewModel = GroupDetailViewModel()
     @State private var selectedTab: Tab = .tracks
     @State private var showingAddMembers = false
+    @State private var showingAddSong = false
     @State private var showingEditGroup = false
     @State private var showLeaveConfirm = false
     @State private var showDeleteConfirm = false
@@ -67,6 +68,14 @@ struct GroupDetailView: View {
             AddMemberSheet(
                 viewModel: viewModel,
                 onDismiss: { showingAddMembers = false }
+            )
+        }
+        .sheet(isPresented: $showingAddSong, onDismiss: {
+            viewModel.resetSongSearch()
+        }) {
+            AddSongSheet(
+                viewModel: viewModel,
+                onDismiss: { showingAddSong = false }
             )
         }
         .sheet(isPresented: $showingEditGroup) {
@@ -162,48 +171,40 @@ struct GroupDetailView: View {
 
     private var tracksSection: some View {
         VStack(spacing: 0) {
-            addSongBar
+            addSongButton
 
             if viewModel.isLoading && viewModel.tracks.isEmpty {
                 XomifyLoaderPulse()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.tracks.isEmpty {
                 emptyTab(icon: "music.note", title: "No tracks yet",
-                         message: "Paste a Spotify URL above to add one.")
+                         message: "Tap Add song to search Spotify.")
             } else {
                 tracksList
             }
         }
     }
 
-    private var addSongBar: some View {
-        HStack(spacing: 8) {
-            TextField("Paste Spotify track URL", text: $viewModel.addSongUrl)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .padding()
-                .background(Color.white.opacity(0.05))
-                .clipShape(.rect(cornerRadius: 10))
-                .foregroundStyle(.white)
-
-            Button {
-                Task { await viewModel.addSongByUrl() }
-            } label: {
-                if viewModel.isAddingSong {
-                    ProgressView().tint(.white)
-                        .frame(width: 44, height: 44)
-                } else {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(Color.xomifyGreen)
-                        .frame(width: 44, height: 44)
-                }
+    private var addSongButton: some View {
+        Button {
+            showingAddSong = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus.circle.fill")
+                Text("Add song")
             }
-            .disabled(viewModel.isAddingSong || viewModel.addSongUrl.isEmpty)
-            .accessibilityLabel("Add track from URL")
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.vertical, 10)
+            .background(LinearGradient.xomifyGradient)
+            .foregroundStyle(.white)
+            .clipShape(.rect(cornerRadius: 22))
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
+        .accessibilityLabel("Add song")
+        .accessibilityHint("Opens search to add a Spotify track to this group")
     }
 
     private var tracksList: some View {

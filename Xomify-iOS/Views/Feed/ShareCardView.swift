@@ -6,18 +6,34 @@ struct ShareCardView: View {
 
     @State private var viewModel: ShareCardViewModel
     @State private var showRateSheet: Bool = false
+    @State private var showDeleteConfirm: Bool = false
 
     /// Resolved sharer identity (display name + avatar). Falls back to the
     /// email when unresolved — `FeedViewModel.identity(for:)` always returns
     /// a value, so the fallback tree is handled upstream.
     let sharerIdentity: SharerIdentity
 
-    init(share: Share, viewerEmail: String, sharerIdentity: SharerIdentity) {
+    /// Optional callback fired when the viewer confirms deletion of their
+    /// own post. When `nil` (or the share wasn't authored by the viewer)
+    /// the delete menu entry is hidden.
+    let onDelete: (() -> Void)?
+
+    init(
+        share: Share,
+        viewerEmail: String,
+        sharerIdentity: SharerIdentity,
+        onDelete: (() -> Void)? = nil
+    ) {
         _viewModel = State(initialValue: ShareCardViewModel(
             share: share,
             viewerEmail: viewerEmail
         ))
         self.sharerIdentity = sharerIdentity
+        self.onDelete = onDelete
+    }
+
+    private var isOwnPost: Bool {
+        viewModel.share.sharedBy == viewModel.viewerEmail
     }
 
     var body: some View {
@@ -44,6 +60,16 @@ struct ShareCardView: View {
         .sheet(isPresented: $showRateSheet) {
             RateSheet(viewModel: viewModel, isPresented: $showRateSheet)
                 .presentationDetents([.medium])
+        }
+        .confirmationDialog(
+            "Delete this post?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) { onDelete?() }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will remove your share from the feed. This can't be undone.")
         }
     }
 
@@ -82,7 +108,28 @@ struct ShareCardView: View {
                 .clipShape(Capsule())
                 .accessibilityLabel("\(sharerIdentity.displayName) rated this \(rating) out of 5")
             }
+
+            if isOwnPost, onDelete != nil {
+                ownPostMenu
+            }
         }
+    }
+
+    private var ownPostMenu: some View {
+        Menu {
+            Button(role: .destructive) {
+                showDeleteConfirm = true
+            } label: {
+                Label("Delete post", systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.subheadline)
+                .foregroundStyle(.gray)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Post options")
     }
 
     @ViewBuilder

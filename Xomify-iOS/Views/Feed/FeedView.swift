@@ -75,7 +75,10 @@ struct FeedView: View {
                     ShareCardView(
                         share: share,
                         viewerEmail: viewModel.userEmail,
-                        sharerIdentity: viewModel.identity(for: share.sharedBy)
+                        sharerIdentity: viewModel.identity(for: share.sharedBy),
+                        onDelete: {
+                            Task { await viewModel.deleteShare(share) }
+                        }
                     )
                     .padding(.horizontal, 16)
                     .onAppear {
