@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Mood Picks: pick a mood -> fetch filtered top artists -> top tracks.
 struct MoodPicksView: View {
@@ -10,12 +11,71 @@ struct MoodPicksView: View {
             Color.xomifyDark.ignoresSafeArea()
             VStack(spacing: 12) {
                 moodChips
+                createPlaylistCTA
                 content
             }
         }
         .navigationTitle("Mood Picks")
         .navigationBarTitleDisplayMode(.inline)
         .tint(Color.xomifyGreen)
+    }
+
+    // MARK: - Create playlist CTA
+
+    @ViewBuilder
+    private var createPlaylistCTA: some View {
+        if !viewModel.tracks.isEmpty {
+            VStack(spacing: 8) {
+                Button {
+                    Task { await viewModel.createPlaylistFromCurrentTracks() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if viewModel.isCreatingPlaylist {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(0.85)
+                        } else {
+                            Image(systemName: "plus.square.on.square")
+                        }
+                        Text(viewModel.isCreatingPlaylist ? "Creating..." : "Create Playlist")
+                            .fontWeight(.semibold)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 44)
+                    .background(LinearGradient.xomifyGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .disabled(viewModel.isCreatingPlaylist)
+                .buttonStyle(.plain)
+                .accessibilityHint("Saves the current list as a new Spotify playlist")
+
+                if let url = viewModel.createdPlaylistUrl {
+                    Button {
+                        UIApplication.shared.open(url)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color.xomifyGreen)
+                            Text("Playlist created — open in Spotify")
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                } else if let err = viewModel.createPlaylistError {
+                    Text(err)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.horizontal)
+        }
     }
 
     // MARK: - Chips
