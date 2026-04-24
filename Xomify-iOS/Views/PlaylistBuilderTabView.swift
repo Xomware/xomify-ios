@@ -10,6 +10,29 @@ struct PlaylistBuilderTabView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Playlist Builder",
+                    subtitle: viewModel.trackCount > 0
+                        ? "\(viewModel.trackCount) TRACKS QUEUED"
+                        : "BUILD A PLAYLIST FROM ANYWHERE",
+                    systemImage: "plus.square.on.square"
+                ) {
+                    if selectedTab == 0 && !viewModel.isEmpty {
+                        Button {
+                            viewModel.clear()
+                        } label: {
+                            Text("Clear")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule().fill(Color.white.opacity(0.18))
+                                )
+                        }
+                    }
+                }
+
                 // Tab picker
                 tabPicker
 
@@ -21,20 +44,7 @@ struct PlaylistBuilderTabView: View {
                 }
             }
             .background(Color.xomifyDark.ignoresSafeArea())
-            .navigationTitle("Playlist Builder")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if selectedTab == 0 && !viewModel.isEmpty {
-                        Button {
-                            viewModel.clear()
-                        } label: {
-                            Text("Clear")
-                                .foregroundColor(.red)
-                        }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingCreateSheet) {
                 createPlaylistSheet
             }
