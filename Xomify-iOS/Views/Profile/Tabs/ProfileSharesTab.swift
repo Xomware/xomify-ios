@@ -75,13 +75,13 @@ struct ProfileSharesTab: View {
     }
 
     private var emptyTitle: String {
-        context.isSelf ? "Share your first track" : "No shares yet"
+        context.isSelf ? "Post your first track" : "No posts yet"
     }
 
     private var emptySubtitle: String {
         context.isSelf
-        ? "When you share a song, it lands here."
-        : "This user hasn't shared anything yet."
+        ? "When you post a song, it lands here."
+        : "This user hasn't posted anything yet."
     }
 
     private func errorState(_ message: String) -> some View {
@@ -90,7 +90,7 @@ struct ProfileSharesTab: View {
                 .font(.system(size: 36))
                 .foregroundStyle(.orange.opacity(0.8))
                 .accessibilityHidden(true)
-            Text("Couldn't load shares")
+            Text("Couldn't load posts")
                 .font(.headline)
                 .foregroundStyle(.white)
             Text(message)

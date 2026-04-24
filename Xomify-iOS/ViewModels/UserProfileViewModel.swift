@@ -8,7 +8,7 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
 
     var title: String {
         switch self {
-        case .shares:  return "Shares"
+        case .shares:  return "Posts"
         case .ratings: return "Ratings"
         case .taste:   return "Taste"
         }
@@ -141,6 +141,20 @@ final class UserProfileViewModel {
         profileEmail = user.email ?? callerEmail
         avatarURL = user.profileImageUrl
         followersCount = user.followers?.total
+
+        // Populate the three header stats (Friends / Ratings / Posts) with
+        // parallel fetches. Missing counts fall through to nil so the header
+        // skeleton keeps working if any single call fails.
+        async let ratings: RatingsAllResponse? = try? xomifyService.getAllRatings(email: callerEmail)
+        async let friends: FriendsAllResponse? = try? xomifyService.getAllFriends(email: callerEmail)
+        async let shares: FeedResponse?       = try? xomifyService.getSharesByUser(
+            email: callerEmail, targetEmail: callerEmail, limit: 1, before: nil
+        )
+
+        let (r, f, s) = await (ratings, friends, shares)
+        ratingCount = r?.totalCount ?? r?.ratings?.count
+        friendCount = f?.acceptedCount ?? f?.accepted?.count
+        shareCount  = s?.totalCount ?? s?.shares.count
     }
 
     private func loadOtherHeader(email: String) async throws {

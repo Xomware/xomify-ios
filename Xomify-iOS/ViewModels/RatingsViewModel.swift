@@ -12,7 +12,12 @@ final class RatingsViewModel {
     var isRefreshing = false
     var errorMessage: String?
 
+    /// Cover art URL per `trackId`. Resolved after ratings load — see
+    /// `RatingsHistoryViewModel` for the same pattern.
+    var artworkByTrackId: [String: URL] = [:]
+
     private let xomify = XomifyService.shared
+    private let spotify = SpotifyService.shared
 
     var isEmpty: Bool { ratings.isEmpty }
 
@@ -42,12 +47,29 @@ final class RatingsViewModel {
         do {
             let response = try await xomify.getAllRatings(email: email)
             ratings = response.ratings ?? []
+            await resolveArtwork()
         } catch {
             errorMessage = error.localizedDescription
             print("❌ Ratings: load failed - \(error)")
         }
 
         isLoading = false
+    }
+
+    private func resolveArtwork() async {
+        let missing = ratings.map(\.trackId).filter { !$0.isEmpty && artworkByTrackId[$0] == nil }
+        guard !missing.isEmpty else { return }
+
+        do {
+            let tracks = try await spotify.getTracks(ids: missing)
+            for track in tracks {
+                if let url = track.imageUrl {
+                    artworkByTrackId[track.id] = url
+                }
+            }
+        } catch {
+            print("⚠️ Ratings: artwork fetch failed - \(error)")
+        }
     }
 
     func refresh() async {

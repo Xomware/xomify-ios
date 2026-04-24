@@ -6,6 +6,7 @@ import SwiftUI
 struct ProfileView: View {
 
     @State private var viewModel: UserProfileViewModel
+    @Namespace private var tabNamespace
 
     init(context: ProfileContext = .me) {
         _viewModel = State(wrappedValue: UserProfileViewModel(context: context))
@@ -43,10 +44,13 @@ struct ProfileView: View {
                 ProfileHeaderView(viewModel: viewModel)
                     .padding(.top, 12)
 
-                ProfileTabPicker(selection: Binding(
-                    get: { viewModel.selectedTab },
-                    set: { viewModel.selectedTab = $0 }
-                ))
+                ProfileTabPicker(
+                    selection: Binding(
+                        get: { viewModel.selectedTab },
+                        set: { viewModel.selectedTab = $0 }
+                    ),
+                    namespace: tabNamespace
+                )
 
                 tabContent
                     .padding(.bottom, 24)

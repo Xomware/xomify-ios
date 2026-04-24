@@ -5,6 +5,8 @@ import UIKit
 /// Tapping a row opens the track in Spotify. Swipe-to-delete removes a rating.
 struct RatingsHistoryView: View {
     @State private var viewModel = RatingsHistoryViewModel()
+    @State private var queueErrorMessage: String?
+    @State private var query: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,6 +16,10 @@ struct RatingsHistoryView: View {
                 systemImage: "star.fill"
             )
 
+            if !viewModel.ratings.isEmpty {
+                searchField
+            }
+
             Group {
                 if viewModel.isLoading && viewModel.ratings.isEmpty {
                     loadingState
@@ -21,6 +27,8 @@ struct RatingsHistoryView: View {
                     errorState(error)
                 } else if viewModel.ratings.isEmpty {
                     emptyState
+                } else if filteredRatings.isEmpty {
+                    noMatchesState
                 } else {
                     list
                 }
@@ -35,6 +43,64 @@ struct RatingsHistoryView: View {
             }
         }
         .refreshable { await viewModel.load() }
+        .overlay(alignment: .bottom) {
+            if let message = queueErrorMessage {
+                queueBanner(message)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut, value: queueErrorMessage)
+    }
+
+    // MARK: - Filtered ratings
+
+    private var filteredRatings: [TrackRating] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return viewModel.ratings }
+        let needle = trimmed.lowercased()
+        return viewModel.ratings.filter { rating in
+            (rating.trackName ?? "").lowercased().contains(needle)
+                || (rating.artistName ?? "").lowercased().contains(needle)
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.white.opacity(0.6))
+            TextField("Search track or artist", text: $query)
+                .textFieldStyle(.plain)
+                .foregroundStyle(.white)
+                .accessibilityLabel("Search ratings")
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.xomifyCard)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private var noMatchesState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.title3)
+                .foregroundStyle(.white.opacity(0.5))
+            Text("No ratings match \"\(query)\"")
+                .font(.xomifyCaption)
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var subtitleText: String {
@@ -58,10 +124,24 @@ struct RatingsHistoryView: View {
                                 Button {
                                     openInSpotify(trackId: rating.trackId)
                                 } label: {
-                                    RatingCard(rating: rating)
+                                    RatingCard(
+                                        rating: rating,
+                                        artwork: viewModel.artworkByTrackId[rating.trackId]
+                                    )
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu {
+                                    Button {
+                                        queue(rating: rating)
+                                    } label: {
+                                        Label("Add to Spotify queue", systemImage: "text.badge.plus")
+                                    }
+                                    Button {
+                                        openInSpotify(trackId: rating.trackId)
+                                    } label: {
+                                        Label("Open in Spotify", systemImage: "arrow.up.forward.app")
+                                    }
+                                    Divider()
                                     Button(role: .destructive) {
                                         Task { await viewModel.delete(rating) }
                                     } label: {
@@ -79,7 +159,7 @@ struct RatingsHistoryView: View {
     }
 
     private var groupedByStars: [(stars: Int, ratings: [TrackRating])] {
-        Dictionary(grouping: viewModel.ratings, by: { $0.rating })
+        Dictionary(grouping: filteredRatings, by: { $0.rating })
             .map { (stars: $0.key, ratings: $0.value) }
             .sorted { $0.stars > $1.stars }
     }
@@ -178,12 +258,62 @@ struct RatingsHistoryView: View {
             }
         }
     }
+
+    private func queue(rating: TrackRating) {
+        guard !rating.trackId.isEmpty else { return }
+        let uri = "spotify:track:\(rating.trackId)"
+        Task {
+            do {
+                try await SpotifyService.shared.queueTrack(uri: uri)
+                withAnimation { queueErrorMessage = "Queued on Spotify" }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                withAnimation { queueErrorMessage = nil }
+            } catch {
+                withAnimation { queueErrorMessage = queueFailureMessage(from: error) }
+                try? await Task.sleep(nanoseconds: 3_500_000_000)
+                withAnimation { queueErrorMessage = nil }
+            }
+        }
+    }
+
+    private func queueFailureMessage(from error: Error) -> String {
+        if case SpotifyServiceError.premiumRequired = error {
+            return "Spotify Premium is required to queue tracks."
+        }
+        if case SpotifyServiceError.noActiveDevice = error {
+            return "Open Spotify on a device first, then try again."
+        }
+        return "Could not add to queue."
+    }
+
+    private func queueBanner(_ message: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: message.hasPrefix("Queued") ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(message.hasPrefix("Queued") ? Color.xomifyGreen : .orange)
+            Text(message)
+                .font(.xomifyFootnote.weight(.semibold))
+                .foregroundStyle(.white)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color.xomifyCard)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
 }
 
 // MARK: - Card
 
 private struct RatingCard: View {
     let rating: TrackRating
+    /// Cover art URL. Provided by the parent view model via
+    /// `artworkByTrackId`. When `nil`, the gradient placeholder renders
+    /// instead.
+    let artwork: URL?
 
     var body: some View {
         HStack(spacing: 14) {
@@ -248,14 +378,18 @@ private struct RatingCard: View {
 
     private var artworkTile: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color.xomifyPurple, Color.xomifyGreen],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            Image(systemName: "music.note")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(.white)
+            if let artwork {
+                AsyncImage(url: artwork) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    default:
+                        placeholderTile
+                    }
+                }
+            } else {
+                placeholderTile
+            }
         }
         .frame(width: 52, height: 52)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -267,6 +401,19 @@ private struct RatingCard: View {
                 .background(Color.xomifyGreen, in: Circle())
                 .overlay(Circle().stroke(Color.xomifyDark, lineWidth: 2))
                 .offset(x: 6, y: 6)
+        }
+    }
+
+    private var placeholderTile: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.xomifyPurple, Color.xomifyGreen],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Image(systemName: "music.note")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
         }
     }
 
