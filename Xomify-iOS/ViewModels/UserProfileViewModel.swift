@@ -15,6 +15,17 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .playlists: return "Playlists"
         }
     }
+
+    /// SF Symbol used in the compact tab picker. Pinned to a filled glyph
+    /// for the active pill's legibility on the gradient background.
+    var systemImage: String {
+        switch self {
+        case .shares:    return "bubble.left.and.bubble.right.fill"
+        case .ratings:   return "star.fill"
+        case .taste:     return "waveform"
+        case .playlists: return "music.note.list"
+        }
+    }
 }
 
 /// Fan-out controller for the new tabbed `ProfileView`. Owns the context,
