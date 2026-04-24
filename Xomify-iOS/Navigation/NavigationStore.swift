@@ -14,6 +14,8 @@ enum SidebarDestination: Hashable {
     case friends
     case groups
     case builder
+    case moodPicks
+    case playlistAnalysis
     case settings
 }
 

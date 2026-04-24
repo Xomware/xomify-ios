@@ -90,6 +90,10 @@ struct MainShell: View {
             GroupsView()
         case .builder:
             PlaylistBuilderTabView()
+        case .moodPicks:
+            MoodPicksView()
+        case .playlistAnalysis:
+            PlaylistAnalysisView()
         case .settings:
             SettingsView()
         }

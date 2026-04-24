@@ -6,6 +6,16 @@ import UIKit
 struct RatingsHistoryView: View {
     @State private var viewModel = RatingsHistoryViewModel()
     @State private var query: String = ""
+    @State private var starFilter: Int? = nil
+    @State private var sortOrder: SortOrder = .starsDesc
+
+    enum SortOrder: String, CaseIterable, Identifiable {
+        case starsDesc = "Rating: High → Low"
+        case starsAsc  = "Rating: Low → High"
+        case dateDesc  = "Date: Newest"
+        case dateAsc   = "Date: Oldest"
+        var id: String { rawValue }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,6 +27,7 @@ struct RatingsHistoryView: View {
 
             if !viewModel.ratings.isEmpty {
                 searchField
+                filterAndSortBar
             }
 
             Group {
@@ -44,16 +55,126 @@ struct RatingsHistoryView: View {
         .refreshable { await viewModel.load() }
     }
 
-    // MARK: - Filtered ratings
+    // MARK: - Filtered + sorted ratings
 
     private var filteredRatings: [TrackRating] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return viewModel.ratings }
-        let needle = trimmed.lowercased()
-        return viewModel.ratings.filter { rating in
-            (rating.trackName ?? "").lowercased().contains(needle)
-                || (rating.artistName ?? "").lowercased().contains(needle)
+        var result = viewModel.ratings
+
+        if let starFilter {
+            result = result.filter { $0.rating == starFilter }
         }
+
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            let needle = trimmed.lowercased()
+            result = result.filter { rating in
+                (rating.trackName ?? "").lowercased().contains(needle)
+                    || (rating.artistName ?? "").lowercased().contains(needle)
+            }
+        }
+
+        return result
+    }
+
+    /// Flat list sorted by the current sort order. Used when the sort isn't
+    /// grouped by stars (ie. date-based sorts).
+    private var sortedRatings: [TrackRating] {
+        switch sortOrder {
+        case .starsDesc, .starsAsc:
+            return filteredRatings  // grouped path handles this
+        case .dateDesc:
+            return filteredRatings.sorted { Self.timestamp($0) > Self.timestamp($1) }
+        case .dateAsc:
+            return filteredRatings.sorted { Self.timestamp($0) < Self.timestamp($1) }
+        }
+    }
+
+    private static func timestamp(_ rating: TrackRating) -> String {
+        rating.updatedAt ?? rating.createdAt ?? ""
+    }
+
+    private var isGroupedByStars: Bool {
+        switch sortOrder {
+        case .starsDesc, .starsAsc: return true
+        case .dateDesc, .dateAsc:   return false
+        }
+    }
+
+    private var filterAndSortBar: some View {
+        HStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    filterChip(label: "All", isSelected: starFilter == nil) {
+                        starFilter = nil
+                    }
+                    ForEach((1...5).reversed(), id: \.self) { stars in
+                        filterChip(
+                            label: "\(stars)★",
+                            isSelected: starFilter == stars
+                        ) {
+                            starFilter = (starFilter == stars) ? nil : stars
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+
+            sortMenu
+                .padding(.trailing, 16)
+        }
+        .padding(.top, 8)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Filter and sort ratings")
+    }
+
+    private func filterChip(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.xomifyCaption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .foregroundStyle(isSelected ? .white : .white.opacity(0.7))
+                .background(
+                    Group {
+                        if isSelected {
+                            LinearGradient(
+                                colors: [Color.xomifyPurple, Color.xomifyGreen],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        } else {
+                            Color.white.opacity(0.08)
+                        }
+                    }
+                )
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Filter by \(label) rating")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            ForEach(SortOrder.allCases) { order in
+                Button {
+                    sortOrder = order
+                } label: {
+                    if sortOrder == order {
+                        Label(order.rawValue, systemImage: "checkmark")
+                    } else {
+                        Text(order.rawValue)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Color.white.opacity(0.08), in: Circle())
+        }
+        .accessibilityLabel("Sort ratings")
+        .accessibilityValue(sortOrder.rawValue)
     }
 
     private var searchField: some View {
@@ -101,7 +222,73 @@ struct RatingsHistoryView: View {
 
     // MARK: - List (grouped by star count, high → low)
 
+    @ViewBuilder
     private var list: some View {
+        if isGroupedByStars {
+            groupedList
+        } else {
+            flatList
+        }
+    }
+
+    private var flatList: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(sortedRatings) { rating in
+                    ratingRow(rating)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+        }
+    }
+
+    @ViewBuilder
+    private func ratingRow(_ rating: TrackRating) -> some View {
+        HStack(spacing: 10) {
+            Button {
+                openInSpotify(trackId: rating.trackId)
+            } label: {
+                RatingCard(
+                    rating: rating,
+                    artwork: viewModel.artworkByTrackId[rating.trackId]
+                )
+            }
+            .buttonStyle(.plain)
+
+            if !rating.trackId.isEmpty {
+                QueueButton(
+                    uri: "spotify:track:\(rating.trackId)",
+                    trackName: rating.trackName
+                )
+            }
+        }
+        .contextMenu {
+            Button {
+                Task {
+                    await QueueActionController.shared.queue(
+                        uri: "spotify:track:\(rating.trackId)",
+                        trackName: rating.trackName
+                    )
+                }
+            } label: {
+                Label("Add to Spotify queue", systemImage: "text.badge.plus")
+            }
+            Button {
+                openInSpotify(trackId: rating.trackId)
+            } label: {
+                Label("Open in Spotify", systemImage: "arrow.up.forward.app")
+            }
+            Divider()
+            Button(role: .destructive) {
+                Task { await viewModel.delete(rating) }
+            } label: {
+                Label("Delete rating", systemImage: "trash")
+            }
+        }
+    }
+
+    private var groupedList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
                 ForEach(groupedByStars, id: \.stars) { group in
@@ -163,9 +350,10 @@ struct RatingsHistoryView: View {
     }
 
     private var groupedByStars: [(stars: Int, ratings: [TrackRating])] {
-        Dictionary(grouping: filteredRatings, by: { $0.rating })
+        let ascending = (sortOrder == .starsAsc)
+        return Dictionary(grouping: filteredRatings, by: { $0.rating })
             .map { (stars: $0.key, ratings: $0.value) }
-            .sorted { $0.stars > $1.stars }
+            .sorted { ascending ? $0.stars < $1.stars : $0.stars > $1.stars }
     }
 
     private func starGroupHeader(stars: Int, count: Int) -> some View {
