@@ -222,12 +222,19 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         return URL(string: s)
     }
 
-    /// Custom decoding — enrichment fields are optional on the wire because the
-    /// backend may omit them for cold-cache responses. Default to safe zeros.
+    /// Custom decoding — the backend stores the author as `email` on the
+    /// `shares` table but some paths also emit `sharedBy`. Accept either so
+    /// the feed doesn't hard-fail on the live payload. Enrichment fields are
+    /// optional because cold-cache responses may omit them.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         shareId         = try c.decode(String.self, forKey: .shareId)
-        sharedBy        = try c.decode(String.self, forKey: .sharedBy)
+        if let author = try c.decodeIfPresent(String.self, forKey: .sharedBy) {
+            sharedBy = author
+        } else {
+            let fallback = try decoder.container(keyedBy: FallbackAuthorKey.self)
+            sharedBy = try fallback.decode(String.self, forKey: .email)
+        }
         sharedAt        = try c.decode(String.self, forKey: .sharedAt)
         trackId         = try c.decode(String.self, forKey: .trackId)
         trackUri        = try c.decode(String.self, forKey: .trackUri)
@@ -243,6 +250,10 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         viewerHasQueued = try c.decodeIfPresent(Bool.self, forKey: .viewerHasQueued) ?? false
         viewerRating    = try c.decodeIfPresent(Int.self, forKey: .viewerRating)
         sharerRating    = try c.decodeIfPresent(Int.self, forKey: .sharerRating)
+    }
+
+    private enum FallbackAuthorKey: String, CodingKey {
+        case email
     }
 
     /// Memberwise initializer for tests and optimistic-update copies.

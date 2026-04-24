@@ -341,6 +341,25 @@ actor SpotifyService {
             throw error
         }
     }
+
+    /// Start playback of a single track on the user's active Spotify device.
+    /// Same failure mapping as `queueTrack` — Premium + active-device required.
+    ///
+    /// Docs: https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback
+    func playTrack(uri: String) async throws {
+        do {
+            try await network.spotifyPut("/me/player/play", body: ["uris": [uri]])
+        } catch let error as NetworkService.NetworkError {
+            if case .serverError(let code, _) = error {
+                switch code {
+                case 403: throw SpotifyServiceError.premiumRequired
+                case 404: throw SpotifyServiceError.noActiveDevice
+                default:  throw SpotifyServiceError.unexpected(statusCode: code)
+                }
+            }
+            throw error
+        }
+    }
 }
 
 // MARK: - Array Extension

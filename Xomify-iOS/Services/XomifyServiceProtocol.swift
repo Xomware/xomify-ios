@@ -85,10 +85,11 @@ extension SpotifyService: SpotifyCurrentUserProviding {}
 
 // MARK: - SpotifyQueueing
 
-/// Subset of `SpotifyService` needed to queue a track. Split from the above
-/// so queue-only tests can mock a smaller surface.
+/// Subset of `SpotifyService` needed to queue or start playback. Split from
+/// the full service so player-only tests can mock a smaller surface.
 protocol SpotifyQueueing: Sendable {
     func queueTrack(uri: String) async throws
+    func playTrack(uri: String) async throws
 }
 
 extension SpotifyService: SpotifyQueueing {}
