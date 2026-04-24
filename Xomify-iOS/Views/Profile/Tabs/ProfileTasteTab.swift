@@ -1,22 +1,146 @@
 import SwiftUI
 
-/// Taste tab on `ProfileView`. v1 delegates to existing surfaces:
-///   `.me`    → embeds `TopItemsView` verbatim so the self-view picker and
-///              rich tiles are preserved.
-///   `.other` → reads the `FriendProfile` payload already loaded by
-///              `UserProfileViewModel` and renders degraded text tiles with
-///              a term picker. Empty-bucket fallback per contract.
+/// Taste tab on `ProfileView`. Compact summary — top 3 of each category per
+/// term — with a "See all" CTA that jumps to the full `Music Taste` drawer
+/// destination (`TopItemsView`). Keeps the profile lightweight and steers
+/// users to the richer surface.
+///   `.me`    → fetches from `TopItemsViewModel` once on first appear.
+///   `.other` → renders degraded text tiles from the already-loaded
+///              `FriendProfile` payload; empty-bucket fallback per contract.
 struct ProfileTasteTab: View {
 
     let viewModel: UserProfileViewModel
+    @Environment(NavigationStore.self) private var navStore
 
     var body: some View {
         switch viewModel.context {
         case .me:
-            TopItemsView()
-                .padding(.horizontal, -16)
+            SelfTasteSummary(onSeeAll: { navStore.select(.musicTaste) })
         case .other:
             OtherTasteView(viewModel: viewModel)
+        }
+    }
+}
+
+// MARK: - Self taste summary (top-3 per category, per term)
+
+private struct SelfTasteSummary: View {
+    let onSeeAll: () -> Void
+
+    @State private var viewModel = TopItemsViewModel()
+    @State private var selectedTerm: TimeRange = .shortTerm
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Picker("Time range", selection: $selectedTerm) {
+                Text("4 weeks").tag(TimeRange.shortTerm)
+                Text("6 months").tag(TimeRange.mediumTerm)
+                Text("All time").tag(TimeRange.longTerm)
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Taste time range")
+
+            if viewModel.isLoading && tracks.isEmpty && artists.isEmpty {
+                VStack {
+                    ProgressView().tint(.xomifyGreen)
+                }
+                .frame(maxWidth: .infinity, minHeight: 160)
+            } else {
+                section(title: "Top Tracks", items: tracks.map(\.name))
+                section(title: "Top Artists", items: artists.map(\.name))
+                section(title: "Top Genres", items: genres.map(\.name))
+
+                Button(action: onSeeAll) {
+                    HStack(spacing: 6) {
+                        Text("See all")
+                            .fontWeight(.semibold)
+                        Image(systemName: "arrow.right")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.xomifyPurple, Color.xomifyGreen],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .accessibilityHint("Opens the full Music Taste screen")
+            }
+        }
+        .padding(.horizontal)
+        .task { await viewModel.loadData() }
+    }
+
+    // MARK: Term-scoped slices (top 3 each)
+
+    private var tracks: [SpotifyTrack] {
+        Array(tracksForSelectedTerm.prefix(3))
+    }
+
+    private var artists: [SpotifyArtist] {
+        Array(artistsForSelectedTerm.prefix(3))
+    }
+
+    private var genres: [(name: String, count: Int)] {
+        Array(genresForSelectedTerm.prefix(3))
+    }
+
+    private var tracksForSelectedTerm: [SpotifyTrack] {
+        switch selectedTerm {
+        case .shortTerm:  return viewModel.shortTermTracks
+        case .mediumTerm: return viewModel.mediumTermTracks
+        case .longTerm:   return viewModel.longTermTracks
+        }
+    }
+
+    private var artistsForSelectedTerm: [SpotifyArtist] {
+        switch selectedTerm {
+        case .shortTerm:  return viewModel.shortTermArtists
+        case .mediumTerm: return viewModel.mediumTermArtists
+        case .longTerm:   return viewModel.longTermArtists
+        }
+    }
+
+    private var genresForSelectedTerm: [(name: String, count: Int)] {
+        switch selectedTerm {
+        case .shortTerm:  return viewModel.shortTermGenres
+        case .mediumTerm: return viewModel.mediumTermGenres
+        case .longTerm:   return viewModel.longTermGenres
+        }
+    }
+
+    // MARK: Section
+
+    @ViewBuilder
+    private func section(title: String, items: [String]) -> some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                    HStack(spacing: 12) {
+                        Text("\(index + 1)")
+                            .font(.subheadline.monospacedDigit().weight(.bold))
+                            .foregroundStyle(Color.xomifyGreen)
+                            .frame(width: 20, alignment: .leading)
+                        Text(item)
+                            .font(.subheadline)
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(Color.xomifyCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+            }
         }
     }
 }

@@ -5,15 +5,16 @@ import SwiftUI
 /// All top-level destinations reachable from the sidebar drawer.
 /// This is the sole primary-navigation enum — `ShellTab` has been removed.
 enum SidebarDestination: Hashable {
+    case profile
     case feed
+    case musicTaste
     case wrapped
     case releaseRadar
     case ratings
-    case groups
     case friends
-    case profile
-    case settings
+    case groups
     case builder
+    case settings
 }
 
 // MARK: - NavigationStore
