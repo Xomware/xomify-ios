@@ -14,6 +14,8 @@ struct ProfileSharesTab: View {
     /// card instead of a per-email lookup.
     let sharerIdentity: SharerIdentity
 
+    @State private var selectedShare: Share?
+
     var body: some View {
         Group {
             if viewModel.isRefreshing && viewModel.shares.isEmpty {
@@ -40,23 +42,17 @@ struct ProfileSharesTab: View {
     private var sharesList: some View {
         LazyVStack(spacing: 12) {
             ForEach(viewModel.shares) { share in
-                NavigationLink {
-                    ShareDetailView(
-                        share: share,
-                        viewerEmail: viewerEmail,
-                        sharerIdentity: sharerIdentity
-                    )
-                } label: {
-                    ShareCardView(
-                        share: share,
-                        viewerEmail: viewerEmail,
-                        sharerIdentity: sharerIdentity,
-                        onDelete: context.isSelf ? {
-                            Task { await viewModel.deleteShare(share) }
-                        } : nil
-                    )
-                }
-                .buttonStyle(.plain)
+                ShareCardView(
+                    share: share,
+                    viewerEmail: viewerEmail,
+                    sharerIdentity: sharerIdentity,
+                    onDelete: context.isSelf ? {
+                        Task { await viewModel.deleteShare(share) }
+                    } : nil,
+                    onOpenDetail: {
+                        selectedShare = share
+                    }
+                )
                 .onAppear {
                     if share.id == viewModel.shares.last?.id {
                         Task { await viewModel.loadMore() }
@@ -70,6 +66,13 @@ struct ProfileSharesTab: View {
             }
         }
         .padding(.horizontal)
+        .navigationDestination(item: $selectedShare) { share in
+            ShareDetailView(
+                share: share,
+                viewerEmail: viewerEmail,
+                sharerIdentity: sharerIdentity
+            )
+        }
     }
 
     // MARK: - States

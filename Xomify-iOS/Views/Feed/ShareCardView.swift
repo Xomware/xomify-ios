@@ -18,11 +18,19 @@ struct ShareCardView: View {
     /// the delete menu entry is hidden.
     let onDelete: (() -> Void)?
 
+    /// Optional callback fired when the viewer taps the card body (avatar,
+    /// text, or album art — but NOT the action buttons). Wrapping the whole
+    /// card in a NavigationLink swallows taps on the inner action buttons,
+    /// so navigation is wired through this callback and the caller handles
+    /// the push via `navigationDestination(item:)`.
+    let onOpenDetail: (() -> Void)?
+
     init(
         share: Share,
         viewerEmail: String,
         sharerIdentity: SharerIdentity,
-        onDelete: (() -> Void)? = nil
+        onDelete: (() -> Void)? = nil,
+        onOpenDetail: (() -> Void)? = nil
     ) {
         _viewModel = State(initialValue: ShareCardViewModel(
             share: share,
@@ -30,6 +38,7 @@ struct ShareCardView: View {
         ))
         self.sharerIdentity = sharerIdentity
         self.onDelete = onDelete
+        self.onOpenDetail = onOpenDetail
     }
 
     private var isOwnPost: Bool {
@@ -38,16 +47,11 @@ struct ShareCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sharerRow
-            trackBlock
-            if let caption = viewModel.share.caption, !caption.isEmpty {
-                Text(caption)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.white.opacity(0.9))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if viewModel.share.moodTag != nil || !(viewModel.share.genreTags ?? []).isEmpty {
-                tagsRow
+            HStack(alignment: .top, spacing: 8) {
+                detailTapZone
+                if isOwnPost, onDelete != nil {
+                    ownPostMenu
+                }
             }
             actionRow
             if let error = viewModel.queueError {
@@ -70,6 +74,41 @@ struct ShareCardView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("This will remove your share from the feed. This can't be undone.")
+        }
+    }
+
+    // MARK: - Tap zone
+
+    /// Groups the non-interactive parts of the card (sharer, track, caption,
+    /// tags) into a single accessible button so tapping the body opens the
+    /// detail view. The action row below stays outside this button, so
+    /// queue/rate/delete still fire normally.
+    @ViewBuilder
+    private var detailTapZone: some View {
+        let content = VStack(alignment: .leading, spacing: 12) {
+            sharerRow
+            trackBlock
+            if let caption = viewModel.share.caption, !caption.isEmpty {
+                Text(caption)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.9))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if viewModel.share.moodTag != nil || !(viewModel.share.genreTags ?? []).isEmpty {
+                tagsRow
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+
+        if let onOpenDetail {
+            Button(action: onOpenDetail) {
+                content
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Double-tap to open post details")
+        } else {
+            content
         }
     }
 
@@ -107,10 +146,6 @@ struct ShareCardView: View {
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())
                 .accessibilityLabel("\(sharerIdentity.displayName) rated this \(rating) out of 5")
-            }
-
-            if isOwnPost, onDelete != nil {
-                ownPostMenu
             }
         }
     }
