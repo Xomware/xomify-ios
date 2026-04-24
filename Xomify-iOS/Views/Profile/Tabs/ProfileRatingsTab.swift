@@ -79,12 +79,14 @@ struct ProfileRatingsTab: View {
 
             Spacer()
 
+            if !rating.trackId.isEmpty {
+                QueueButton(
+                    uri: "spotify:track:\(rating.trackId)",
+                    trackName: rating.trackName
+                )
+            }
+
             Menu {
-                Button {
-                    Task { await queue(rating: rating) }
-                } label: {
-                    Label("Add to Spotify queue", systemImage: "text.badge.plus")
-                }
                 Button {
                     openInSpotify(trackId: rating.trackId)
                 } label: {
@@ -105,7 +107,7 @@ struct ProfileRatingsTab: View {
                     .frame(width: 32, height: 32)
                     .background(Color.white.opacity(0.08), in: Circle())
             }
-            .accessibilityLabel("Actions for \(rating.trackName ?? "track")")
+            .accessibilityLabel("More actions for \(rating.trackName ?? "track")")
         }
         .padding(12)
         .background(Color.xomifyCard)
@@ -148,15 +150,6 @@ struct ProfileRatingsTab: View {
     private func openInSpotify(trackId: String) {
         guard !trackId.isEmpty, let url = URL(string: "spotify:track:\(trackId)") else { return }
         UIApplication.shared.open(url)
-    }
-
-    private func queue(rating: TrackRating) async {
-        guard !rating.trackId.isEmpty else { return }
-        do {
-            try await SpotifyService.shared.queueTrack(uri: "spotify:track:\(rating.trackId)")
-        } catch {
-            print("ProfileRatingsTab: queue failed — \(error)")
-        }
     }
 
     // MARK: - States

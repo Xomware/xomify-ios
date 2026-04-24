@@ -304,6 +304,7 @@ private struct SelfTasteSummary: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
+            QueueButton(uri: track.uri ?? "spotify:track:\(track.id)", trackName: track.name)
             trackActions(trackId: track.id, uri: track.uri ?? "spotify:track:\(track.id)")
         }
         .padding(.vertical, 8)
@@ -342,11 +343,6 @@ private struct SelfTasteSummary: View {
 
     private func trackActions(trackId: String, uri: String) -> some View {
         Menu {
-            Button {
-                Task { try? await SpotifyService.shared.queueTrack(uri: uri) }
-            } label: {
-                Label("Add to Spotify queue", systemImage: "text.badge.plus")
-            }
             Button {
                 openURL(uri)
             } label: {

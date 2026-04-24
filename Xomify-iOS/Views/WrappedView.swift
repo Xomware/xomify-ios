@@ -340,7 +340,12 @@ struct WrappedContent: View {
 
             Spacer()
 
-            // Add button
+            QueueButton(
+                uri: track.uri ?? "spotify:track:\(track.id)",
+                trackName: track.name
+            )
+
+            // Add to playlist builder
             Button {
                 if playlistBuilder.contains(track) {
                     playlistBuilder.removeTrack(track)

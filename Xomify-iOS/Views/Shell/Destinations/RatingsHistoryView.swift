@@ -5,7 +5,6 @@ import UIKit
 /// Tapping a row opens the track in Spotify. Swipe-to-delete removes a rating.
 struct RatingsHistoryView: View {
     @State private var viewModel = RatingsHistoryViewModel()
-    @State private var queueErrorMessage: String?
     @State private var query: String = ""
 
     var body: some View {
@@ -43,15 +42,6 @@ struct RatingsHistoryView: View {
             }
         }
         .refreshable { await viewModel.load() }
-        .overlay(alignment: .bottom) {
-            if let message = queueErrorMessage {
-                queueBanner(message)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut, value: queueErrorMessage)
     }
 
     // MARK: - Filtered ratings
@@ -121,18 +111,32 @@ struct RatingsHistoryView: View {
 
                         VStack(spacing: 10) {
                             ForEach(group.ratings) { rating in
-                                Button {
-                                    openInSpotify(trackId: rating.trackId)
-                                } label: {
-                                    RatingCard(
-                                        rating: rating,
-                                        artwork: viewModel.artworkByTrackId[rating.trackId]
-                                    )
+                                HStack(spacing: 10) {
+                                    Button {
+                                        openInSpotify(trackId: rating.trackId)
+                                    } label: {
+                                        RatingCard(
+                                            rating: rating,
+                                            artwork: viewModel.artworkByTrackId[rating.trackId]
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if !rating.trackId.isEmpty {
+                                        QueueButton(
+                                            uri: "spotify:track:\(rating.trackId)",
+                                            trackName: rating.trackName
+                                        )
+                                    }
                                 }
-                                .buttonStyle(.plain)
                                 .contextMenu {
                                     Button {
-                                        queue(rating: rating)
+                                        Task {
+                                            await QueueActionController.shared.queue(
+                                                uri: "spotify:track:\(rating.trackId)",
+                                                trackName: rating.trackName
+                                            )
+                                        }
                                     } label: {
                                         Label("Add to Spotify queue", systemImage: "text.badge.plus")
                                     }
@@ -259,51 +263,6 @@ struct RatingsHistoryView: View {
         }
     }
 
-    private func queue(rating: TrackRating) {
-        guard !rating.trackId.isEmpty else { return }
-        let uri = "spotify:track:\(rating.trackId)"
-        Task {
-            do {
-                try await SpotifyService.shared.queueTrack(uri: uri)
-                withAnimation { queueErrorMessage = "Queued on Spotify" }
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                withAnimation { queueErrorMessage = nil }
-            } catch {
-                withAnimation { queueErrorMessage = queueFailureMessage(from: error) }
-                try? await Task.sleep(nanoseconds: 3_500_000_000)
-                withAnimation { queueErrorMessage = nil }
-            }
-        }
-    }
-
-    private func queueFailureMessage(from error: Error) -> String {
-        if case SpotifyServiceError.premiumRequired = error {
-            return "Spotify Premium is required to queue tracks."
-        }
-        if case SpotifyServiceError.noActiveDevice = error {
-            return "Open Spotify on a device first, then try again."
-        }
-        return "Could not add to queue."
-    }
-
-    private func queueBanner(_ message: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: message.hasPrefix("Queued") ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(message.hasPrefix("Queued") ? Color.xomifyGreen : .orange)
-            Text(message)
-                .font(.xomifyFootnote.weight(.semibold))
-                .foregroundStyle(.white)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color.xomifyCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
 }
 
 // MARK: - Card

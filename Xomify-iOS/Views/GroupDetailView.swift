@@ -254,6 +254,10 @@ struct GroupDetailView: View {
 
             Spacer()
 
+            if let tid = track.trackId, !tid.isEmpty {
+                QueueButton(uri: "spotify:track:\(tid)", trackName: track.trackName)
+            }
+
             Button(role: .destructive) {
                 Task { await viewModel.removeSong(track) }
             } label: {
