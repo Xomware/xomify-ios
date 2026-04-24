@@ -49,7 +49,8 @@ struct ProfileView: View {
                         get: { viewModel.selectedTab },
                         set: { viewModel.selectedTab = $0 }
                     ),
-                    namespace: tabNamespace
+                    namespace: tabNamespace,
+                    tabs: viewModel.visibleTabs
                 )
 
                 tabContent
@@ -83,6 +84,9 @@ struct ProfileView: View {
 
         case .taste:
             ProfileTasteTab(viewModel: viewModel)
+
+        case .playlists:
+            ProfilePlaylistsTab(viewModel: viewModel.playlistsViewModel())
         }
     }
 
