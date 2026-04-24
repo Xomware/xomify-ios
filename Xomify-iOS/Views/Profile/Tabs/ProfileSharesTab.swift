@@ -9,6 +9,10 @@ struct ProfileSharesTab: View {
     /// Signed-in user email — passed to each `ShareCardView` so per-card
     /// actions (queue, rate) can hit the right account.
     let viewerEmail: String
+    /// Profile owner's resolved identity — the shares on this tab were all
+    /// authored by this user, so we can pass a single identity to every
+    /// card instead of a per-email lookup.
+    let sharerIdentity: SharerIdentity
 
     var body: some View {
         Group {
@@ -36,7 +40,11 @@ struct ProfileSharesTab: View {
     private var sharesList: some View {
         LazyVStack(spacing: 12) {
             ForEach(viewModel.shares) { share in
-                ShareCardView(share: share, viewerEmail: viewerEmail)
+                ShareCardView(
+                    share: share,
+                    viewerEmail: viewerEmail,
+                    sharerIdentity: sharerIdentity
+                )
                     .onAppear {
                         if share.id == viewModel.shares.last?.id {
                             Task { await viewModel.loadMore() }
