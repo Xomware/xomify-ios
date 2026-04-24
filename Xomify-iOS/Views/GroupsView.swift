@@ -93,7 +93,7 @@ struct GroupsView: View {
     @ViewBuilder
     private var content: some View {
         if isLoadingUser || viewModel.isLoading {
-            ProgressView().tint(.xomifyGreen)
+            XomifyLoaderPulse()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.errorMessage, viewModel.isEmpty {
             errorState(error)

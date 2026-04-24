@@ -152,7 +152,7 @@ struct GroupDetailView: View {
             addSongBar
 
             if viewModel.isLoading && viewModel.tracks.isEmpty {
-                ProgressView().tint(.xomifyGreen)
+                XomifyLoaderPulse()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.tracks.isEmpty {
                 emptyTab(icon: "music.note", title: "No tracks yet",
@@ -280,7 +280,7 @@ struct GroupDetailView: View {
             addMembersButton
 
             if viewModel.isLoading && viewModel.members.isEmpty {
-                ProgressView().tint(.xomifyGreen)
+                XomifyLoaderPulse()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.members.isEmpty {
                 emptyTab(icon: "person.2", title: "No members yet",

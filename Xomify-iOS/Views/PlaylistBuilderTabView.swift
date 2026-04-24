@@ -121,8 +121,7 @@ struct PlaylistBuilderTabView: View {
 
             if viewModel.isSearching {
                 Spacer()
-                ProgressView()
-                    .tint(Color.xomifyGreen)
+                XomifyLoaderPulse()
                 Spacer()
             } else if viewModel.searchResults.isEmpty {
                 searchEmptyState

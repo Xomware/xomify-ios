@@ -77,8 +77,7 @@ struct ProfileHeaderView: View {
     private var identityBlock: some View {
         VStack(spacing: 4) {
             if viewModel.isLoading && viewModel.displayName.isEmpty {
-                ProgressView()
-                    .tint(.xomifyGreen)
+                XomifyLoaderSpin()
             } else {
                 Text(viewModel.displayName.isEmpty ? viewModel.profileEmail : viewModel.displayName)
                     .font(.title2)

@@ -13,7 +13,7 @@ struct ProfileSharesTab: View {
     var body: some View {
         Group {
             if viewModel.isRefreshing && viewModel.shares.isEmpty {
-                VStack { ProgressView().tint(.xomifyGreen) }
+                VStack { XomifyLoaderPulse() }
                     .frame(maxWidth: .infinity, minHeight: 160)
             } else if let error = viewModel.errorMessage, viewModel.shares.isEmpty {
                 errorState(error)
@@ -45,8 +45,7 @@ struct ProfileSharesTab: View {
             }
 
             if viewModel.isLoading {
-                ProgressView()
-                    .tint(.xomifyGreen)
+                XomifyLoaderSpin()
                     .padding(.vertical, 12)
             }
         }

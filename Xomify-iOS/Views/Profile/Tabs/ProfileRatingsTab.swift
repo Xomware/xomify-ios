@@ -15,7 +15,7 @@ struct ProfileRatingsTab: View {
     var body: some View {
         Group {
             if viewModel.isLoading && viewModel.ratings.isEmpty {
-                ProgressView().tint(.xomifyGreen)
+                XomifyLoaderPulse()
                     .frame(maxWidth: .infinity, minHeight: 160)
             } else if let error = viewModel.errorMessage, viewModel.isEmpty {
                 errorState(error)

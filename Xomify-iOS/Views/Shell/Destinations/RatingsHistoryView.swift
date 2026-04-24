@@ -185,8 +185,8 @@ struct RatingsHistoryView: View {
     // MARK: - States
 
     private var loadingState: some View {
-        VStack(spacing: 12) {
-            ProgressView().tint(Color.xomifyGreen)
+        VStack(spacing: 16) {
+            XomifyLoaderPulse()
             Text("Loading ratings…")
                 .font(.xomifyCaption)
                 .foregroundStyle(.white.opacity(0.7))
