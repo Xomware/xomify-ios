@@ -73,6 +73,38 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         FeedResponse(shares: [], nextBefore: nil)
     }
 
+    func deleteShare(
+        email: String, shareId: String, sharedAt: String
+    ) async throws -> SuccessResponse {
+        SuccessResponse(success: true)
+    }
+
+    // MARK: - getShareDetail
+
+    struct GetShareDetailCall: Equatable {
+        let email: String
+        let shareId: String
+        let sharedBy: String?
+        let sharedAt: String?
+    }
+
+    private(set) var getShareDetailCalls: [GetShareDetailCall] = []
+    var getShareDetailResponses: [ShareDetailResponse] = []
+    var getShareDetailError: Error?
+
+    func getShareDetail(
+        email: String, shareId: String, sharedBy: String?, sharedAt: String?
+    ) async throws -> ShareDetailResponse {
+        getShareDetailCalls.append(GetShareDetailCall(
+            email: email, shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt
+        ))
+        if let getShareDetailError { throw getShareDetailError }
+        if getShareDetailResponses.isEmpty {
+            throw NSError(domain: "mock", code: -1, userInfo: [NSLocalizedDescriptionKey: "no response primed"])
+        }
+        return getShareDetailResponses.removeFirst()
+    }
+
     func listGroups(email: String) async throws -> GroupsListResponse {
         GroupsListResponse(email: email, groups: [], totalCount: 0)
     }

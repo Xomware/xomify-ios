@@ -674,3 +674,63 @@ struct RatingsAllResponse: Codable, Sendable {
     let ratings: [TrackRating]?
     let totalCount: Int?
 }
+
+// MARK: - Share Detail
+//
+// Response for GET `/shares/detail`. Backend-documented contract:
+// `{ share, interactions, friendRatings }`. See
+// xomify-backend/lambdas/shares_detail/handler.py.
+
+/// One row under `interactions[]` — a friend who queued or rated the share.
+struct ShareInteractionEntry: Codable, Sendable, Identifiable, Hashable {
+    let email: String
+    let displayName: String?
+    let avatar: String?
+    let action: String   // "queued" | "rated"
+    let createdAt: String?
+
+    /// Synthesized stable id — email + action — since the backend doesn't
+    /// return one and a user can both queue and rate.
+    var id: String { "\(email)#\(action)" }
+
+    var avatarURL: URL? {
+        guard let s = avatar, !s.isEmpty else { return nil }
+        return URL(string: s)
+    }
+
+    var resolvedName: String {
+        if let n = displayName, !n.isEmpty { return n }
+        return email
+    }
+}
+
+/// One row under `friendRatings[]` — a friend's rating of this track.
+struct ShareFriendRating: Codable, Sendable, Identifiable, Hashable {
+    let email: String
+    let displayName: String?
+    let avatar: String?
+    let rating: Double
+    let review: String?
+    let ratedAt: String?
+
+    var id: String { email }
+
+    var avatarURL: URL? {
+        guard let s = avatar, !s.isEmpty else { return nil }
+        return URL(string: s)
+    }
+
+    var resolvedName: String {
+        if let n = displayName, !n.isEmpty { return n }
+        return email
+    }
+
+    /// Integer display for the 1-5 star UI. Backend persists as float.
+    var displayStars: Int { Int(rating.rounded()) }
+}
+
+struct ShareDetailResponse: Codable, Sendable {
+    let share: Share
+    let interactions: [ShareInteractionEntry]
+    let friendRatings: [ShareFriendRating]
+}
