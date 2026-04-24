@@ -85,8 +85,7 @@ struct FeedView: View {
                 }
 
                 if viewModel.isLoading && !viewModel.shares.isEmpty {
-                    ProgressView()
-                        .tint(Color.xomifyGreen)
+                    XomifyLoaderSpin()
                         .padding(.vertical, 16)
                 }
 
@@ -98,8 +97,7 @@ struct FeedView: View {
 
     private var loadingState: some View {
         VStack(spacing: 12) {
-            ProgressView()
-                .tint(Color.xomifyGreen)
+            XomifyLoaderPulse()
             Text("Loading feed...")
                 .font(.caption)
                 .foregroundStyle(.gray)

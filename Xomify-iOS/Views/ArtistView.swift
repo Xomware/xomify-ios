@@ -20,7 +20,7 @@ struct ArtistView: View {
         ZStack {
             ScrollView {
                 if isLoading {
-                    ProgressView()
+                    XomifyLoaderPulse()
                         .padding(.top, 100)
                 } else if let error = errorMessage {
                     errorState(error)
