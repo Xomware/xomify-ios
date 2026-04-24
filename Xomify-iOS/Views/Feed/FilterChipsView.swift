@@ -9,7 +9,6 @@ struct FilterChipsView: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(for: .all)
                 chip(for: .friends)
 
                 ForEach(viewModel.groups) { group in

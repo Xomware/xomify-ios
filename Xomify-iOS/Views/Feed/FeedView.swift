@@ -74,7 +74,8 @@ struct FeedView: View {
                 ForEach(viewModel.shares) { share in
                     ShareCardView(
                         share: share,
-                        viewerEmail: viewModel.userEmail
+                        viewerEmail: viewModel.userEmail,
+                        sharerIdentity: viewModel.identity(for: share.sharedBy)
                     )
                     .padding(.horizontal, 16)
                     .onAppear {

@@ -69,7 +69,11 @@ struct ProfileView: View {
                 ProfileSharesTab(
                     viewModel: sharesVM,
                     context: viewModel.context,
-                    viewerEmail: viewModel.callerEmail
+                    viewerEmail: viewModel.callerEmail,
+                    sharerIdentity: SharerIdentity(
+                        displayName: viewModel.displayName.isEmpty ? viewModel.profileEmail : viewModel.displayName,
+                        avatarURL: viewModel.avatarURL
+                    )
                 )
             } else {
                 loadingTab

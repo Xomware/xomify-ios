@@ -7,11 +7,17 @@ struct ShareCardView: View {
     @State private var viewModel: ShareCardViewModel
     @State private var showRateSheet: Bool = false
 
-    init(share: Share, viewerEmail: String) {
+    /// Resolved sharer identity (display name + avatar). Falls back to the
+    /// email when unresolved — `FeedViewModel.identity(for:)` always returns
+    /// a value, so the fallback tree is handled upstream.
+    let sharerIdentity: SharerIdentity
+
+    init(share: Share, viewerEmail: String, sharerIdentity: SharerIdentity) {
         _viewModel = State(initialValue: ShareCardViewModel(
             share: share,
             viewerEmail: viewerEmail
         ))
+        self.sharerIdentity = sharerIdentity
     }
 
     var body: some View {
@@ -45,19 +51,11 @@ struct ShareCardView: View {
 
     private var sharerRow: some View {
         HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(LinearGradient.xomifyGradient)
-                    .frame(width: 36, height: 36)
-                Text(String(viewModel.share.sharedBy.prefix(1)).uppercased())
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-            }
-            .accessibilityHidden(true)
+            avatarView
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.share.sharedBy)
+                Text(sharerIdentity.displayName)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.white)
@@ -82,8 +80,38 @@ struct ShareCardView: View {
                 .padding(.vertical, 4)
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())
-                .accessibilityLabel("\(viewModel.share.sharedBy) rated this \(rating) out of 5")
+                .accessibilityLabel("\(sharerIdentity.displayName) rated this \(rating) out of 5")
             }
+        }
+    }
+
+    @ViewBuilder
+    private var avatarView: some View {
+        if let url = sharerIdentity.avatarURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                default:
+                    avatarFallback
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+        } else {
+            avatarFallback
+        }
+    }
+
+    private var avatarFallback: some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient.xomifyGradient)
+                .frame(width: 36, height: 36)
+            Text(String(sharerIdentity.displayName.prefix(1)).uppercased())
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
         }
     }
 
