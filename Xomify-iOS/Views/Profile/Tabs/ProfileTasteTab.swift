@@ -71,7 +71,20 @@ private struct SelfTasteSummary: View {
             } else {
                 stageCard
                     .frame(maxWidth: .infinity, minHeight: 260, alignment: .top)
+                    .contentShape(Rectangle())
                     .onTapGesture { advance() }
+                    .gesture(
+                        DragGesture(minimumDistance: 20)
+                            .onEnded { value in
+                                let horizontal = value.translation.width
+                                if horizontal < -40 {
+                                    advance()
+                                } else if horizontal > 40 {
+                                    retreat()
+                                }
+                            }
+                    )
+                    .accessibilityHint("Swipe left or right to switch stage")
                 progressIndicator
                 seeAllButton
             }
@@ -163,6 +176,12 @@ private struct SelfTasteSummary: View {
     private func advance() {
         withAnimation(.easeInOut(duration: 0.35)) {
             stage = (stage + 1) % Self.stages.count
+        }
+    }
+
+    private func retreat() {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            stage = (stage - 1 + Self.stages.count) % Self.stages.count
         }
     }
 
