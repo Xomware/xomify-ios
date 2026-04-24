@@ -21,7 +21,7 @@ struct GroupDetailView: View {
     }
 
     private var isOwner: Bool {
-        viewModel.group?.ownerEmail == viewerEmail
+        (viewModel.group?.ownerLabel) == viewerEmail
     }
 
     var body: some View {

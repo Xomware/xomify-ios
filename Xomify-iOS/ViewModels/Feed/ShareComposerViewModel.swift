@@ -14,7 +14,7 @@ enum ComposerAudience: Hashable, Sendable {
         switch self {
         case .all:               return "Everyone"
         case .friendsOnly:       return "Friends only"
-        case .group(let group):  return group.name
+        case .group(let group):  return group.displayName
         }
     }
 
