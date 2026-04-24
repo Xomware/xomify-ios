@@ -6,6 +6,7 @@ struct ArtistCount: Sendable, Hashable {
     let id: String
     let name: String
     let count: Int
+    let imageUrl: URL?
 }
 
 struct GenreCount: Sendable, Hashable {
@@ -27,6 +28,9 @@ struct PlaylistAnalysis: Sendable {
     let topArtists: [ArtistCount]
     let topGenres: [GenreCount]
     let decades: [DecadeCount]
+    /// A handful of tracks from the playlist (preserving order) to render as
+    /// a visual preview row — drives the "Sample Tracks" strip in the view.
+    let sampleTracks: [SpotifyTrack]
 }
 
 /// ViewModel for the Playlist Analysis screen.
@@ -127,7 +131,14 @@ final class PlaylistAnalysisViewModel {
         }
 
         let topArtists = counts
-            .map { ArtistCount(id: $0.key, name: $0.value.name, count: $0.value.count) }
+            .map { (id, tuple) -> ArtistCount in
+                ArtistCount(
+                    id: id,
+                    name: tuple.name,
+                    count: tuple.count,
+                    imageUrl: artistMeta[id]?.imageUrl
+                )
+            }
             .sorted { $0.count > $1.count }
             .prefix(10)
 
@@ -156,6 +167,9 @@ final class PlaylistAnalysisViewModel {
             .map { DecadeCount(decade: $0.key, count: $0.value) }
             .sorted { $0.decade < $1.decade }
 
+        // Visual preview — first 10 tracks with artwork available.
+        let sampleTracks = Array(tracks.filter { $0.imageUrl != nil }.prefix(10))
+
         return PlaylistAnalysis(
             totalTracks: totalTracks,
             totalDurationMs: totalDurationMs,
@@ -164,7 +178,8 @@ final class PlaylistAnalysisViewModel {
             uniqueArtistCount: counts.count,
             topArtists: Array(topArtists),
             topGenres: Array(topGenres),
-            decades: decades
+            decades: decades,
+            sampleTracks: sampleTracks
         )
     }
 
