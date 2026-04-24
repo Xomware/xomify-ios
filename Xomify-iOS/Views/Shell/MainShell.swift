@@ -19,6 +19,11 @@ struct MainShell: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
+            // Ambient brand background — wandering blurred blobs + occasional
+            // lightning. Purely decorative; hit-testing disabled.
+            AmbientBackground()
+                .opacity(0.35)
+
             // Primary content: header bar + full-screen destination.
             VStack(spacing: 0) {
                 HeaderBar(avatarURL: avatarURL)
