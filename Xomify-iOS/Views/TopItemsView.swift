@@ -347,23 +347,7 @@ struct TopItemsContent: View {
 
             Spacer()
 
-            // Add to Spotify queue
-            QueueButton(
-                uri: track.uri ?? "spotify:track:\(track.id)",
-                trackName: track.name
-            )
-
-            // Add to playlist builder
-            AddToPlaylistButton(track: track)
-
-            // Play button
-            Button {
-                playTrack(track)
-            } label: {
-                Image(systemName: "play.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(Color.xomifyGreen)
-            }
+            TrackActionsMenu(track: track)
         }
         .padding(12)
         .background(Color.white.opacity(0.03))

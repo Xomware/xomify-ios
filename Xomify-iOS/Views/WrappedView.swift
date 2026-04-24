@@ -340,23 +340,7 @@ struct WrappedContent: View {
 
             Spacer()
 
-            QueueButton(
-                uri: track.uri ?? "spotify:track:\(track.id)",
-                trackName: track.name
-            )
-
-            // Add to playlist builder
-            Button {
-                if playlistBuilder.contains(track) {
-                    playlistBuilder.removeTrack(track)
-                } else {
-                    playlistBuilder.addTrack(track)
-                }
-            } label: {
-                Image(systemName: playlistBuilder.contains(track) ? "checkmark.circle.fill" : "plus.circle")
-                    .font(.title3)
-                    .foregroundStyle(playlistBuilder.contains(track) ? Color.xomifyGreen : Color.xomifyPurple)
-            }
+            TrackActionsMenu(track: track)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
