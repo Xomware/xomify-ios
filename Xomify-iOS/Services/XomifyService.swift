@@ -312,19 +312,22 @@ actor XomifyService {
         return try await network.xomifyPost("/groups/create", body: body)
     }
 
-    /// Update a group's name / description.
+    /// Update a group's name / description. Backend route is `PUT
+    /// /groups/update` — sending POST here would be rejected by API Gateway
+    /// before reaching the lambda.
     @discardableResult
     func updateGroup(email: String, groupId: String, name: String? = nil, description: String? = nil) async throws -> SuccessResponse {
         var body: [String: Any] = ["email": email, "groupId": groupId]
         if let name = name { body["name"] = name }
         if let description = description { body["description"] = description }
-        return try await network.xomifyPost("/groups/update", body: body)
+        return try await network.xomifyPut("/groups/update", body: body)
     }
 
-    /// Delete a group (owner only).
+    /// Delete a group (owner only). Backend route is `DELETE
+    /// /groups/remove` and reads identifiers from query params (not body).
     @discardableResult
     func removeGroup(email: String, groupId: String) async throws -> SuccessResponse {
-        try await network.xomifyPost("/groups/remove", body: [
+        try await network.xomifyDelete("/groups/remove", queryParams: [
             "email": email,
             "groupId": groupId
         ])
@@ -349,10 +352,11 @@ actor XomifyService {
         ])
     }
 
-    /// Remove a member from a group.
+    /// Remove a member from a group. Backend is `DELETE
+    /// /groups/remove-member` with query params.
     @discardableResult
     func removeMember(email: String, groupId: String, memberEmail: String) async throws -> SuccessResponse {
-        try await network.xomifyPost("/groups/remove-member", body: [
+        try await network.xomifyDelete("/groups/remove-member", queryParams: [
             "email": email,
             "groupId": groupId,
             "memberEmail": memberEmail
@@ -404,13 +408,15 @@ actor XomifyService {
         ])
     }
 
-    /// Remove a track by its composite id.
+    /// Remove a track by its composite id. Backend is `DELETE
+    /// /groups/remove-song` and reads `songId` (not `trackIdTimestamp`)
+    /// from query params.
     @discardableResult
     func removeSong(email: String, groupId: String, trackIdTimestamp: String) async throws -> SuccessResponse {
-        try await network.xomifyPost("/groups/remove-song", body: [
+        try await network.xomifyDelete("/groups/remove-song", queryParams: [
             "email": email,
             "groupId": groupId,
-            "trackIdTimestamp": trackIdTimestamp
+            "songId": trackIdTimestamp
         ])
     }
 
