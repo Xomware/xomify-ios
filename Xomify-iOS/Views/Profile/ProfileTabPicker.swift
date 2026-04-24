@@ -57,17 +57,17 @@ struct ProfileTabPicker: View {
                     .matchedGeometryEffect(id: "profileTabActive", in: namespace)
                     .shadow(color: Color.xomifyPurple.opacity(0.35), radius: 8, y: 3)
                 }
-                Text(tab.title)
+                Image(systemName: tab.systemImage)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isSelected ? .white : Color.white.opacity(0.6))
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(tab.title) tab")
+        .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

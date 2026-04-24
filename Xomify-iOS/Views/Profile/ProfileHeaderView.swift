@@ -9,6 +9,7 @@ import SwiftUI
 struct ProfileHeaderView: View {
 
     let viewModel: UserProfileViewModel
+    @Environment(NavigationStore.self) private var navStore
 
     var body: some View {
         VStack(spacing: 16) {
@@ -105,11 +106,26 @@ struct ProfileHeaderView: View {
                 divider
                 skeletonStat
             } else {
-                statItem(value: viewModel.friendCount ?? 0, label: "Friends", color: .xomifyGreen)
+                statItem(
+                    value: viewModel.friendCount ?? 0,
+                    label: "Friends",
+                    color: .xomifyGreen,
+                    destination: .friends
+                )
                 divider
-                statItem(value: viewModel.ratingCount ?? 0, label: "Ratings", color: .xomifyPurple)
+                statItem(
+                    value: viewModel.ratingCount ?? 0,
+                    label: "Ratings",
+                    color: .xomifyPurple,
+                    destination: .ratings
+                )
                 divider
-                statItem(value: viewModel.shareCount ?? 0, label: "Posts", color: .xomifyGreen)
+                statItem(
+                    value: viewModel.shareCount ?? 0,
+                    label: "Posts",
+                    color: .xomifyGreen,
+                    destination: .feed
+                )
             }
         }
         .padding(.vertical, 12)
@@ -143,15 +159,39 @@ struct ProfileHeaderView: View {
         Divider().frame(height: 30).background(Color.gray.opacity(0.25))
     }
 
-    private func statItem(value: Int, label: String, color: Color) -> some View {
-        VStack(spacing: 4) {
+    private func statItem(
+        value: Int,
+        label: String,
+        color: Color,
+        destination: SidebarDestination?
+    ) -> some View {
+        let isTappable = destination != nil && viewModel.context.isSelf
+
+        let content = VStack(spacing: 4) {
             Text("\(value)")
                 .font(.title3).fontWeight(.bold).foregroundStyle(color)
             Text(label).font(.caption2).foregroundStyle(.gray)
         }
         .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(value)")
+        .contentShape(Rectangle())
+
+        return Group {
+            if isTappable, let destination {
+                Button {
+                    navStore.select(destination)
+                } label: {
+                    content
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(label): \(value)")
+                .accessibilityHint("Opens \(label) page")
+            } else {
+                content
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(label): \(value)")
+            }
+        }
     }
 
     // MARK: - Action button
@@ -161,7 +201,7 @@ struct ProfileHeaderView: View {
         switch viewModel.context {
         case .me:
             Button {
-                // Placeholder — Edit Profile sheet deferred beyond v1.
+                navStore.select(.settings)
             } label: {
                 Label("Edit Profile", systemImage: "pencil")
                     .font(.subheadline.weight(.semibold))
@@ -171,7 +211,7 @@ struct ProfileHeaderView: View {
                     .background(Color.xomifyCard)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
-            .accessibilityHint("Opens the Settings screen from the sidebar")
+            .accessibilityHint("Opens Settings")
 
         case .other:
             Button {

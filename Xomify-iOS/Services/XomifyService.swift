@@ -292,11 +292,12 @@ actor XomifyService {
         try await network.xomifyGet("/friends/pending", queryParams: ["email": email])
     }
 
-    /// Public profile of another user.
+    /// Public profile of another user. Backend expects `friendEmail` and
+    /// resolves the caller from the auth header — previous shape
+    /// (`email` + `profileEmail`) returns 400.
     func getFriendProfile(email: String, profileEmail: String) async throws -> FriendProfile {
         try await network.xomifyGet("/friends/profile", queryParams: [
-            "email": email,
-            "profileEmail": profileEmail
+            "friendEmail": profileEmail
         ])
     }
 

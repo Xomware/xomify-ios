@@ -10,6 +10,12 @@ struct ProfileRatingsTab: View {
     let context: ProfileContext
     let viewerEmail: String
 
+    @Environment(NavigationStore.self) private var navStore
+    @State private var shuffled: [TrackRating] = []
+
+    /// How many cards the shuffle sample shows at a time.
+    private let sampleSize = 5
+
     private var targetEmail: String { context.email ?? viewerEmail }
 
     var body: some View {
@@ -29,35 +35,100 @@ struct ProfileRatingsTab: View {
             if viewModel.userEmail != targetEmail || viewModel.ratings.isEmpty {
                 await viewModel.load(email: targetEmail)
             }
+            if shuffled.isEmpty { reshuffle() }
         }
+        .onChange(of: viewModel.ratings) { _, _ in reshuffle() }
         .refreshable { await viewModel.refresh() }
+    }
+
+    private func reshuffle() {
+        let pool = viewModel.ratings.shuffled()
+        shuffled = Array(pool.prefix(sampleSize))
     }
 
     // MARK: - List
 
     private var ratingsList: some View {
-        LazyVStack(alignment: .leading, spacing: 20) {
-            ForEach(viewModel.grouped, id: \.stars) { group in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 6) {
-                        ForEach(0..<group.stars, id: \.self) { _ in
-                            Image(systemName: "star.fill").foregroundStyle(Color.xomifyGreen)
-                        }
-                        ForEach(group.stars..<5, id: \.self) { _ in
-                            Image(systemName: "star").foregroundStyle(.gray.opacity(0.4))
-                        }
-                        Text("\(group.ratings.count) songs")
-                            .font(.caption).foregroundStyle(.gray).padding(.leading, 8)
-                    }
-                    .font(.caption)
+        VStack(alignment: .leading, spacing: 12) {
+            shuffleHeader
 
-                    ForEach(group.ratings) { rating in
+            LazyVStack(alignment: .leading, spacing: 10) {
+                ForEach(shuffled) { rating in
+                    HStack(spacing: 8) {
+                        starsBar(for: rating.rating)
                         ratingRow(rating)
                     }
                 }
             }
+
+            viewAllButton
         }
         .padding(.horizontal)
+    }
+
+    private var shuffleHeader: some View {
+        HStack {
+            Text("Sample")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+            Text("· \(viewModel.ratings.count) total")
+                .font(.caption)
+                .foregroundStyle(.gray)
+            Spacer()
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { reshuffle() }
+            } label: {
+                Label("Shuffle", systemImage: "shuffle")
+                    .labelStyle(.titleAndIcon)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.xomifyPurple.opacity(0.7))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Shuffle sample")
+        }
+    }
+
+    private var viewAllButton: some View {
+        Button {
+            navStore.select(.ratings)
+        } label: {
+            HStack {
+                Text("View all ratings")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+            }
+            .foregroundStyle(.white)
+            .padding(14)
+            .background(
+                LinearGradient(
+                    colors: [Color.xomifyPurple, Color.xomifyGreen],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens the full ratings history")
+    }
+
+    @ViewBuilder
+    private func starsBar(for count: Int) -> some View {
+        VStack(spacing: 2) {
+            ForEach(0..<count, id: \.self) { _ in
+                Image(systemName: "star.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(Color.xomifyGreen)
+            }
+        }
+        .frame(width: 10)
+        .accessibilityHidden(true)
     }
 
     private func ratingRow(_ rating: TrackRating) -> some View {
