@@ -10,24 +10,38 @@ struct GroupsView: View {
 
     private let spotifyService = SpotifyService.shared
 
+    private var groupsSubtitle: String {
+        let count = viewModel.groups.count
+        if count == 0 { return "Make a group to share with a crew" }
+        return "\(count) \(count == 1 ? "group" : "groups")"
+    }
+
     var body: some View {
         ZStack {
             Color.xomifyDark.ignoresSafeArea()
-            content
-        }
-        .navigationTitle("Groups")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingCreate = true
-                } label: {
-                    Image(systemName: "plus")
+            VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Groups",
+                    subtitle: groupsSubtitle,
+                    systemImage: "person.3.fill"
+                ) {
+                    Button {
+                        showingCreate = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(.white.opacity(0.18), in: Circle())
+                    }
+                    .disabled(isLoadingUser)
+                    .accessibilityLabel("Create group")
                 }
-                .disabled(isLoadingUser)
-                .accessibilityLabel("Create group")
+                content
             }
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task { await loadUserAndData() }
         .onAppear {
             // Return from GroupDetailView (e.g. after delete/leave) should

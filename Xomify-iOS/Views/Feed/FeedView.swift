@@ -11,6 +11,12 @@ struct FeedView: View {
             Color.xomifyDark.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Feed",
+                    subtitle: "What your friends are vibing to",
+                    systemImage: "sparkles"
+                )
+
                 FilterChipsView(viewModel: viewModel)
 
                 mainContent
@@ -22,8 +28,8 @@ struct FeedView: View {
                 }
             }
         }
-        .navigationTitle("Feed")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await viewModel.bootstrap()
             await viewModel.loadGroupsForChips()

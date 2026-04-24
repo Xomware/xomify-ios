@@ -26,6 +26,12 @@ struct TopItemsContent: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Music Taste",
+                    subtitle: "Your top tracks, artists, and genres",
+                    systemImage: "waveform"
+                )
+
                 // Category selector
                 categorySelector
 
@@ -69,8 +75,8 @@ struct TopItemsContent: View {
             }
         }
         .background(Color.xomifyDark.ignoresSafeArea())
-        .navigationTitle("Top Items")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await viewModel.loadData()
         }

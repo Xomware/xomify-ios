@@ -31,14 +31,21 @@ struct FriendsView: View {
             Color.xomifyDark.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Friends",
+                    subtitle: friendsSubtitle,
+                    systemImage: "person.2.fill"
+                ) {
+                    addFriendButton
+                }
+
                 tabPicker
                 searchField
                 content
             }
         }
-        .navigationTitle("Friends")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbarContent }
+        .toolbar(.hidden, for: .navigationBar)
         .task { await loadUserAndData() }
         .tint(Color.xomifyGreen)
         .confirmationDialog(
@@ -76,39 +83,31 @@ struct FriendsView: View {
         }
     }
 
-    // MARK: - Toolbar
+    // MARK: - Header accessory
 
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                Task { await viewModel.mintInvite() }
-            } label: {
-                if viewModel.isMintingInvite {
-                    ProgressView()
-                } else {
-                    Label("Invite a Friend", systemImage: "person.badge.plus")
-                        .labelStyle(.titleAndIcon)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                }
+    private var friendsSubtitle: String {
+        let count = viewModel.accepted.count
+        if count == 0 { return "Invite friends to start sharing" }
+        return "\(count) \(count == 1 ? "friend" : "friends")"
+    }
+
+    private var addFriendButton: some View {
+        Button {
+            Task { await viewModel.mintInvite() }
+        } label: {
+            if viewModel.isMintingInvite {
+                ProgressView().tint(.white)
+                    .frame(width: 36, height: 36)
+            } else {
+                Image(systemName: "person.badge.plus")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(.white.opacity(0.18), in: Circle())
             }
-            .accessibilityLabel("Invite a friend")
-            .disabled(viewModel.isMintingInvite || isLoadingUser)
         }
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                Task { await viewModel.refresh() }
-            } label: {
-                if viewModel.isRefreshing {
-                    ProgressView()
-                } else {
-                    Image(systemName: "arrow.clockwise")
-                }
-            }
-            .accessibilityLabel("Refresh")
-            .disabled(viewModel.isRefreshing || isLoadingUser)
-        }
+        .accessibilityLabel("Invite a friend")
+        .disabled(viewModel.isMintingInvite || isLoadingUser)
     }
 
     private var removalConfirmationTitle: String {
