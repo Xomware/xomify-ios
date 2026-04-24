@@ -142,6 +142,27 @@ actor XomifyService {
         return try await network.xomifyGet("/shares/user", queryParams: params)
     }
 
+    /// Fetch full detail for one share — includes the share row plus the
+    /// friend listener/rating activity needed to render listeners +
+    /// per-friend ratings on `ShareDetailView`.
+    ///
+    /// Endpoint is query-param only; backend accepts `sharedBy` / `sharedAt`
+    /// for forward-compat but ignores them today.
+    func getShareDetail(
+        email: String,
+        shareId: String,
+        sharedBy: String? = nil,
+        sharedAt: String? = nil
+    ) async throws -> ShareDetailResponse {
+        var params: [String: String] = [
+            "email": email,
+            "shareId": shareId
+        ]
+        if let sharedBy = sharedBy { params["sharedBy"] = sharedBy }
+        if let sharedAt = sharedAt { params["sharedAt"] = sharedAt }
+        return try await network.xomifyGet("/shares/detail", queryParams: params)
+    }
+
     /// Delete a share (author only). Backend expects composite key via body.
     @discardableResult
     func deleteShare(

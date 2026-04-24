@@ -1,19 +1,28 @@
 import SwiftUI
 
-/// Detail screen for a single feed share. Pushed from the Feed and
-/// profile Shares tab when the user taps a card.
+/// Detail screen for a single feed share. Pushed from the Feed and profile
+/// Shares tab when the user taps a card.
 ///
-/// Renders the full track context — big hero art, sharer's rating and
-/// caption, aggregate listener/rating stats, and the shared
-/// `TrackActionsMenu` so every playback + playlist + share action is
-/// available from one place. Friend-by-friend ratings and a listener
-/// list land when the backend endpoints for those are in place; for now
-/// the aggregate counts keep the view useful.
+/// Loads `/shares/detail` on appear so the listener + friend-rating lists are
+/// always fresh. Hero + track header render immediately from the pushed
+/// `Share` so there's no flash-of-empty while the detail load is in flight.
+///
+/// Rating lives here as well — the detail screen is a first-class rating
+/// surface, not just a read-only expansion of the card.
 struct ShareDetailView: View {
 
-    let share: Share
-    let viewerEmail: String
+    @State private var viewModel: ShareDetailViewModel
+    @State private var showRateSheet: Bool = false
+
     let sharerIdentity: SharerIdentity
+
+    init(share: Share, viewerEmail: String, sharerIdentity: SharerIdentity) {
+        _viewModel = State(initialValue: ShareDetailViewModel(
+            share: share,
+            viewerEmail: viewerEmail
+        ))
+        self.sharerIdentity = sharerIdentity
+    }
 
     var body: some View {
         ZStack {
@@ -25,24 +34,40 @@ struct ShareDetailView: View {
                     sharerBlock
                     statsRow
                     actionRow
-                    if let caption = share.caption, !caption.isEmpty {
+                    if let caption = viewModel.share.caption, !caption.isEmpty {
                         captionBlock(caption)
+                    }
+                    friendRatingsSection
+                    listenersSection
+                    if let error = viewModel.errorMessage {
+                        inlineErrorBanner(error)
                     }
                     Spacer(minLength: 16)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
+                .padding(.bottom, 24)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .tint(Color.xomifyGreen)
+        .task {
+            await viewModel.load()
+        }
+        .refreshable {
+            await viewModel.load()
+        }
+        .sheet(isPresented: $showRateSheet) {
+            DetailRateSheet(viewModel: viewModel, isPresented: $showRateSheet)
+                .presentationDetents([.medium])
+        }
     }
 
     // MARK: - Hero art
 
     @ViewBuilder
     private var heroArt: some View {
-        if let url = share.albumArt {
+        if let url = viewModel.share.albumArt {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
@@ -75,22 +100,22 @@ struct ShareDetailView: View {
 
     private var trackHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(share.trackName)
+            Text(viewModel.share.trackName)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(.white)
                 .lineLimit(3)
-            Text(share.artistName)
+            Text(viewModel.share.artistName)
                 .font(.subheadline)
                 .foregroundStyle(.gray)
                 .lineLimit(2)
-            if let album = share.albumName, !album.isEmpty {
+            if let album = viewModel.share.albumName, !album.isEmpty {
                 Text(album)
                     .font(.caption)
                     .foregroundStyle(.gray.opacity(0.75))
                     .lineLimit(1)
             }
-            if share.moodTag != nil || !(share.genreTags ?? []).isEmpty {
+            if viewModel.share.moodTag != nil || !(viewModel.share.genreTags ?? []).isEmpty {
                 tagsRow
                     .padding(.top, 4)
             }
@@ -99,10 +124,10 @@ struct ShareDetailView: View {
 
     private var tagsRow: some View {
         HStack(spacing: 6) {
-            if let mood = share.moodTag {
+            if let mood = viewModel.share.moodTag {
                 tagPill(label: "\(mood.emoji) \(mood.displayName)", tint: Color.xomifyPurple)
             }
-            ForEach(share.genreTags ?? [], id: \.self) { genre in
+            ForEach(viewModel.share.genreTags ?? [], id: \.self) { genre in
                 tagPill(label: genre, tint: Color.xomifyGreen)
             }
         }
@@ -123,7 +148,7 @@ struct ShareDetailView: View {
 
     private var sharerBlock: some View {
         HStack(spacing: 12) {
-            avatarView
+            avatarView(url: sharerIdentity.avatarURL, initial: sharerIdentity.displayName.prefix(1))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Shared by \(sharerIdentity.displayName)")
@@ -131,14 +156,14 @@ struct ShareDetailView: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                Text(share.relativeTime)
+                Text(viewModel.share.relativeTime)
                     .font(.caption2)
                     .foregroundStyle(.gray)
             }
 
             Spacer(minLength: 8)
 
-            if let rating = share.sharerRating {
+            if let rating = viewModel.share.sharerRating {
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
                         .font(.caption)
@@ -160,57 +185,27 @@ struct ShareDetailView: View {
         .clipShape(.rect(cornerRadius: 12))
     }
 
-    @ViewBuilder
-    private var avatarView: some View {
-        if let url = sharerIdentity.avatarURL {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    avatarFallback
-                }
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
-        } else {
-            avatarFallback
-        }
-    }
-
-    private var avatarFallback: some View {
-        ZStack {
-            Circle()
-                .fill(LinearGradient.xomifyGradient)
-                .frame(width: 40, height: 40)
-            Text(String(sharerIdentity.displayName.prefix(1)).uppercased())
-                .font(.subheadline)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-        }
-    }
-
     // MARK: - Stats
 
     private var statsRow: some View {
         HStack(spacing: 10) {
             statCard(
-                value: "\(share.queuedCount)",
-                label: share.queuedCount == 1 ? "friend queued" : "friends queued",
+                value: "\(viewModel.share.queuedCount)",
+                label: viewModel.share.queuedCount == 1 ? "friend queued" : "friends queued",
                 icon: "text.badge.plus"
             )
             statCard(
-                value: "\(share.ratedCount)",
-                label: share.ratedCount == 1 ? "friend rated" : "friends rated",
+                value: "\(viewModel.share.ratedCount)",
+                label: viewModel.share.ratedCount == 1 ? "friend rated" : "friends rated",
                 icon: "star"
             )
-            if let mine = share.viewerRating {
+            if let mine = viewModel.myRating {
                 statCard(
                     value: "\(mine)/5",
                     label: "your rating",
                     icon: "star.fill"
                 )
-            } else if share.viewerHasQueued {
+            } else if viewModel.share.viewerHasQueued {
                 statCard(
                     value: "✓",
                     label: "in your queue",
@@ -247,8 +242,30 @@ struct ShareDetailView: View {
     private var actionRow: some View {
         HStack(spacing: 12) {
             TrackActionsMenu(track: makeTrackForActions(), style: .pill)
+            rateButton
             Spacer()
         }
+    }
+
+    private var rateButton: some View {
+        Button {
+            showRateSheet = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: viewModel.myRating != nil ? "star.fill" : "star")
+                Text(viewModel.myRating.map { "\($0)/5" } ?? "Rate")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(viewModel.myRating != nil ? Color.xomifyGreen : .white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(minHeight: 44)
+            .background(Color.white.opacity(0.08))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(viewModel.myRating.map { "You rated this \($0) out of 5. Tap to change." } ?? "Rate this track")
     }
 
     /// Synthesize a minimal `SpotifyTrack` from the Share so the shared
@@ -256,12 +273,12 @@ struct ShareDetailView: View {
     /// share-to-feed without a round-trip to `/v1/tracks`.
     private func makeTrackForActions() -> SpotifyTrack {
         let images: [SpotifyImage] = {
-            guard let url = share.albumArtUrl, !url.isEmpty else { return [] }
+            guard let url = viewModel.share.albumArtUrl, !url.isEmpty else { return [] }
             return [SpotifyImage(url: url, height: nil, width: nil)]
         }()
         let album = SpotifyAlbum(
             id: "",
-            name: share.albumName ?? "",
+            name: viewModel.share.albumName ?? "",
             uri: nil,
             albumType: nil,
             totalTracks: nil,
@@ -273,7 +290,7 @@ struct ShareDetailView: View {
         )
         let artist = SpotifyArtist(
             id: nil,
-            name: share.artistName,
+            name: viewModel.share.artistName,
             uri: nil,
             genres: nil,
             popularity: nil,
@@ -282,9 +299,9 @@ struct ShareDetailView: View {
             externalUrls: nil
         )
         return SpotifyTrack(
-            id: share.trackId,
-            name: share.trackName,
-            uri: share.trackUri,
+            id: viewModel.share.trackId,
+            name: viewModel.share.trackName,
+            uri: viewModel.share.trackUri,
             durationMs: 0,
             explicit: nil,
             popularity: nil,
@@ -312,5 +329,246 @@ struct ShareDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.xomifyCard)
         .clipShape(.rect(cornerRadius: 12))
+    }
+
+    // MARK: - Friend ratings
+
+    @ViewBuilder
+    private var friendRatingsSection: some View {
+        if !viewModel.sortedFriendRatings.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionHeader(
+                    title: "What friends think",
+                    icon: "star.bubble",
+                    count: viewModel.sortedFriendRatings.count
+                )
+                VStack(spacing: 8) {
+                    ForEach(viewModel.sortedFriendRatings) { rating in
+                        friendRatingRow(rating)
+                    }
+                }
+            }
+        } else if viewModel.isLoading {
+            sectionPlaceholder(message: "Loading friend ratings…")
+        }
+    }
+
+    private func friendRatingRow(_ rating: ShareFriendRating) -> some View {
+        HStack(spacing: 12) {
+            avatarView(url: rating.avatarURL, initial: rating.resolvedName.prefix(1))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(rating.resolvedName)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                if let review = rating.review, !review.isEmpty {
+                    Text(review)
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                        .lineLimit(2)
+                }
+            }
+            Spacer(minLength: 8)
+            starBadge(rating.displayStars)
+        }
+        .padding(10)
+        .background(Color.xomifyCard)
+        .clipShape(.rect(cornerRadius: 10))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(rating.resolvedName) rated this \(rating.displayStars) out of 5")
+    }
+
+    private func starBadge(_ stars: Int) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "star.fill")
+                .font(.caption2)
+                .foregroundStyle(Color.xomifyGreen)
+            Text("\(stars)/5")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.white.opacity(0.08))
+        .clipShape(Capsule())
+    }
+
+    // MARK: - Listeners
+
+    @ViewBuilder
+    private var listenersSection: some View {
+        if !viewModel.listeners.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionHeader(
+                    title: "Listeners",
+                    icon: "headphones",
+                    count: viewModel.listeners.count
+                )
+                VStack(spacing: 6) {
+                    ForEach(viewModel.listeners) { listener in
+                        listenerRow(listener)
+                    }
+                }
+            }
+        } else if viewModel.isLoading {
+            sectionPlaceholder(message: "Loading listeners…")
+        }
+    }
+
+    private func listenerRow(_ entry: ShareInteractionEntry) -> some View {
+        HStack(spacing: 12) {
+            avatarView(url: entry.avatarURL, initial: entry.resolvedName.prefix(1))
+                .accessibilityHidden(true)
+            Text(entry.resolvedName)
+                .font(.subheadline)
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Image(systemName: "text.badge.plus")
+                .font(.caption2)
+                .foregroundStyle(Color.xomifyGreen)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.xomifyCard)
+        .clipShape(.rect(cornerRadius: 10))
+    }
+
+    // MARK: - Shared helpers
+
+    private func sectionHeader(title: String, icon: String, count: Int) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(Color.xomifyGreen)
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+            Text("\(count)")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.gray)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+        }
+    }
+
+    private func sectionPlaceholder(message: String) -> some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+                .tint(Color.xomifyGreen)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.gray)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.xomifyCard.opacity(0.5))
+        .clipShape(.rect(cornerRadius: 10))
+    }
+
+    private func inlineErrorBanner(_ message: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(Color.orange.opacity(0.1))
+        .clipShape(.rect(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private func avatarView(url: URL?, initial: Substring) -> some View {
+        if let url {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                default:
+                    avatarFallback(initial: initial)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+        } else {
+            avatarFallback(initial: initial)
+        }
+    }
+
+    private func avatarFallback(initial: Substring) -> some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient.xomifyGradient)
+                .frame(width: 36, height: 36)
+            Text(String(initial).uppercased())
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
+        }
+    }
+}
+
+// MARK: - Rate sheet (detail)
+
+/// Mirrors `ShareCardView`'s `RateSheet` but binds to `ShareDetailViewModel`
+/// instead of `ShareCardViewModel`. Shared UI would be ideal but the two VMs
+/// have different surfaces; inlining keeps the dependency graph flat.
+private struct DetailRateSheet: View {
+    @Bindable var viewModel: ShareDetailViewModel
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 4) {
+                Text("Rate this track")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Text(viewModel.share.trackName)
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+                    .lineLimit(1)
+            }
+            .padding(.top, 24)
+
+            HStack(spacing: 12) {
+                ForEach(1...5, id: \.self) { stars in
+                    Button {
+                        Task {
+                            await viewModel.rate(stars)
+                            isPresented = false
+                        }
+                    } label: {
+                        Image(systemName: (viewModel.myRating ?? 0) >= stars ? "star.fill" : "star")
+                            .font(.system(size: 36))
+                            .foregroundStyle(Color.xomifyGreen)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(stars) star\(stars == 1 ? "" : "s")")
+                }
+            }
+
+            if let error = viewModel.rateError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.xomifyDark)
     }
 }
