@@ -8,10 +8,16 @@ struct PlaylistAnalysisView: View {
     var body: some View {
         ZStack {
             Color.xomifyDark.ignoresSafeArea()
-            content
+            VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Playlist Analysis",
+                    subtitle: viewModel.selectedPlaylist.map { "ANALYZING · \($0.name.uppercased())" } ?? "DEEP DIVE ON ANY PLAYLIST",
+                    systemImage: "chart.bar.xaxis"
+                )
+                content
+            }
         }
-        .navigationTitle("Playlist Analysis")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             if viewModel.playlists.isEmpty {
                 await viewModel.loadPlaylists()

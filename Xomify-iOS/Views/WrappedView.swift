@@ -34,6 +34,27 @@ struct WrappedContent: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                BrandGradientHeader(
+                    "Wrapped",
+                    subtitle: currentWrap.map { "MONTHLY RECAP · \($0.displayName.uppercased())" } ?? "YOUR MONTHLY RECAP",
+                    systemImage: "gift.fill"
+                ) {
+                    if let wrap = currentWrap, let shareURL = URL(string: "https://xomify.xomware.com/wrapped") {
+                        ShareLink(
+                            item: shareURL,
+                            subject: Text("My \(wrap.displayName) Wrap"),
+                            message: Text("My top tracks from \(wrap.displayName)")
+                        ) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.title3)
+                                .foregroundStyle(.white)
+                        }
+                        .simultaneousGesture(TapGesture().onEnded {
+                            Task { await publishWrappedShare() }
+                        })
+                    }
+                }
+
                 // Month selector header
                 if !wraps.isEmpty {
                     monthHeader
@@ -82,24 +103,7 @@ struct WrappedContent: View {
             }
         }
         .background(Color.xomifyDark.ignoresSafeArea())
-        .navigationTitle("Wrapped")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if let wrap = currentWrap, let shareURL = URL(string: "https://xomify.xomware.com/wrapped") {
-                    ShareLink(
-                        item: shareURL,
-                        subject: Text("My \(wrap.displayName) Wrap"),
-                        message: Text("My top tracks from \(wrap.displayName)")
-                    ) {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                    .simultaneousGesture(TapGesture().onEnded {
-                        Task { await publishWrappedShare() }
-                    })
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await loadData()
         }

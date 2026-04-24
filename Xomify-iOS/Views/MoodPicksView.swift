@@ -10,13 +10,18 @@ struct MoodPicksView: View {
         ZStack {
             Color.xomifyDark.ignoresSafeArea()
             VStack(spacing: 12) {
+                BrandGradientHeader(
+                    "Mood Picks",
+                    subtitle: viewModel.selectedMood.map { "VIBE · \($0.rawValue.uppercased())" } ?? "PICK A VIBE, WE'LL BUILD THE LIST",
+                    systemImage: "sparkles"
+                )
+
                 moodChips
                 createPlaylistCTA
                 content
             }
         }
-        .navigationTitle("Mood Picks")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .tint(Color.xomifyGreen)
     }
 

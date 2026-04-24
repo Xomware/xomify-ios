@@ -12,14 +12,50 @@ struct ReleaseRadarView: View {
         NavigationStack {
             ZStack {
                 VStack(spacing: 0) {
+                    BrandGradientHeader(
+                        "Release Radar",
+                        subtitle: "NEW DROPS · \(viewModel.displayWeekName.uppercased())",
+                        systemImage: "antenna.radiowaves.left.and.right"
+                    ) {
+                        HStack(spacing: 12) {
+                            Button {
+                                Task { await viewModel.refresh() }
+                            } label: {
+                                if viewModel.isRefreshing {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.title3)
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .disabled(viewModel.isRefreshing || isLoadingUser)
+
+                            if viewModel.selectedWeek != nil || !viewModel.historyWeeks.isEmpty {
+                                ShareLink(
+                                    item: URL(string: "https://xomify.xomware.com/release-radar")!,
+                                    subject: Text("My Release Radar"),
+                                    message: Text(shareCaption)
+                                ) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.title3)
+                                        .foregroundStyle(.white)
+                                }
+                                .simultaneousGesture(TapGesture().onEnded {
+                                    Task { await publishReleaseRadarShare() }
+                                })
+                            }
+                        }
+                    }
+
                     // Week selector header
                     weekHeader
-                    
+
                     // Stats bar
                     if let stats = viewModel.displayStats {
                         statsBar(stats)
                     }
-                    
+
                     // Content
                     ScrollView {
                         if isLoadingUser || viewModel.isLoading {
@@ -45,7 +81,7 @@ struct ReleaseRadarView: View {
                         }
                     }
                 }
-                
+
                 // Floating playlist builder button
                 VStack {
                     Spacer()
@@ -58,36 +94,7 @@ struct ReleaseRadarView: View {
                 }
             }
             .background(Color.xomifyDark.ignoresSafeArea())
-            .navigationTitle("Release Radar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await viewModel.refresh() }
-                    } label: {
-                        if viewModel.isRefreshing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                    }
-                    .disabled(viewModel.isRefreshing || isLoadingUser)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if viewModel.selectedWeek != nil || !viewModel.historyWeeks.isEmpty {
-                        ShareLink(
-                            item: URL(string: "https://xomify.xomware.com/release-radar")!,
-                            subject: Text("My Release Radar"),
-                            message: Text(shareCaption)
-                        ) {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .simultaneousGesture(TapGesture().onEnded {
-                            Task { await publishReleaseRadarShare() }
-                        })
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .task {
                 await loadUserAndData()
             }
