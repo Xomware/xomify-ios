@@ -45,6 +45,9 @@ struct MainShell: View {
                 email: userEmail
             )
             .environment(navStore)
+
+            // App-root toast for Queue actions. Floats above everything.
+            QueueToastHost()
         }
         .environment(navStore)
         .ignoresSafeArea(edges: .bottom)

@@ -336,10 +336,15 @@ struct ArtistView: View {
             }
             
             Spacer()
-            
+
+            QueueButton(
+                uri: track.uri ?? "spotify:track:\(track.id)",
+                trackName: track.name
+            )
+
             // Add to playlist builder
             AddToPlaylistButton(track: track)
-            
+
             // Play button
             Button {
                 playTrack(track)

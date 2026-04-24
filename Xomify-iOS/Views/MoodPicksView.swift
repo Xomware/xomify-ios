@@ -134,6 +134,11 @@ struct MoodPicksView: View {
 
             Spacer()
 
+            QueueButton(
+                uri: track.uri ?? "spotify:track:\(track.id)",
+                trackName: track.name
+            )
+
             if let urlString = track.externalUrls?["spotify"], let url = URL(string: urlString) {
                 Link(destination: url) {
                     Image(systemName: "play.circle.fill")

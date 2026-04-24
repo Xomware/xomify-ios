@@ -347,6 +347,12 @@ struct TopItemsContent: View {
 
             Spacer()
 
+            // Add to Spotify queue
+            QueueButton(
+                uri: track.uri ?? "spotify:track:\(track.id)",
+                trackName: track.name
+            )
+
             // Add to playlist builder
             AddToPlaylistButton(track: track)
 

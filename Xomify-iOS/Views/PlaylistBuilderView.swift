@@ -204,11 +204,16 @@ struct PlaylistBuilderView: View {
             }
             
             Spacer()
-            
+
             // Duration
             Text(track.duration)
                 .font(.caption)
                 .foregroundColor(.gray)
+
+            QueueButton(
+                uri: track.uri ?? "spotify:track:\(track.id)",
+                trackName: track.name
+            )
         }
     }
     
