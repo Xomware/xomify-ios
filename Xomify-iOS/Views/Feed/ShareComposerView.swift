@@ -22,7 +22,7 @@ struct ShareComposerView: View {
                         captionSection
                         moodSection
                         genreSection
-                        audienceSection
+                        targetsSection
                     }
 
                     if let error = viewModel.submitError {
@@ -282,48 +282,128 @@ struct ShareComposerView: View {
         .disabled(isAtCap)
     }
 
-    private var audienceSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private var targetsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Audience")
+                Text("Post to")
                     .font(.caption)
                     .foregroundStyle(.gray)
                 Spacer()
-                // Cosmetic disclosure — backend doesn't scope by audience at
-                // write time yet (see plan Open Questions).
-                Image(systemName: "info.circle")
+                Text(viewModel.targetSummary)
                     .font(.caption2)
-                    .foregroundStyle(.gray)
-                    .accessibilityLabel("Audience currently shown to anyone with access.")
+                    .foregroundStyle(viewModel.targetState == .ok ? .gray : Color.orange)
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    audienceChip(.all)
-                    audienceChip(.friendsOnly)
+            publicToggleRow
+
+            if viewModel.availableGroups.isEmpty {
+                emptyGroupsRow
+            } else {
+                VStack(spacing: 6) {
                     ForEach(viewModel.availableGroups) { group in
-                        audienceChip(.group(group))
+                        groupToggleRow(group)
                     }
                 }
+            }
+
+            if let hint = viewModel.targetState.hint {
+                Text(hint)
+                    .font(.caption2)
+                    .foregroundStyle(Color.orange)
             }
         }
     }
 
-    private func audienceChip(_ audience: ComposerAudience) -> some View {
-        let isSelected = viewModel.selectedAudience == audience
-        return Button {
-            viewModel.selectedAudience = audience
+    private var publicToggleRow: some View {
+        Button {
+            viewModel.shareToPublic.toggle()
         } label: {
-            Text(audience.label)
-                .font(.subheadline)
-                .foregroundStyle(isSelected ? Color.black : .white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .frame(minHeight: 44)
-                .background(isSelected ? Color.xomifyGreen : Color.xomifyCard)
-                .clipShape(Capsule())
+            HStack(spacing: 12) {
+                checkbox(isOn: viewModel.shareToPublic)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Friends feed")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                    Text("Anyone who follows you")
+                        .font(.caption2)
+                        .foregroundStyle(.gray)
+                }
+                Spacer()
+                Image(systemName: "globe")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+            }
+            .padding(12)
+            .frame(minHeight: 44)
+            .background(Color.xomifyCard)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(viewModel.shareToPublic ? .isSelected : [])
+        .accessibilityLabel(viewModel.shareToPublic ? "Friends feed selected" : "Friends feed")
+    }
+
+    private func groupToggleRow(_ group: XomifyGroup) -> some View {
+        let isSelected = viewModel.selectedGroupIds.contains(group.groupId)
+        return Button {
+            viewModel.toggleGroup(group.groupId)
+        } label: {
+            HStack(spacing: 12) {
+                checkbox(isOn: isSelected)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(group.displayName)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    if let memberCount = group.memberCount {
+                        Text("\(memberCount) member\(memberCount == 1 ? "" : "s")")
+                            .font(.caption2)
+                            .foregroundStyle(.gray)
+                    }
+                }
+                Spacer()
+                Image(systemName: "person.3.fill")
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+            }
+            .padding(12)
+            .frame(minHeight: 44)
+            .background(Color.xomifyCard)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var emptyGroupsRow: some View {
+        Text("Join a group to post to it here.")
+            .font(.caption)
+            .foregroundStyle(.gray)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.xomifyCard.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func checkbox(isOn: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(isOn ? Color.xomifyGreen : Color.clear)
+                .frame(width: 22, height: 22)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(isOn ? Color.xomifyGreen : Color.white.opacity(0.3), lineWidth: 1.5)
+                )
+            if isOn {
+                Image(systemName: "checkmark")
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.black)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     // MARK: - Submit

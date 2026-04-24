@@ -188,6 +188,11 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
     let viewerRating: Int?
     let sharerRating: Int?
 
+    // Target audience (xomify-backend#138). Legacy rows omit both fields and
+    // are treated as public shares with no group targets.
+    let groupIds: [String]
+    let isPublic: Bool
+
     var id: String { shareId }
 
     /// Parse sharedAt ("2025-04-17 14:30:00" UTC) into a Date. Falls back to ISO8601.
@@ -250,6 +255,8 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         viewerHasQueued = try c.decodeIfPresent(Bool.self, forKey: .viewerHasQueued) ?? false
         viewerRating    = try c.decodeIfPresent(Int.self, forKey: .viewerRating)
         sharerRating    = try c.decodeIfPresent(Int.self, forKey: .sharerRating)
+        groupIds        = try c.decodeIfPresent([String].self, forKey: .groupIds) ?? []
+        isPublic        = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? true
     }
 
     private enum FallbackAuthorKey: String, CodingKey {
@@ -274,7 +281,9 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         ratedCount: Int = 0,
         viewerHasQueued: Bool = false,
         viewerRating: Int? = nil,
-        sharerRating: Int? = nil
+        sharerRating: Int? = nil,
+        groupIds: [String] = [],
+        isPublic: Bool = true
     ) {
         self.shareId = shareId
         self.sharedBy = sharedBy
@@ -293,6 +302,8 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         self.viewerHasQueued = viewerHasQueued
         self.viewerRating = viewerRating
         self.sharerRating = sharerRating
+        self.groupIds = groupIds
+        self.isPublic = isPublic
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -300,6 +311,8 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         case trackId, trackUri, trackName, artistName, albumName, albumArtUrl
         case caption, moodTag, genreTags
         case queuedCount, ratedCount, viewerHasQueued, viewerRating, sharerRating
+        case groupIds
+        case isPublic = "public"
     }
 }
 

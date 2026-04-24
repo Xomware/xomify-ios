@@ -20,7 +20,9 @@ protocol XomifyServiceProtocol: Sendable {
         albumArtUrl: String?,
         caption: String?,
         moodTag: MoodTag?,
-        genreTags: [String]?
+        genreTags: [String]?,
+        groupIds: [String]?,
+        isPublic: Bool?
     ) async throws -> ShareCreateResponse
 
     func getFeed(

@@ -1,29 +1,23 @@
 import Foundation
 
-// MARK: - Composer Audience
+// MARK: - Composer Targets
+//
+// Multi-target routing (xomify-backend#138). A share can hit the public
+// friends feed, one-or-more groups, or both. Backend rejects
+// `public=false` with no groups.
 
-/// Audience selection shown in the composer. Backend `shares_create` currently
-/// accepts no audience scoping at write time; we ship the picker anyway so the
-/// UI is ready when the backend splits by audience.
-enum ComposerAudience: Hashable, Sendable {
-    case all
-    case friendsOnly
-    case group(XomifyGroup)
+/// Validation state for the composer's target selection. Kept as a small
+/// enum so the submit button can disable + show an inline hint without the
+/// view duplicating the check.
+enum ComposerTargetState: Equatable {
+    case ok
+    case noTargets  // public off AND no groups → backend would 400
 
-    var label: String {
+    var hint: String? {
         switch self {
-        case .all:               return "Everyone"
-        case .friendsOnly:       return "Friends only"
-        case .group(let group):  return group.displayName
+        case .ok:         return nil
+        case .noTargets:  return "Pick at least one target."
         }
-    }
-
-    /// For future wire-parity. Currently unused (the backend ignores audience
-    /// on write and enforces it at read time via the friend-graph + group
-    /// filter in `shares_feed`).
-    var groupId: String? {
-        if case .group(let g) = self { return g.groupId }
-        return nil
     }
 }
 
@@ -64,7 +58,11 @@ final class ShareComposerViewModel {
     var caption: String = ""
     var selectedMood: MoodTag?
     var selectedGenres: [String] = []
-    var selectedAudience: ComposerAudience = .all
+    /// Whether to publish to the public friends feed. Defaults to true —
+    /// matches the legacy single-target behavior.
+    var shareToPublic: Bool = true
+    /// Group ids the user has picked as additional (or exclusive) targets.
+    var selectedGroupIds: Set<String> = []
     var availableGroups: [XomifyGroup] = []
 
     // MARK: - Submit state
@@ -126,11 +124,30 @@ final class ShareComposerViewModel {
         selectedGenres.count <= Self.maxGenreTags
     }
 
+    /// Backend rejects `public=false` with no groupIds — catch it client-side
+    /// so the Post button can stay disabled instead of firing a 400.
+    var targetState: ComposerTargetState {
+        if !shareToPublic && selectedGroupIds.isEmpty { return .noTargets }
+        return .ok
+    }
+
     var canSubmit: Bool {
         selectedTrack != nil
             && isCaptionValid
             && isGenreCountValid
+            && targetState == .ok
             && !isSubmitting
+    }
+
+    /// User-visible summary of the target selection — drives the small
+    /// subtitle under the Targets section header.
+    var targetSummary: String {
+        switch (shareToPublic, selectedGroupIds.count) {
+        case (true, 0):      return "Friends feed"
+        case (true, let n):  return "Friends feed + \(n) group\(n == 1 ? "" : "s")"
+        case (false, 0):     return "No targets"
+        case (false, let n): return "\(n) group\(n == 1 ? "" : "s")"
+        }
     }
 
     // MARK: - Search
@@ -187,6 +204,15 @@ final class ShareComposerViewModel {
         selectedTrack = nil
     }
 
+    /// Toggle membership of a group in the target set.
+    func toggleGroup(_ groupId: String) {
+        if selectedGroupIds.contains(groupId) {
+            selectedGroupIds.remove(groupId)
+        } else {
+            selectedGroupIds.insert(groupId)
+        }
+    }
+
     /// Toggle a genre tag. Refuses to add a 4th tag.
     func toggleGenre(_ tag: String) {
         let normalized = tag.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -223,6 +249,8 @@ final class ShareComposerViewModel {
         let trimmedCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         let capturedCaption: String? = trimmedCaption.isEmpty ? nil : trimmedCaption
         let capturedGenres: [String]? = selectedGenres.isEmpty ? nil : selectedGenres
+        let capturedGroupIds: [String] = Array(selectedGroupIds)
+        let capturedIsPublic: Bool = shareToPublic
 
         do {
             let response = try await xomifyService.createShare(
@@ -235,7 +263,9 @@ final class ShareComposerViewModel {
                 albumArtUrl: track.album?.imageUrl?.absoluteString,
                 caption: capturedCaption,
                 moodTag: selectedMood,
-                genreTags: capturedGenres
+                genreTags: capturedGenres,
+                groupIds: capturedGroupIds.isEmpty ? nil : capturedGroupIds,
+                isPublic: capturedIsPublic
             )
 
             // Value-moment trigger for the APNs permission prompt — fire-and-forget.
@@ -266,7 +296,9 @@ final class ShareComposerViewModel {
                 ratedCount: 0,
                 viewerHasQueued: false,
                 viewerRating: nil,
-                sharerRating: nil
+                sharerRating: nil,
+                groupIds: capturedGroupIds,
+                isPublic: capturedIsPublic
             )
         } catch {
             submitError = error.localizedDescription

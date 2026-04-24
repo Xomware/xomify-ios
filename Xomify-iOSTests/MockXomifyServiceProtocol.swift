@@ -62,7 +62,8 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     func createShare(
         email: String, trackId: String, trackUri: String, trackName: String,
         artistName: String, albumName: String?, albumArtUrl: String?,
-        caption: String?, moodTag: MoodTag?, genreTags: [String]?
+        caption: String?, moodTag: MoodTag?, genreTags: [String]?,
+        groupIds: [String]?, isPublic: Bool?
     ) async throws -> ShareCreateResponse {
         throw NSError(domain: "mock", code: -1)
     }
