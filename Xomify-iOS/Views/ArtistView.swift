@@ -59,6 +59,9 @@ struct ArtistView: View {
         .background(Color.xomifyDark.ignoresSafeArea())
         .navigationTitle(artist?.name ?? "Artist")
         .navigationBarTitleDisplayMode(.inline)
+        // Pushed from tabs that hide the system nav bar (TopItems, Wrapped,
+        // ReleaseRadar). Re-assert visibility so the back button renders.
+        .toolbar(.visible, for: .navigationBar)
         .task {
             await loadArtist()
         }
