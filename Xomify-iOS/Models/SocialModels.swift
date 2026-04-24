@@ -541,16 +541,40 @@ struct SearchResult: Codable, Sendable, Identifiable, Hashable {
 // MARK: - Groups
 
 /// A group you belong to.
+///
+/// The backend's `/groups/list` endpoint used to return only membership
+/// rows (no `name`/`createdBy`), which crashed decoding. Backend now
+/// hydrates from the Groups table, but we keep most fields optional so a
+/// partial payload from any source degrades to a usable row rather than
+/// failing the whole list. `groupId` is always required — without it the
+/// row is meaningless.
 struct XomifyGroup: Codable, Sendable, Identifiable, Hashable {
     let groupId: String
-    let name: String
+    let name: String?
     let description: String?
     let ownerEmail: String?
+    let createdBy: String?
     let createdAt: String?
     let memberCount: Int?
     let trackCount: Int?
+    let imageUrl: String?
+    let role: String?
+    let joinedAt: String?
 
     var id: String { groupId }
+
+    /// Display-safe name — falls back to a short id suffix when the backend
+    /// returns a headless row so the UI never renders an empty label.
+    var displayName: String {
+        if let name, !name.isEmpty { return name }
+        let suffix = groupId.suffix(6)
+        return "Group \(suffix)"
+    }
+
+    /// Prefer `createdBy` (new hydrated shape) over `ownerEmail` (legacy).
+    var ownerLabel: String? {
+        createdBy ?? ownerEmail
+    }
 }
 
 /// Response for GET /groups/list

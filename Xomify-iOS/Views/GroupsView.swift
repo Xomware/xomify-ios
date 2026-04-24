@@ -124,7 +124,7 @@ struct GroupsView: View {
     }
 
     private func groupRow(_ group: XomifyGroup) -> some View {
-        let isOwner = group.ownerEmail == viewModel.userEmail
+        let isOwner = (group.ownerLabel ?? "") == viewModel.userEmail
         let memberCount = group.memberCount ?? 0
         let trackCount = group.trackCount ?? 0
 
@@ -139,7 +139,7 @@ struct GroupsView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(group.name)
+                    Text(group.displayName)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
@@ -194,7 +194,7 @@ struct GroupsView: View {
         memberCount: Int,
         trackCount: Int
     ) -> String {
-        var parts: [String] = [group.name]
+        var parts: [String] = [group.displayName]
         if isOwner { parts.append("owner") }
         parts.append("\(memberCount) member\(memberCount == 1 ? "" : "s")")
         parts.append("\(trackCount) track\(trackCount == 1 ? "" : "s")")

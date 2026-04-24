@@ -31,7 +31,7 @@ enum FeedFilter: Hashable, Sendable {
         switch self {
         case .all:              return "All"
         case .friends:          return "Friends only"
-        case .group(let group): return group.name
+        case .group(let group): return group.displayName
         }
     }
 }
