@@ -27,30 +27,40 @@ struct BrandGradientHeader<Trailing: View>: View {
         HStack(alignment: .center, spacing: 14) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.title.weight(.bold))
+                    .font(.title2.weight(.heavy))
                     .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(width: 48, height: 48)
+                    .background(
+                        .white.opacity(0.18),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    )
                     .accessibilityHidden(true)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.xomifyTitle2)
+                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .tracking(-0.8)
                     .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
 
                 if let subtitle {
-                    Text(subtitle)
-                        .font(.xomifyFootnote)
-                        .foregroundStyle(.white.opacity(0.85))
+                    Text(subtitle.uppercased())
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .tracking(1.6)
+                        .foregroundStyle(.white.opacity(0.92))
                 }
             }
 
             Spacer(minLength: 0)
             trailing()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
@@ -59,6 +69,12 @@ struct BrandGradientHeader<Trailing: View>: View {
                 endPoint: .bottomTrailing
             )
         )
+        .overlay(alignment: .bottom) {
+            // Hairline separator for definition against dark content below.
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
+        }
         .accessibilityElement(children: .combine)
     }
 }
