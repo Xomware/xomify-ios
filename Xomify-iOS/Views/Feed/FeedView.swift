@@ -6,6 +6,7 @@ struct FeedView: View {
     @Environment(NavigationStore.self) private var navStore
     @State private var viewModel = FeedViewModel()
     @State private var showingRefinement = false
+    @State private var selectedShare: Share?
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -113,24 +114,18 @@ struct FeedView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.filteredShares) { share in
-                    NavigationLink {
-                        ShareDetailView(
-                            share: share,
-                            viewerEmail: viewModel.userEmail,
-                            sharerIdentity: viewModel.identity(for: share.sharedBy)
-                        )
-                    } label: {
-                        ShareCardView(
-                            share: share,
-                            viewerEmail: viewModel.userEmail,
-                            sharerIdentity: viewModel.identity(for: share.sharedBy),
-                            onDelete: {
-                                Task { await viewModel.deleteShare(share) }
-                            }
-                        )
-                        .padding(.horizontal, 16)
-                    }
-                    .buttonStyle(.plain)
+                    ShareCardView(
+                        share: share,
+                        viewerEmail: viewModel.userEmail,
+                        sharerIdentity: viewModel.identity(for: share.sharedBy),
+                        onDelete: {
+                            Task { await viewModel.deleteShare(share) }
+                        },
+                        onOpenDetail: {
+                            selectedShare = share
+                        }
+                    )
+                    .padding(.horizontal, 16)
                     .onAppear {
                         if share.id == viewModel.shares.last?.id {
                             Task { await viewModel.loadMore() }
@@ -146,6 +141,13 @@ struct FeedView: View {
                 Color.clear.frame(height: 80) // bottom inset for FAB
             }
             .padding(.top, 8)
+        }
+        .navigationDestination(item: $selectedShare) { share in
+            ShareDetailView(
+                share: share,
+                viewerEmail: viewModel.userEmail,
+                sharerIdentity: viewModel.identity(for: share.sharedBy)
+            )
         }
     }
 
