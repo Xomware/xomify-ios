@@ -9,11 +9,15 @@ struct ProfileTabPicker: View {
     var body: some View {
         Picker("Profile tab", selection: $selection) {
             ForEach(ProfileTab.allCases, id: \.self) { tab in
-                Text(tab.title).tag(tab)
+                Text(tab.title)
+                    .tag(tab)
+                    .accessibilityLabel("\(tab.title) tab")
             }
         }
         .pickerStyle(.segmented)
         .padding(.horizontal)
         .padding(.bottom, 8)
+        .accessibilityLabel("Profile sections")
+        .accessibilityHint("Swipe to switch between Shares, Ratings, and Taste")
     }
 }

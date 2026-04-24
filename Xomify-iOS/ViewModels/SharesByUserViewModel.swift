@@ -24,8 +24,8 @@ final class SharesByUserViewModel {
     // MARK: - Dependencies
 
     private let xomifyService: XomifyServiceProtocol
-    private let callerEmail: String
-    private let targetEmail: String
+    let callerEmail: String
+    let targetEmail: String
 
     // MARK: - Init
 

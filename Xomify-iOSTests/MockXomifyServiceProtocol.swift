@@ -35,6 +35,28 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         return getSharesByUserResponses.removeFirst()
     }
 
+    // MARK: - getFriendProfile
+
+    struct GetFriendProfileCall: Equatable {
+        let email: String
+        let profileEmail: String
+    }
+
+    private(set) var getFriendProfileCalls: [GetFriendProfileCall] = []
+    var getFriendProfileResponse: FriendProfile = FriendProfile(
+        email: nil, displayName: nil, userId: nil, avatar: nil,
+        followersCount: nil, followingCount: nil, playlistCount: nil,
+        friendsCount: nil, shareCount: nil,
+        topSongs: nil, topArtists: nil, topGenres: nil, playlists: nil
+    )
+    var getFriendProfileError: Error?
+
+    func getFriendProfile(email: String, profileEmail: String) async throws -> FriendProfile {
+        getFriendProfileCalls.append(GetFriendProfileCall(email: email, profileEmail: profileEmail))
+        if let getFriendProfileError { throw getFriendProfileError }
+        return getFriendProfileResponse
+    }
+
     // MARK: - Unused surface — return empty success shapes so the protocol compiles.
 
     func createShare(
@@ -60,5 +82,31 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         rating: Int, review: String?
     ) async throws -> SuccessResponse {
         SuccessResponse(success: true)
+    }
+}
+
+// MARK: - SpotifyCurrentUserProviding mock
+
+/// Mock for `SpotifyCurrentUserProviding` — returns a canned `SpotifyUser`
+/// unless `error` is set. Records call count so tests can assert the caller
+/// email is resolved exactly once.
+final class MockSpotifyCurrentUserProviding: SpotifyCurrentUserProviding, @unchecked Sendable {
+    private(set) var callCount: Int = 0
+    var response: SpotifyUser = SpotifyUser(
+        id: "mock-id",
+        displayName: "Mock User",
+        email: "me@example.com",
+        images: nil,
+        followers: nil,
+        country: nil,
+        product: nil,
+        externalUrls: nil
+    )
+    var error: Error?
+
+    func getCurrentUser() async throws -> SpotifyUser {
+        callCount += 1
+        if let error { throw error }
+        return response
     }
 }

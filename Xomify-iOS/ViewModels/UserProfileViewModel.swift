@@ -56,8 +56,8 @@ final class UserProfileViewModel {
 
     // MARK: - Dependencies
 
-    private let xomifyService: XomifyService
-    private let spotifyService: SpotifyService
+    private let xomifyService: XomifyServiceProtocol
+    private let spotifyService: SpotifyCurrentUserProviding
 
     /// Signed-in user's email, resolved once on load. Required as the caller
     /// email for `/shares/user` requests.
@@ -93,8 +93,8 @@ final class UserProfileViewModel {
 
     init(
         context: ProfileContext,
-        xomifyService: XomifyService = .shared,
-        spotifyService: SpotifyService = .shared
+        xomifyService: XomifyServiceProtocol = XomifyService.shared,
+        spotifyService: SpotifyCurrentUserProviding = SpotifyService.shared
     ) {
         self.context = context
         self.xomifyService = xomifyService
