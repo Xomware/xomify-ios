@@ -231,49 +231,100 @@ actor NetworkService {
     /// POST request to Xomify API
     func xomifyPost<T: Decodable>(_ endpoint: String, body: [String: Any]) async throws -> T {
         let config = await getXomifyConfig()
-        
+
         let url = URL(string: "\(config.baseUrl)\(endpoint)")!
-        
+
         print("🌐 XomifyAPI POST: \(url.absoluteString)")
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.token, forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
         return try await performXomifyRequest(request)
     }
+
+    /// PUT request to Xomify API. Used for endpoints the API Gateway only
+    /// binds to PUT (e.g. `/groups/update`) — sending POST there would 403
+    /// before the lambda ever sees the body.
+    func xomifyPut<T: Decodable>(_ endpoint: String, body: [String: Any]) async throws -> T {
+        let config = await getXomifyConfig()
+
+        let url = URL(string: "\(config.baseUrl)\(endpoint)")!
+
+        print("🌐 XomifyAPI PUT: \(url.absoluteString)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(config.token, forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        return try await performXomifyRequest(request)
+    }
+
+    /// DELETE request to Xomify API. Backend DELETE handlers read
+    /// `queryStringParameters`, not a JSON body — pass identifiers via
+    /// `queryParams`. Most DELETE endpoints return `204 No Content`, so
+    /// this helper accepts an empty body and synthesises a typed result
+    /// when the response carries no payload.
+    func xomifyDelete<T: Decodable>(_ endpoint: String, queryParams: [String: String] = [:]) async throws -> T {
+        let config = await getXomifyConfig()
+
+        var components = URLComponents(string: "\(config.baseUrl)\(endpoint)")!
+        if !queryParams.isEmpty {
+            components.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        guard let url = components.url else {
+            throw NetworkError.unknown(NSError(domain: "Invalid URL", code: 0))
+        }
+
+        print("🌐 XomifyAPI DELETE: \(url.absoluteString)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(config.token, forHTTPHeaderField: "Authorization")
+
+        return try await performXomifyRequest(request, allowEmpty: true)
+    }
     
-    /// Perform Xomify API request
-    private func performXomifyRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
+    /// Perform Xomify API request. `allowEmpty` covers 204-style endpoints
+    /// (group delete, remove-member, remove-song) where the server
+    /// legitimately returns no body — we synthesise `{}` so the generic
+    /// `T` decoder can still materialise a `SuccessResponse`-like struct
+    /// with all-optional fields.
+    private func performXomifyRequest<T: Decodable>(_ request: URLRequest, allowEmpty: Bool = false) async throws -> T {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            
+
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw NetworkError.unknown(NSError(domain: "Invalid response", code: 0))
             }
-            
+
             print("🌐 XomifyAPI Response: \(httpResponse.statusCode)")
-            
+
             guard (200...299).contains(httpResponse.statusCode) else {
                 let message = String(data: data, encoding: .utf8) ?? "Unknown error"
                 print("❌ XomifyAPI Error: \(message)")
                 throw NetworkError.serverError(statusCode: httpResponse.statusCode, message: message)
             }
-            
+
+            let payload: Data = (allowEmpty && data.isEmpty) ? Data("{}".utf8) : data
+
             do {
                 let decoder = JSONDecoder()
                 decoder.keyDecodingStrategy = .convertFromSnakeCase
-                return try decoder.decode(T.self, from: data)
+                return try decoder.decode(T.self, from: payload)
             } catch {
                 print("❌ NetworkService: Xomify decoding error - \(error)")
-                if let jsonString = String(data: data, encoding: .utf8) {
+                if let jsonString = String(data: payload, encoding: .utf8) {
                     print("Raw JSON: \(jsonString.prefix(500))")
                 }
                 throw NetworkError.decodingError(error)
             }
-            
+
         } catch let error as NetworkError {
             throw error
         } catch {
