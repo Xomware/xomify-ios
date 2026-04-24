@@ -9,6 +9,7 @@ struct GroupDetailView: View {
     @State private var viewModel = GroupDetailViewModel()
     @State private var selectedTab: Tab = .tracks
     @State private var showingAddMembers = false
+    @State private var showingEditGroup = false
     @State private var showLeaveConfirm = false
     @State private var showDeleteConfirm = false
 
@@ -68,6 +69,12 @@ struct GroupDetailView: View {
                 onDismiss: { showingAddMembers = false }
             )
         }
+        .sheet(isPresented: $showingEditGroup) {
+            EditGroupSheet(
+                viewModel: viewModel,
+                onDismiss: { showingEditGroup = false }
+            )
+        }
         .confirmationDialog(
             "Leave this group?",
             isPresented: $showLeaveConfirm,
@@ -114,6 +121,12 @@ struct GroupDetailView: View {
             .disabled(viewModel.isRefreshing)
 
             if isOwner {
+                Button {
+                    showingEditGroup = true
+                } label: {
+                    Label("Edit Group", systemImage: "pencil")
+                }
+
                 Button(role: .destructive) {
                     showDeleteConfirm = true
                 } label: {

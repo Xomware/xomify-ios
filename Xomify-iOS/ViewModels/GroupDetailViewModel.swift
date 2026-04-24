@@ -24,6 +24,9 @@ final class GroupDetailViewModel {
     var addSongUrl: String = ""
     var isAddingSong = false
 
+    /// Edit-group form state (owner-only).
+    var isSavingEdit = false
+
     /// Accepted-friends cache used by the add-member sheet picker.
     var friends: [Friend] = []
     var isLoadingFriends = false
@@ -164,6 +167,53 @@ final class GroupDetailViewModel {
         } catch {
             errorMessage = "Failed to remove member: \(error.localizedDescription)"
             print("❌ GroupDetail: removeMember failed - \(error)")
+        }
+    }
+
+    // MARK: - Edit (owner-only)
+
+    /// Owner-only edit of name + description. Optimistically patches `group`
+    /// on success so the header re-renders without waiting for refresh.
+    /// Returns `true` on success so the sheet can dismiss.
+    @discardableResult
+    func saveEdit(name: String, description: String) async -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDesc = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty, !groupId.isEmpty, !userEmail.isEmpty else {
+            errorMessage = "Name is required"
+            return false
+        }
+        guard !isSavingEdit else { return false }
+        isSavingEdit = true
+        defer { isSavingEdit = false }
+
+        do {
+            _ = try await xomify.updateGroup(
+                email: userEmail,
+                groupId: groupId,
+                name: trimmedName,
+                description: trimmedDesc
+            )
+            if let current = group {
+                group = XomifyGroup(
+                    groupId: current.groupId,
+                    name: trimmedName,
+                    description: trimmedDesc.isEmpty ? nil : trimmedDesc,
+                    ownerEmail: current.ownerEmail,
+                    createdBy: current.createdBy,
+                    createdAt: current.createdAt,
+                    memberCount: current.memberCount,
+                    trackCount: current.trackCount,
+                    imageUrl: current.imageUrl,
+                    role: current.role,
+                    joinedAt: current.joinedAt
+                )
+            }
+            return true
+        } catch {
+            errorMessage = "Failed to save: \(error.localizedDescription)"
+            print("❌ GroupDetail: saveEdit failed - \(error)")
+            return false
         }
     }
 
