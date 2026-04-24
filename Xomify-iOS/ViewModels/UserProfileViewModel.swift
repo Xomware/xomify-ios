@@ -83,12 +83,12 @@ final class UserProfileViewModel {
     private var _playlistsVM: ProfilePlaylistsViewModel?
 
     /// Tabs visible for this profile's context. `.playlists` surfaces the
-    /// signed-in user's Spotify playlists — we don't have a reliable fetch
-    /// path for other users yet, so hide the tab for `.other`.
+    /// signed-in user's Spotify playlists for `.me`, and the friend's public
+    /// playlists for `.other` once the `FriendProfile` payload has loaded.
     var visibleTabs: [ProfileTab] {
         switch context {
         case .me:    return [.shares, .ratings, .taste, .playlists]
-        case .other: return [.shares, .ratings, .taste]
+        case .other: return [.shares, .ratings, .taste, .playlists]
         }
     }
 
@@ -113,13 +113,51 @@ final class UserProfileViewModel {
         return vm
     }
 
-    /// Lazy accessor for the Playlists tab view model. Only meaningful for
-    /// `.me` — callers should gate on `visibleTabs` before asking.
+    /// Lazy accessor for the Playlists tab view model. In `.me` context
+    /// returns a fetch-backed VM; in `.other` context, seeds the VM from
+    /// `FriendProfile.playlists` and runs in read-only mode.
     func playlistsViewModel() -> ProfilePlaylistsViewModel {
         if let existing = _playlistsVM { return existing }
-        let vm = ProfilePlaylistsViewModel()
+        let vm: ProfilePlaylistsViewModel
+        switch context {
+        case .me:
+            vm = ProfilePlaylistsViewModel()
+        case .other:
+            let preloaded = friendProfile?.playlists.flatMap(parsePreloadedPlaylists) ?? []
+            vm = ProfilePlaylistsViewModel(preloaded: preloaded)
+        }
         _playlistsVM = vm
         return vm
+    }
+
+    /// Convert the slim `FriendProfile.playlists` JSON payload (shape:
+    /// `{ id, name, description, imageUrl, trackCount, uri, externalUrl }`)
+    /// into `SpotifyPlaylist` values the shared Playlists tab can render.
+    private func parsePreloadedPlaylists(_ values: [JSONValue]) -> [SpotifyPlaylist] {
+        values.compactMap { value -> SpotifyPlaylist? in
+            guard let obj = value.objectValue,
+                  let id = obj["id"]?.stringValue,
+                  let name = obj["name"]?.stringValue else { return nil }
+
+            let imageUrl = obj["imageUrl"]?.stringValue
+            let images: [SpotifyImage]? = imageUrl.map { [SpotifyImage(url: $0, height: nil, width: nil)] }
+            let trackCount = obj["trackCount"]?.intValue ?? 0
+            let external = obj["externalUrl"]?.stringValue
+            let externalUrls: [String: String]? = external.map { ["spotify": $0] }
+
+            return SpotifyPlaylist(
+                id: id,
+                name: name,
+                description: obj["description"]?.stringValue,
+                uri: obj["uri"]?.stringValue,
+                images: images,
+                owner: nil,
+                tracks: SpotifyPlaylist.PlaylistTracks(total: trackCount),
+                isPublic: true,
+                collaborative: nil,
+                externalUrls: externalUrls
+            )
+        }
     }
 
     // MARK: - Init
