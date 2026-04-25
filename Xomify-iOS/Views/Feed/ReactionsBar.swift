@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Shared reactions row used on both `ShareCardView` (feed) and
 /// `ShareDetailView`. Renders a pill for every reaction the post has at least
-/// one of (active when the viewer has reacted), then a smiley menu button at
-/// the end that lets the viewer pick from any of the supported emojis.
+/// one of (active when the viewer has reacted), then a smiley button at the
+/// end that opens an iMessage-style horizontal emoji picker popover.
 ///
 /// The owning view model decides what happens on toggle — this component is
 /// purely presentational + closure-driven.
@@ -13,6 +13,8 @@ struct ReactionsBar: View {
     let viewerReactions: [String]
     let inFlightSlugs: Set<String>
     let onToggle: (ShareReaction) -> Void
+
+    @State private var showPicker: Bool = false
 
     /// Order pills appear in. Reactions with count > 0 stick to the front in
     /// `ShareReaction.allCases` order so the row stays stable as counts shift.
@@ -25,7 +27,7 @@ struct ReactionsBar: View {
             ForEach(activeReactions) { reaction in
                 pill(reaction)
             }
-            addMenu
+            addButton
         }
     }
 
@@ -63,16 +65,9 @@ struct ReactionsBar: View {
         .accessibilityValue(active ? "On, \(count)" : "Off, \(count)")
     }
 
-    private var addMenu: some View {
-        Menu {
-            ForEach(ShareReaction.allCases) { reaction in
-                Button {
-                    onToggle(reaction)
-                } label: {
-                    Label(reaction.accessibilityLabel, systemImage: "")
-                    Text(reaction.emoji)
-                }
-            }
+    private var addButton: some View {
+        Button {
+            showPicker = true
         } label: {
             Image(systemName: "face.smiling")
                 .font(.system(size: 18, weight: .semibold))
@@ -81,6 +76,35 @@ struct ReactionsBar: View {
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())
         }
+        .buttonStyle(.plain)
         .accessibilityLabel("Add a reaction")
+        .popover(
+            isPresented: $showPicker,
+            attachmentAnchor: .point(.top),
+            arrowEdge: .bottom
+        ) {
+            emojiPickerRow
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    /// iMessage-style row: emoji-only buttons in a single horizontal capsule.
+    private var emojiPickerRow: some View {
+        HStack(spacing: 14) {
+            ForEach(ShareReaction.allCases) { reaction in
+                Button {
+                    showPicker = false
+                    onToggle(reaction)
+                } label: {
+                    Text(reaction.emoji)
+                        .font(.system(size: 28))
+                        .frame(width: 40, height: 40)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(reaction.accessibilityLabel)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 }

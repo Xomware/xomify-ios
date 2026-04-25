@@ -100,6 +100,14 @@ final class ShareDetailViewModel {
         interactions.filter { $0.action == "queued" }
     }
 
+    /// Average of all friend ratings (0–5). nil when no friend has rated yet
+    /// so callers can pick their own empty-state copy.
+    var averageFriendRating: Double? {
+        let values = friendRatings.map(\.rating)
+        guard !values.isEmpty else { return nil }
+        return values.reduce(0, +) / Double(values.count)
+    }
+
     /// Friend ratings sorted by rated-at desc when the timestamp is present —
     /// stable alphabetical fallback otherwise.
     var sortedFriendRatings: [ShareFriendRating] {
