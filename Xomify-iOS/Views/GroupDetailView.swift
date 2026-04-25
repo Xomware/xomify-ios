@@ -1,35 +1,28 @@
 import SwiftUI
 
-/// Detail view for a single group: Shares + Members tabs.
+/// Detail view for a single group: Stats + Members tabs.
 ///
-/// "Add song" routes through the standard composer pre-targeted at this
-/// group (no public, just this groupId). The legacy `/groups/add-song`
-/// flow has been retired from the UI; the shares stream below is sourced
-/// from `/shares/feed?groupId=…`.
+/// The Shares card list is gone — the Feed is the place for that. The "Add
+/// track" pill at the top of either tab pops the user back to the Feed
+/// destination so they can use the standard composer (and optionally include
+/// this group from the picker).
 struct GroupDetailView: View {
 
     let groupId: String
     let viewerEmail: String
 
     @State private var viewModel = GroupDetailViewModel()
-    @State private var selectedTab: Tab = .shares
+    @State private var selectedTab: Tab = .stats
     @State private var showingAddMembers = false
-    @State private var showingComposer = false
     @State private var showingEditGroup = false
     @State private var showLeaveConfirm = false
     @State private var showDeleteConfirm = false
 
-    /// Composer VM is owned at the screen level so we can prefill it with the
-    /// current group + reset it on dismiss.
-    @State private var composerVM: ShareComposerViewModel?
-
-    /// Drives the push to ShareDetailView when a card body is tapped.
-    @State private var selectedShare: Share?
-
     @Environment(\.dismiss) private var dismiss
+    @Environment(NavigationStore.self) private var navStore
 
     enum Tab: String, CaseIterable, Identifiable {
-        case shares = "Shares"
+        case stats = "Stats"
         case members = "Members"
         var id: String { rawValue }
     }
@@ -52,7 +45,7 @@ struct GroupDetailView: View {
                 .padding()
 
                 switch selectedTab {
-                case .shares:  sharesSection
+                case .stats:   statsSection
                 case .members: membersSection
                 }
             }
@@ -76,31 +69,11 @@ struct GroupDetailView: View {
                     .background(Color.red.opacity(0.15))
             }
         }
-        .navigationDestination(item: $selectedShare) { share in
-            ShareDetailView(
-                share: share,
-                viewerEmail: viewerEmail,
-                sharerIdentity: identity(for: share.sharedBy)
-            )
-        }
         .sheet(isPresented: $showingAddMembers) {
             AddMemberSheet(
                 viewModel: viewModel,
                 onDismiss: { showingAddMembers = false }
             )
-        }
-        .sheet(isPresented: $showingComposer, onDismiss: {
-            composerVM = nil
-        }) {
-            if let composerVM {
-                ShareComposerView(
-                    viewModel: composerVM,
-                    onSubmitted: { _ in
-                        showingComposer = false
-                        Task { await viewModel.loadShares() }
-                    }
-                )
-            }
         }
         .sheet(isPresented: $showingEditGroup) {
             EditGroupSheet(
@@ -186,70 +159,190 @@ struct GroupDetailView: View {
 
     private func tabTitle(_ tab: Tab) -> String {
         switch tab {
-        case .shares:  return "Shares (\(viewModel.shares.count))"
+        case .stats:   return "Stats"
         case .members: return "Members (\(viewModel.members.count))"
         }
     }
 
-    // MARK: - Shares
+    // MARK: - Stats
 
-    private var sharesSection: some View {
-        VStack(spacing: 0) {
-            addSongButton
-
-            if viewModel.isLoadingShares && viewModel.shares.isEmpty {
-                XomifyLoaderPulse()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.sharesError, viewModel.shares.isEmpty {
-                emptyTab(icon: "exclamationmark.triangle",
-                         title: "Couldn't load shares",
-                         message: error)
-            } else if viewModel.shares.isEmpty {
-                emptyTab(icon: "music.note", title: "No shares yet",
-                         message: "Tap Add song to post the first one to this group.")
-            } else {
-                sharesList
-            }
-        }
-    }
-
-    private var addSongButton: some View {
+    /// Compact "+ track" pill — kicks the user back to the Feed where they
+    /// can compose a share and optionally include this group from the picker.
+    /// Smaller than a full-width CTA on purpose; the Stats tab is the primary
+    /// content here.
+    private var addTrackPill: some View {
         Button {
-            presentComposer()
+            navStore.select(.feed)
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus.circle.fill")
-                Text("Add song")
+            HStack(spacing: 6) {
+                Image(systemName: "plus")
+                Text("Add track")
             }
-            .font(.subheadline)
+            .font(.caption)
             .fontWeight(.semibold)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(minHeight: 32)
             .background(LinearGradient.xomifyGradient)
             .foregroundStyle(.white)
-            .clipShape(.rect(cornerRadius: 22))
+            .clipShape(Capsule())
         }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-        .accessibilityLabel("Add song")
-        .accessibilityHint("Opens the share composer pre-targeted at this group")
+        .accessibilityLabel("Add a track")
+        .accessibilityHint("Switches to the Feed where you can share and target this group")
     }
 
-    private var sharesList: some View {
+    private var statsSection: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(viewModel.shares) { share in
-                    ShareCardView(
-                        share: share,
-                        viewerEmail: viewerEmail,
-                        sharerIdentity: identity(for: share.sharedBy),
-                        onDelete: nil,
-                        onOpenDetail: { selectedShare = share }
-                    )
+            VStack(spacing: 12) {
+                HStack {
+                    Spacer()
+                    addTrackPill
+                }
+                .padding(.horizontal)
+
+                if viewModel.isLoadingShares && viewModel.shares.isEmpty {
+                    XomifyLoaderPulse()
+                        .frame(maxWidth: .infinity, minHeight: 120)
+                } else if let error = viewModel.sharesError, viewModel.shares.isEmpty {
+                    emptyTab(icon: "exclamationmark.triangle",
+                             title: "Couldn't load stats",
+                             message: error)
+                } else if viewModel.shares.isEmpty {
+                    emptyTab(icon: "chart.bar",
+                             title: "No shares yet",
+                             message: "Once members start sharing, totals and breakdowns will appear here.")
+                } else {
+                    statsContent
+                }
+            }
+            .padding(.bottom, 16)
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
+
+    @ViewBuilder
+    private var statsContent: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                statTile(
+                    value: "\(viewModel.totalShareCount)",
+                    label: viewModel.totalShareCount == 1 ? "song shared" : "songs shared",
+                    icon: "music.note.list"
+                )
+                statTile(
+                    value: viewModel.averageSharerRating
+                        .map { String(format: "%.1f", $0) } ?? "—",
+                    label: "avg rating",
+                    icon: "star.fill"
+                )
+            }
+            .padding(.horizontal)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.3.fill")
+                        .font(.caption)
+                        .foregroundStyle(Color.xomifyGreen)
+                    Text("By member")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                    Spacer()
+                }
+                ForEach(viewModel.perUserStats) { stat in
+                    perUserRow(stat)
                 }
             }
             .padding(.horizontal)
-            .padding(.bottom, 16)
+        }
+    }
+
+    private func statTile(value: String, label: String, icon: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(Color.xomifyGreen)
+            Text(value)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 88)
+        .padding(10)
+        .background(Color.xomifyCard)
+        .clipShape(.rect(cornerRadius: 12))
+    }
+
+    private func perUserRow(_ stat: GroupDetailViewModel.GroupUserStat) -> some View {
+        HStack(spacing: 12) {
+            avatarCircle(url: stat.avatarURL, initial: stat.displayName.prefix(1))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stat.displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text("\(stat.shareCount) share\(stat.shareCount == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundStyle(.gray)
+            }
+            Spacer(minLength: 8)
+            if let avg = stat.averageRating {
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                        .foregroundStyle(Color.xomifyGreen)
+                    Text(String(format: "%.1f", avg))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+            }
+        }
+        .padding(10)
+        .background(Color.xomifyCard)
+        .clipShape(.rect(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private func avatarCircle(url: URL?, initial: Substring) -> some View {
+        if let url {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                default:
+                    avatarFallbackCircle(initial: initial)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+        } else {
+            avatarFallbackCircle(initial: initial)
+        }
+    }
+
+    private func avatarFallbackCircle(initial: Substring) -> some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient.xomifyGradient)
+                .frame(width: 36, height: 36)
+            Text(String(initial).uppercased())
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
         }
     }
 
@@ -305,24 +398,38 @@ struct GroupDetailView: View {
     }
 
     private func memberRow(_ member: GroupMember) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(LinearGradient.xomifyGradient)
-                    .frame(width: 40, height: 40)
-                Text(String(member.label.prefix(1)).uppercased())
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
+        let isSelf = member.email == viewerEmail
+        // Self-row uses the viewer's known display name + avatar — the
+        // backend's GroupMember payload doesn't currently carry profile
+        // info, so without this every self-row would show as the email.
+        let displayName: String = {
+            if isSelf, let mine = viewModel.viewerDisplayName, !mine.isEmpty {
+                return mine
             }
+            return member.label
+        }()
+        let avatarURL: URL? = isSelf ? viewModel.viewerAvatarURL : nil
+
+        return HStack(spacing: 12) {
+            avatarCircle(url: avatarURL, initial: displayName.prefix(1))
+                .frame(width: 40, height: 40)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(member.label)
+                    Text(displayName)
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundStyle(.white)
                         .lineLimit(1)
+                    if isSelf {
+                        Text("YOU")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Color.xomifyGreen.opacity(0.18))
+                            .foregroundStyle(Color.xomifyGreen)
+                            .clipShape(.rect(cornerRadius: 4))
+                    }
                     if member.isOwner == true {
                         Text("OWNER")
                             .font(.caption2)
@@ -342,7 +449,27 @@ struct GroupDetailView: View {
 
             Spacer()
 
-            if member.isOwner != true, isOwner {
+            // Self + non-owner → Leave. Owner sees a remove button on others.
+            if isSelf, member.isOwner != true {
+                Button(role: .destructive) {
+                    showLeaveConfirm = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                        Text("Leave")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .frame(minHeight: 32)
+                    .background(Color.red.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Leave this group")
+            } else if !isSelf, member.isOwner != true, isOwner {
                 Button(role: .destructive) {
                     Task { await viewModel.removeMember(member) }
                 } label: {
@@ -358,27 +485,6 @@ struct GroupDetailView: View {
         .padding(12)
         .background(Color.xomifyCard)
         .clipShape(.rect(cornerRadius: 10))
-    }
-
-    // MARK: - Composer plumbing
-
-    /// Spin up a composer VM pre-targeted at this group and present the sheet.
-    private func presentComposer() {
-        composerVM = ShareComposerViewModel(
-            prefilledGroupIds: [groupId],
-            defaultShareToPublic: false
-        )
-        showingComposer = true
-    }
-
-    /// Best-effort identity for a member email — falls back to the email.
-    /// Group detail doesn't have access to the friends-graph map FeedViewModel
-    /// builds, so we resolve from the loaded `members` list.
-    private func identity(for email: String) -> SharerIdentity {
-        if let member = viewModel.members.first(where: { $0.email == email }) {
-            return SharerIdentity(displayName: member.label, avatarURL: nil)
-        }
-        return SharerIdentity(displayName: email, avatarURL: nil)
     }
 
     // MARK: - Empty helper
@@ -403,4 +509,5 @@ struct GroupDetailView: View {
     NavigationStack {
         GroupDetailView(groupId: "demo", viewerEmail: "me@me.com")
     }
+    .environment(NavigationStore())
 }
