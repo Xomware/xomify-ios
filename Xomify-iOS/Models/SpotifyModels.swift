@@ -200,6 +200,34 @@ struct MultipleTracksResponse: Codable, Sendable {
     let tracks: [SpotifyTrack?]
 }
 
+/// `/me/tracks` response item — wraps a `SpotifyTrack` with the date the user
+/// hearted it. `addedAt` decodes from snake-case `added_at` thanks to the
+/// network layer's `convertFromSnakeCase` policy.
+struct SpotifySavedTrack: Codable, Sendable {
+    let addedAt: String?
+    let track: SpotifyTrack
+}
+
+struct SavedTracksResponse: Codable, Sendable {
+    let items: [SpotifySavedTrack]
+    let total: Int?
+    let limit: Int?
+    let offset: Int?
+}
+
+/// `/me/player/recently-played` response item — track + playback context +
+/// when it was played.
+struct SpotifyPlayHistory: Codable, Sendable {
+    let track: SpotifyTrack
+    let playedAt: String?
+}
+
+struct RecentlyPlayedResponse: Codable, Sendable {
+    let items: [SpotifyPlayHistory]
+    let next: String?
+    let limit: Int?
+}
+
 struct SearchResponse: Codable, Sendable {
     let tracks: SearchTracks?
     let artists: SearchArtists?

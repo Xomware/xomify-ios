@@ -63,6 +63,7 @@ final class AuthService: NSObject, Sendable {
             "user-follow-modify",
             "user-modify-playback-state",
             "user-read-playback-state",
+            "user-read-recently-played",
             "streaming"
         ].joined(separator: " ")
         

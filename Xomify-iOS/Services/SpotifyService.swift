@@ -184,8 +184,28 @@ actor SpotifyService {
         return response.items
     }
     
+    // MARK: - Library / Recently Played
+
+    /// User's saved (liked) tracks, newest-first. Requires the
+    /// `user-library-read` scope on the Spotify token.
+    func getSavedTracks(limit: Int = 25) async throws -> [SpotifySavedTrack] {
+        let response: SavedTracksResponse = try await network.spotifyGet(
+            "/me/tracks?limit=\(limit)"
+        )
+        return response.items
+    }
+
+    /// User's recently played tracks, newest-first. Requires the
+    /// `user-read-recently-played` scope.
+    func getRecentlyPlayed(limit: Int = 25) async throws -> [SpotifyPlayHistory] {
+        let response: RecentlyPlayedResponse = try await network.spotifyGet(
+            "/me/player/recently-played?limit=\(limit)"
+        )
+        return response.items
+    }
+
     // MARK: - Tracks
-    
+
     /// Get track details
     func getTrack(id: String) async throws -> SpotifyTrack {
         try await network.spotifyGet("/tracks/\(id)")

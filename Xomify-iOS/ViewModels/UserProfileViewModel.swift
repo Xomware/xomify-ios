@@ -6,6 +6,10 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
     case ratings
     case taste
     case playlists
+    /// Last-25 liked + last-25 recently played from Spotify. Self-only
+    /// because the underlying Spotify endpoints are scoped to the
+    /// authenticated user — we have no way to fetch a friend's library.
+    case recent
 
     var title: String {
         switch self {
@@ -13,6 +17,7 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .ratings:   return "Ratings"
         case .taste:     return "Taste"
         case .playlists: return "Playlists"
+        case .recent:    return "Recent"
         }
     }
 
@@ -24,6 +29,7 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .ratings:   return "star.fill"
         case .taste:     return "waveform"
         case .playlists: return "music.note.list"
+        case .recent:    return "clock.arrow.circlepath"
         }
     }
 }
@@ -87,7 +93,7 @@ final class UserProfileViewModel {
     /// playlists for `.other` once the `FriendProfile` payload has loaded.
     var visibleTabs: [ProfileTab] {
         switch context {
-        case .me:    return [.shares, .ratings, .taste, .playlists]
+        case .me:    return [.shares, .ratings, .taste, .playlists, .recent]
         case .other: return [.shares, .ratings, .taste, .playlists]
         }
     }
