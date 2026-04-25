@@ -25,6 +25,11 @@ final class ShareCardViewModel {
     var isRating: Bool = false
     var rateError: String?
 
+    // Reaction state — slugs in flight so a fast double-tap doesn't fire two
+    // competing toggles for the same emoji.
+    var reactingSlugs: Set<String> = []
+    var reactError: String?
+
     // MARK: - Dependencies
 
     private let xomifyService: XomifyServiceProtocol
@@ -125,6 +130,51 @@ final class ShareCardViewModel {
         } catch {
             myRating = previous
             rateError = error.localizedDescription
+        }
+    }
+
+    // MARK: - Reactions
+
+    /// Toggle a reaction on/off. Optimistic patch via `withReactionSummary`,
+    /// rollback on failure. Mirrors `ShareDetailViewModel.toggleReaction` so
+    /// the feed card and detail screen stay in sync without sharing state.
+    func toggleReaction(_ reaction: ShareReaction) async {
+        let slug = reaction.rawValue
+        guard !reactingSlugs.contains(slug) else { return }
+        reactingSlugs.insert(slug)
+        defer { reactingSlugs.remove(slug) }
+
+        let previousCounts = share.reactionCounts
+        let previousViewer = share.viewerReactions
+
+        var nextCounts = previousCounts
+        var nextViewer = previousViewer
+        if previousViewer.contains(slug) {
+            nextViewer.removeAll { $0 == slug }
+            nextCounts[slug] = max(0, (nextCounts[slug] ?? 0) - 1)
+            if nextCounts[slug] == 0 { nextCounts.removeValue(forKey: slug) }
+        } else {
+            nextViewer.append(slug)
+            nextCounts[slug] = (nextCounts[slug] ?? 0) + 1
+        }
+        share = share.withReactionSummary(counts: nextCounts, viewerReactions: nextViewer)
+
+        do {
+            let resp = try await xomifyService.toggleReaction(
+                email: viewerEmail,
+                shareId: share.shareId,
+                reaction: reaction
+            )
+            share = share.withReactionSummary(
+                counts: resp.counts,
+                viewerReactions: resp.viewerReactions
+            )
+        } catch {
+            share = share.withReactionSummary(
+                counts: previousCounts,
+                viewerReactions: previousViewer
+            )
+            reactError = error.localizedDescription
         }
     }
 }
