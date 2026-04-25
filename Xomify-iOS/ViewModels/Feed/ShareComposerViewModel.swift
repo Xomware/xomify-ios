@@ -86,11 +86,15 @@ final class ShareComposerViewModel {
     init(
         xomifyService: XomifyServiceProtocol = XomifyService.shared,
         spotifyService: SpotifyTrackSearching = SpotifyService.shared,
-        currentUserProvider: SpotifyCurrentUserProviding = SpotifyService.shared
+        currentUserProvider: SpotifyCurrentUserProviding = SpotifyService.shared,
+        prefilledGroupIds: Set<String> = [],
+        defaultShareToPublic: Bool = true
     ) {
         self.xomifyService = xomifyService
         self.spotifyService = spotifyService
         self.currentUserProvider = currentUserProvider
+        self.selectedGroupIds = prefilledGroupIds
+        self.shareToPublic = defaultShareToPublic
     }
 
     // MARK: - Bootstrap

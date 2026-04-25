@@ -12,6 +12,12 @@ final class GroupDetailViewModel {
     var members: [GroupMember] = []
     var tracks: [GroupTrack] = []
 
+    /// Shares posted to this group (the new primary content surface — replaces
+    /// the legacy `tracks` list driven by `/groups/add-song`).
+    var shares: [Share] = []
+    var isLoadingShares = false
+    var sharesError: String?
+
     var isLoading = false
     var isRefreshing = false
     var errorMessage: String?
@@ -75,13 +81,43 @@ final class GroupDetailViewModel {
         }
 
         isLoading = false
+
+        // Group-scoped shares feed lives under a separate request — kick it
+        // off after the group/members payload so the header/members tab can
+        // paint immediately.
+        await loadShares()
     }
 
     func refresh() async {
         guard !groupId.isEmpty else { return }
         isRefreshing = true
         await load(email: userEmail, groupId: groupId)
+        await loadShares()
         isRefreshing = false
+    }
+
+    // MARK: - Shares (group-scoped feed)
+
+    /// Pulls shares scoped to this group via `/shares/feed?groupId=…`. Replaces
+    /// the legacy `tracks` list as the primary content surface.
+    func loadShares() async {
+        guard !userEmail.isEmpty, !groupId.isEmpty else { return }
+        isLoadingShares = true
+        sharesError = nil
+        defer { isLoadingShares = false }
+
+        do {
+            let response = try await xomify.getFeed(
+                email: userEmail,
+                groupId: groupId,
+                limit: 50,
+                before: nil
+            )
+            shares = response.shares ?? []
+        } catch {
+            sharesError = error.localizedDescription
+            print("❌ GroupDetail: loadShares failed - \(error)")
+        }
     }
 
     // MARK: - Friends (for add-member picker)
