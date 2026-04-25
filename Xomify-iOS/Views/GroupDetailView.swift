@@ -172,6 +172,11 @@ struct GroupDetailView: View {
     /// content here.
     private var addTrackPill: some View {
         Button {
+            // Pop GroupDetailView off the navigation stack first, *then* swap
+            // the root destination. Without the dismiss, SwiftUI keeps the
+            // pushed detail view on top of the new Feed root and the user
+            // never sees the destination change.
+            dismiss()
             navStore.select(.feed)
         } label: {
             HStack(spacing: 6) {
