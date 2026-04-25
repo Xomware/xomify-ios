@@ -26,6 +26,11 @@ struct TrackActionsMenu: View {
     let track: SpotifyTrack
     var style: Style = .icon
 
+    /// When non-nil, a destructive "Delete post" entry is appended to the menu.
+    /// Used by `ShareCardView` so own-post deletion lives in the same ellipsis
+    /// affordance as the standard track actions instead of a second button.
+    var onDelete: (() -> Void)? = nil
+
     @State private var queueAction = QueueActionController.shared
     @State private var playlistBuilder = PlaylistBuilderManager.shared
     @State private var isComposerShown = false
@@ -69,6 +74,13 @@ struct TrackActionsMenu: View {
                 isComposerShown = true
             } label: {
                 Label("Share to Feed", systemImage: "bubble.left.and.bubble.right.fill")
+            }
+
+            if let onDelete {
+                Divider()
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete post", systemImage: "trash")
+                }
             }
         } label: {
             switch style {
