@@ -61,10 +61,25 @@ struct DrawerView: View {
         GeometryReader { _ in
             HStack(spacing: 0) {
                 drawerPanel
+                    .gesture(closeDragGesture)
                 Spacer()
             }
         }
         .offset(x: navStore.isDrawerOpen ? 0 : -drawerWidth)
+    }
+
+    /// Drag the open drawer leftward to dismiss. Mirrors `MainShell`'s edge
+    /// swipe to open: requires a clearly horizontal drag past a small threshold
+    /// so it doesn't fight scrolls inside the drawer's row list.
+    private var closeDragGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onEnded { value in
+                guard navStore.isDrawerOpen else { return }
+                let pulledLeft = value.translation.width < -60
+                let mostlyHorizontal = abs(value.translation.width) > abs(value.translation.height) * 1.5
+                guard pulledLeft, mostlyHorizontal else { return }
+                navStore.closeDrawer()
+            }
     }
 
     // MARK: - Drawer panel
