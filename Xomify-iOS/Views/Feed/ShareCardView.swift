@@ -8,6 +8,13 @@ struct ShareCardView: View {
     @State private var showRateSheet: Bool = false
     @State private var showDeleteConfirm: Bool = false
 
+    /// Live viewer email plumbed from the parent feed. Held as a view-level
+    /// `let` (not just stashed in the VM at init) because the parent resolves
+    /// the email asynchronously — when it later flips from `""` → real value,
+    /// SwiftUI re-renders this view and the `.task(id:)` below re-syncs it
+    /// into the VM so own-post detection and write paths actually work.
+    let viewerEmail: String
+
     /// Resolved sharer identity (display name + avatar). Falls back to the
     /// email when unresolved — `FeedViewModel.identity(for:)` always returns
     /// a value, so the fallback tree is handled upstream.
@@ -32,6 +39,7 @@ struct ShareCardView: View {
         onDelete: (() -> Void)? = nil,
         onOpenDetail: (() -> Void)? = nil
     ) {
+        self.viewerEmail = viewerEmail
         _viewModel = State(initialValue: ShareCardViewModel(
             share: share,
             viewerEmail: viewerEmail
@@ -42,16 +50,18 @@ struct ShareCardView: View {
     }
 
     private var isOwnPost: Bool {
-        viewModel.share.sharedBy == viewModel.viewerEmail
+        !viewerEmail.isEmpty && viewModel.share.sharedBy == viewerEmail
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 8) {
                 detailTapZone
-                if isOwnPost, onDelete != nil {
-                    ownPostMenu
-                }
+                TrackActionsMenu(
+                    track: makeTrackForActions(),
+                    style: .icon,
+                    onDelete: (isOwnPost && onDelete != nil) ? { showDeleteConfirm = true } : nil
+                )
             }
             actionRow
             socialRow
@@ -65,6 +75,12 @@ struct ShareCardView: View {
         .padding(14)
         .background(Color.xomifyCard)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .task(id: viewerEmail) {
+            // Parent feed resolves `userEmail` asynchronously; once it lands,
+            // re-sync the VM so write paths and own-post detection use the
+            // real email instead of the empty string captured at init.
+            viewModel.viewerEmail = viewerEmail
+        }
         .sheet(isPresented: $showRateSheet) {
             RateSheet(viewModel: viewModel, isPresented: $showRateSheet)
                 .presentationDetents([.medium])
@@ -154,21 +170,49 @@ struct ShareCardView: View {
         }
     }
 
-    private var ownPostMenu: some View {
-        Menu {
-            Button(role: .destructive) {
-                showDeleteConfirm = true
-            } label: {
-                Label("Delete post", systemImage: "trash")
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.subheadline)
-                .foregroundStyle(.gray)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .accessibilityLabel("Post options")
+    /// Synthesize a minimal `SpotifyTrack` from the share so the shared
+    /// `TrackActionsMenu` can drive play / queue / playlist-builder /
+    /// share-to-feed without a round-trip to `/v1/tracks`. Mirrors the
+    /// helper in `ShareDetailView`.
+    private func makeTrackForActions() -> SpotifyTrack {
+        let images: [SpotifyImage] = {
+            guard let url = viewModel.share.albumArtUrl, !url.isEmpty else { return [] }
+            return [SpotifyImage(url: url, height: nil, width: nil)]
+        }()
+        let album = SpotifyAlbum(
+            id: "",
+            name: viewModel.share.albumName ?? "",
+            uri: nil,
+            albumType: nil,
+            totalTracks: nil,
+            releaseDate: nil,
+            releaseDatePrecision: nil,
+            images: images,
+            artists: nil,
+            externalUrls: nil
+        )
+        let artist = SpotifyArtist(
+            id: nil,
+            name: viewModel.share.artistName,
+            uri: nil,
+            genres: nil,
+            popularity: nil,
+            followers: nil,
+            images: nil,
+            externalUrls: nil
+        )
+        return SpotifyTrack(
+            id: viewModel.share.trackId,
+            name: viewModel.share.trackName,
+            uri: viewModel.share.trackUri,
+            durationMs: 0,
+            explicit: nil,
+            popularity: nil,
+            previewUrl: nil,
+            album: album,
+            artists: [artist],
+            externalUrls: nil
+        )
     }
 
     @ViewBuilder

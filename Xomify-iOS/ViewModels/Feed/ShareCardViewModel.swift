@@ -36,8 +36,11 @@ final class ShareCardViewModel {
     private let spotifyService: SpotifyQueueing
 
     /// The authenticated viewer's email. Pushed down from the parent VM so the
-    /// card doesn't need to re-resolve it on every interaction.
-    let viewerEmail: String
+    /// card doesn't need to re-resolve it on every interaction. Stored as `var`
+    /// so `ShareCardView` can re-sync it once the parent's async email lookup
+    /// resolves — otherwise rate/queue/react/delete would fire with an empty
+    /// email and the own-post menu would never appear.
+    var viewerEmail: String
 
     // MARK: - Init
 
