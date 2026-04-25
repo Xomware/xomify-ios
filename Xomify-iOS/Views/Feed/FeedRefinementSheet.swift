@@ -8,6 +8,11 @@ struct FeedRefinementSheet: View {
     @Bindable var viewModel: FeedViewModel
     let onDismiss: () -> Void
 
+    /// Drives the searchable author picker. Surfaced as a separate sheet so
+    /// the refinement sheet stays compact regardless of friend count — the
+    /// previous pill-per-friend grid didn't scale past ~30 friends.
+    @State private var showAuthorPicker: Bool = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -42,6 +47,12 @@ struct FeedRefinementSheet: View {
             }
         }
         .tint(Color.xomifyGreen)
+        .sheet(isPresented: $showAuthorPicker) {
+            AuthorPickerSheet(viewModel: viewModel) {
+                showAuthorPicker = false
+            }
+            .presentationDetents([.large])
+        }
     }
 
     // MARK: - Date
@@ -68,12 +79,13 @@ struct FeedRefinementSheet: View {
     @ViewBuilder
     private var authorsSection: some View {
         let authors = viewModel.availableAuthors
+        let selectedCount = viewModel.refinement.authors.count
 
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 sectionHeader("From", icon: "person.2")
                 Spacer()
-                if !viewModel.refinement.authors.isEmpty {
+                if selectedCount > 0 {
                     Button("Clear") {
                         viewModel.refinement.authors = []
                     }
@@ -87,21 +99,62 @@ struct FeedRefinementSheet: View {
                     .font(.caption)
                     .foregroundStyle(.gray)
             } else {
-                WrappingChipGrid {
-                    ForEach(authors, id: \.self) { email in
-                        let name = viewModel.identity(for: email).displayName
-                        let selected = viewModel.refinement.authors.contains(email)
-                        pillChip(label: name, selected: selected) {
-                            if selected {
-                                viewModel.refinement.authors.remove(email)
-                            } else {
-                                viewModel.refinement.authors.insert(email)
-                            }
-                        }
-                    }
-                }
+                authorPickerButton(totalAuthors: authors.count, selectedCount: selectedCount)
             }
         }
+    }
+
+    /// Single-tap surface that opens the searchable picker. Replaces the
+    /// pill-per-friend grid that used to live here; the grid's visual weight
+    /// scaled linearly with friend count and was unusable past ~30 names.
+    private func authorPickerButton(totalAuthors: Int, selectedCount: Int) -> some View {
+        Button {
+            showAuthorPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(.body)
+                    .foregroundStyle(Color.xomifyGreen)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(authorButtonTitle(selectedCount: selectedCount, total: totalAuthors))
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                    Text(authorButtonSubtitle(selectedCount: selectedCount, total: totalAuthors))
+                        .font(.caption2)
+                        .foregroundStyle(.gray)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .padding(12)
+            .frame(minHeight: 44)
+            .background(Color.xomifyCard)
+            .clipShape(.rect(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("From \(authorButtonTitle(selectedCount: selectedCount, total: totalAuthors))")
+        .accessibilityHint("Opens the friend picker")
+    }
+
+    private func authorButtonTitle(selectedCount: Int, total: Int) -> String {
+        switch selectedCount {
+        case 0:    return "All friends"
+        case 1:    return "1 friend selected"
+        default:   return "\(selectedCount) friends selected"
+        }
+    }
+
+    private func authorButtonSubtitle(selectedCount: Int, total: Int) -> String {
+        if selectedCount == 0 {
+            return "Showing posts from everyone in this feed"
+        }
+        return "Tap to add or remove friends · \(total) available"
     }
 
     // MARK: - Unlistened
