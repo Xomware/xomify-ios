@@ -54,7 +54,11 @@ struct ShareCardView: View {
                 }
             }
             actionRow
+            socialRow
             if let error = viewModel.queueError {
+                errorBanner(error)
+            }
+            if let error = viewModel.reactError {
                 errorBanner(error)
             }
         }
@@ -281,9 +285,64 @@ struct ShareCardView: View {
         HStack(spacing: 10) {
             queueButton
             rateButton
+            commentButton
             Spacer()
             if viewModel.displayedQueueCount > 0 {
                 queueCountChip
+            }
+        }
+    }
+
+    /// Compact comment-thread shortcut. Mirrors how Instagram/Twitter surface
+    /// reply counts on a card — tap goes to detail (which auto-loads comments).
+    private var commentButton: some View {
+        Button {
+            onOpenDetail?()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "bubble.left")
+                Text("\(viewModel.share.commentCount)")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(minHeight: 44)
+            .background(Color.white.opacity(0.08))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(viewModel.share.commentCount) comments. Tap to open.")
+    }
+
+    /// Reactions row — only renders pills for reactions with count ≥ 1, plus
+    /// the smiley menu to add a new one.
+    @ViewBuilder
+    private var socialRow: some View {
+        let counts = viewModel.share.reactionCounts
+        let viewer = viewModel.share.viewerReactions
+        if !counts.isEmpty || !viewer.isEmpty {
+            ReactionsBar(
+                counts: counts,
+                viewerReactions: viewer,
+                inFlightSlugs: viewModel.reactingSlugs,
+                onToggle: { reaction in
+                    Task { await viewModel.toggleReaction(reaction) }
+                }
+            )
+        } else {
+            // Empty state: just show the add button so a viewer can react first.
+            HStack {
+                ReactionsBar(
+                    counts: [:],
+                    viewerReactions: [],
+                    inFlightSlugs: viewModel.reactingSlugs,
+                    onToggle: { reaction in
+                        Task { await viewModel.toggleReaction(reaction) }
+                    }
+                )
+                Spacer()
             }
         }
     }

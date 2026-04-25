@@ -35,9 +35,6 @@ struct ShareDetailView: View {
                     statsRow
                     actionRow
                     reactionBar
-                    if let caption = viewModel.share.caption, !caption.isEmpty {
-                        captionBlock(caption)
-                    }
                     friendRatingsSection
                     listenersSection
                     commentsSection
@@ -151,37 +148,50 @@ struct ShareDetailView: View {
     // MARK: - Sharer block
 
     private var sharerBlock: some View {
-        HStack(spacing: 12) {
-            avatarView(url: sharerIdentity.avatarURL, initial: sharerIdentity.displayName.prefix(1))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Shared by \(sharerIdentity.displayName)")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Text(viewModel.share.relativeTime)
-                    .font(.caption2)
-                    .foregroundStyle(.gray)
-            }
-
-            Spacer(minLength: 8)
-
-            if let rating = viewModel.share.sharerRating {
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(Color.xomifyGreen)
-                    Text("\(rating)/5")
-                        .font(.caption)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                avatarView(url: sharerIdentity.avatarURL, initial: sharerIdentity.displayName.prefix(1))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Shared by \(sharerIdentity.displayName)")
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(viewModel.share.relativeTime)
+                        .font(.caption2)
+                        .foregroundStyle(.gray)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.08))
-                .clipShape(Capsule())
-                .accessibilityLabel("\(sharerIdentity.displayName) rated this \(rating) out of 5")
+
+                Spacer(minLength: 8)
+
+                if let rating = viewModel.share.sharerRating {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(Color.xomifyGreen)
+                        Text("\(rating)/5")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+                    .accessibilityLabel("\(sharerIdentity.displayName) rated this \(rating) out of 5")
+                }
+            }
+
+            // Inline note — sits in the same card as the sharer so the post
+            // reads like a single utterance ("Dom shared this and said …")
+            // instead of a separate "Note from …" block further down.
+            if let caption = viewModel.share.caption, !caption.isEmpty {
+                Text(caption)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.92))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(12)
@@ -316,25 +326,6 @@ struct ShareDetailView: View {
         )
     }
 
-    // MARK: - Caption
-
-    private func captionBlock(_ caption: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Note from \(sharerIdentity.displayName)")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.xomifyGreen)
-            Text(caption)
-                .font(.subheadline)
-                .foregroundStyle(Color.white.opacity(0.92))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 12))
-    }
-
     // MARK: - Friend ratings
 
     @ViewBuilder
@@ -443,60 +434,25 @@ struct ShareDetailView: View {
 
     // MARK: - Reactions
 
-    /// Six-emoji bar. Each chip shows the count when > 0; tapping toggles
-    /// the viewer's reaction. The chip background flips green when active so
-    /// the viewer can see what they've already reacted with.
+    /// Active reactions render as pills; smiley menu lets the viewer add any
+    /// of the six supported emojis. Empty state still shows the smiley so the
+    /// affordance is always discoverable.
     private var reactionBar: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                ForEach(ShareReaction.allCases) { reaction in
-                    reactionChip(reaction)
+            ReactionsBar(
+                counts: viewModel.share.reactionCounts,
+                viewerReactions: viewModel.share.viewerReactions,
+                inFlightSlugs: viewModel.reactingSlugs,
+                onToggle: { reaction in
+                    Task { await viewModel.toggleReaction(reaction) }
                 }
-            }
+            )
             if let error = viewModel.reactError {
                 Text(error)
                     .font(.caption2)
                     .foregroundStyle(.orange)
             }
         }
-    }
-
-    private func reactionChip(_ reaction: ShareReaction) -> some View {
-        let active = viewModel.viewerHasReacted(reaction)
-        let count = viewModel.count(for: reaction)
-        let inFlight = viewModel.reactingSlugs.contains(reaction.rawValue)
-        return Button {
-            Task { await viewModel.toggleReaction(reaction) }
-        } label: {
-            HStack(spacing: 4) {
-                Text(reaction.emoji)
-                    .font(.system(size: 18))
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(active ? Color.xomifyGreen : .white)
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .frame(minHeight: 36)
-            .background(active
-                ? Color.xomifyGreen.opacity(0.18)
-                : Color.white.opacity(0.08))
-            .overlay(
-                Capsule().strokeBorder(
-                    active ? Color.xomifyGreen.opacity(0.6) : Color.clear,
-                    lineWidth: 1
-                )
-            )
-            .clipShape(Capsule())
-            .opacity(inFlight ? 0.55 : 1)
-        }
-        .buttonStyle(.plain)
-        .disabled(inFlight)
-        .accessibilityLabel(reaction.accessibilityLabel)
-        .accessibilityValue(active ? "On, \(count)" : "Off, \(count)")
     }
 
     // MARK: - Comments
