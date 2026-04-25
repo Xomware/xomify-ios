@@ -35,8 +35,6 @@ struct ShareDetailView: View {
                     statsRow
                     actionRow
                     reactionBar
-                    friendRatingsSection
-                    listenersSection
                     commentsSection
                     if let error = viewModel.errorMessage {
                         inlineErrorBanner(error)
@@ -203,33 +201,58 @@ struct ShareDetailView: View {
 
     private var statsRow: some View {
         HStack(spacing: 10) {
-            statCard(
-                value: "\(viewModel.share.queuedCount)",
-                label: viewModel.share.queuedCount == 1 ? "friend queued" : "friends queued",
-                icon: "text.badge.plus"
-            )
-            statCard(
-                value: "\(viewModel.share.ratedCount)",
-                label: viewModel.share.ratedCount == 1 ? "friend rated" : "friends rated",
-                icon: "star"
-            )
+            NavigationLink {
+                FriendsQueuedListView(
+                    trackName: viewModel.share.trackName,
+                    listeners: viewModel.listeners
+                )
+            } label: {
+                statCardContent(
+                    value: "\(viewModel.share.queuedCount)",
+                    label: viewModel.share.queuedCount == 1 ? "friend queued" : "friends queued",
+                    icon: "text.badge.plus",
+                    sublabel: nil
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(viewModel.share.queuedCount) friends queued. Tap to view all.")
+
+            NavigationLink {
+                FriendsRatedListView(
+                    trackName: viewModel.share.trackName,
+                    ratings: viewModel.sortedFriendRatings,
+                    average: viewModel.averageFriendRating
+                )
+            } label: {
+                statCardContent(
+                    value: "\(viewModel.share.ratedCount)",
+                    label: viewModel.share.ratedCount == 1 ? "friend rated" : "friends rated",
+                    icon: "star",
+                    sublabel: viewModel.averageFriendRating.map { String(format: "%.1f avg", $0) }
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(viewModel.share.ratedCount) friends rated. Tap to view all.")
+
             if let mine = viewModel.myRating {
-                statCard(
+                statCardContent(
                     value: "\(mine)/5",
                     label: "your rating",
-                    icon: "star.fill"
+                    icon: "star.fill",
+                    sublabel: nil
                 )
             } else if viewModel.share.viewerHasQueued {
-                statCard(
+                statCardContent(
                     value: "✓",
                     label: "in your queue",
-                    icon: "checkmark.circle.fill"
+                    icon: "checkmark.circle.fill",
+                    sublabel: nil
                 )
             }
         }
     }
 
-    private func statCard(value: String, label: String, icon: String) -> some View {
+    private func statCardContent(value: String, label: String, icon: String, sublabel: String?) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.caption)
@@ -244,6 +267,12 @@ struct ShareDetailView: View {
                 .font(.caption2)
                 .foregroundStyle(.gray)
                 .multilineTextAlignment(.center)
+            if let sublabel {
+                Text(sublabel)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.xomifyGreen)
+            }
         }
         .frame(maxWidth: .infinity, minHeight: 84)
         .padding(10)
@@ -261,6 +290,8 @@ struct ShareDetailView: View {
         }
     }
 
+    /// Matches `TrackActionsMenu`'s `.pill` style so the Actions/Rate pair
+    /// reads as a balanced pair (same font, padding, corner radius, height).
     private var rateButton: some View {
         Button {
             showRateSheet = true
@@ -268,15 +299,15 @@ struct ShareDetailView: View {
             HStack(spacing: 6) {
                 Image(systemName: viewModel.myRating != nil ? "star.fill" : "star")
                 Text(viewModel.myRating.map { "\($0)/5" } ?? "Rate")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
             }
-            .foregroundStyle(viewModel.myRating != nil ? Color.xomifyGreen : .white)
+            .font(.caption)
+            .fontWeight(.medium)
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(minHeight: 44)
+            .padding(.vertical, 8)
             .background(Color.white.opacity(0.08))
-            .clipShape(Capsule())
+            .foregroundStyle(viewModel.myRating != nil ? Color.xomifyGreen : .white)
+            .clipShape(.rect(cornerRadius: 16))
+            .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(viewModel.myRating.map { "You rated this \($0) out of 5. Tap to change." } ?? "Rate this track")
@@ -324,112 +355,6 @@ struct ShareDetailView: View {
             artists: [artist],
             externalUrls: nil
         )
-    }
-
-    // MARK: - Friend ratings
-
-    @ViewBuilder
-    private var friendRatingsSection: some View {
-        if !viewModel.sortedFriendRatings.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                sectionHeader(
-                    title: "What friends think",
-                    icon: "star.bubble",
-                    count: viewModel.sortedFriendRatings.count
-                )
-                VStack(spacing: 8) {
-                    ForEach(viewModel.sortedFriendRatings) { rating in
-                        friendRatingRow(rating)
-                    }
-                }
-            }
-        } else if viewModel.isLoading {
-            sectionPlaceholder(message: "Loading friend ratings…")
-        }
-    }
-
-    private func friendRatingRow(_ rating: ShareFriendRating) -> some View {
-        HStack(spacing: 12) {
-            avatarView(url: rating.avatarURL, initial: rating.resolvedName.prefix(1))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(rating.resolvedName)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                if let review = rating.review, !review.isEmpty {
-                    Text(review)
-                        .font(.caption)
-                        .foregroundStyle(.gray)
-                        .lineLimit(2)
-                }
-            }
-            Spacer(minLength: 8)
-            starBadge(rating.displayStars)
-        }
-        .padding(10)
-        .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 10))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(rating.resolvedName) rated this \(rating.displayStars) out of 5")
-    }
-
-    private func starBadge(_ stars: Int) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: "star.fill")
-                .font(.caption2)
-                .foregroundStyle(Color.xomifyGreen)
-            Text("\(stars)/5")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.white.opacity(0.08))
-        .clipShape(Capsule())
-    }
-
-    // MARK: - Listeners
-
-    @ViewBuilder
-    private var listenersSection: some View {
-        if !viewModel.listeners.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                sectionHeader(
-                    title: "Listeners",
-                    icon: "headphones",
-                    count: viewModel.listeners.count
-                )
-                VStack(spacing: 6) {
-                    ForEach(viewModel.listeners) { listener in
-                        listenerRow(listener)
-                    }
-                }
-            }
-        } else if viewModel.isLoading {
-            sectionPlaceholder(message: "Loading listeners…")
-        }
-    }
-
-    private func listenerRow(_ entry: ShareInteractionEntry) -> some View {
-        HStack(spacing: 12) {
-            avatarView(url: entry.avatarURL, initial: entry.resolvedName.prefix(1))
-                .accessibilityHidden(true)
-            Text(entry.resolvedName)
-                .font(.subheadline)
-                .foregroundStyle(.white)
-                .lineLimit(1)
-            Spacer(minLength: 8)
-            Image(systemName: "text.badge.plus")
-                .font(.caption2)
-                .foregroundStyle(Color.xomifyGreen)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 10))
     }
 
     // MARK: - Reactions
