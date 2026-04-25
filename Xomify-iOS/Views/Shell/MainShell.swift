@@ -51,6 +51,7 @@ struct MainShell: View {
         }
         .environment(navStore)
         .ignoresSafeArea(edges: .bottom)
+        .gesture(edgeDragGesture)
         .task {
             // Share the nav store with the push pipeline so push-open handlers
             // can call `select(.feed)`.
@@ -97,6 +98,26 @@ struct MainShell: View {
         case .settings:
             SettingsView()
         }
+    }
+
+    // MARK: - Edge swipe → drawer
+
+    /// Edge swipe: a horizontal drag started near the leading edge that pulls
+    /// the drawer open, mirroring the system-wide left-edge gesture you'd
+    /// expect on iOS. We require the gesture to *start* in the leftmost ~30pt
+    /// so it doesn't fight horizontal scrolls inside content (carousels, etc).
+    private var edgeDragGesture: some Gesture {
+        DragGesture(minimumDistance: 12, coordinateSpace: .global)
+            .onEnded { value in
+                let startedAtEdge = value.startLocation.x < 30
+                let pulledRight = value.translation.width > 60
+                let mostlyHorizontal = abs(value.translation.width) > abs(value.translation.height) * 1.5
+                guard !navStore.isDrawerOpen,
+                      startedAtEdge,
+                      pulledRight,
+                      mostlyHorizontal else { return }
+                navStore.openDrawer()
+            }
     }
 
     // MARK: - Avatar fetch

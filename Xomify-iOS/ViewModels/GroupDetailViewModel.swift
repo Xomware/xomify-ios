@@ -12,6 +12,13 @@ final class GroupDetailViewModel {
     var members: [GroupMember] = []
     var tracks: [GroupTrack] = []
 
+    /// Viewer's own display name + avatar — used to enrich the self-row in
+    /// the members tab when the backend's GroupMember payload doesn't carry
+    /// displayName/avatar fields. (Backend follow-up: enrich `/groups/info`
+    /// member list with profile data so this hop isn't needed.)
+    var viewerDisplayName: String?
+    var viewerAvatarURL: URL?
+
     /// Shares posted to this group (the new primary content surface — replaces
     /// the legacy `tracks` list driven by `/groups/add-song`).
     var shares: [Share] = []
@@ -80,6 +87,18 @@ final class GroupDetailViewModel {
             print("❌ GroupDetail: load failed - \(error)")
         }
 
+        // Fetch viewer profile for self-row enrichment. Best-effort; failures
+        // just leave the row showing email + initial.
+        if viewerDisplayName == nil {
+            do {
+                let me = try await spotify.getCurrentUser()
+                viewerDisplayName = me.displayName
+                viewerAvatarURL = me.profileImageUrl
+            } catch {
+                // silent — non-critical
+            }
+        }
+
         isLoading = false
 
         // Group-scoped shares feed lives under a separate request — kick it
@@ -118,6 +137,54 @@ final class GroupDetailViewModel {
             sharesError = error.localizedDescription
             print("❌ GroupDetail: loadShares failed - \(error)")
         }
+    }
+
+    // MARK: - Stats (derived from `shares`)
+
+    /// Per-user breakdown for the Stats tab.
+    struct GroupUserStat: Identifiable, Hashable {
+        let email: String
+        let displayName: String
+        let avatarURL: URL?
+        let shareCount: Int
+        let averageRating: Double?
+        var id: String { email }
+    }
+
+    var totalShareCount: Int { shares.count }
+
+    /// Average sharer-supplied rating across all loaded shares (the rating the
+    /// poster gave when they shared). Nil when nobody rated.
+    var averageSharerRating: Double? {
+        let ratings = shares.compactMap { $0.sharerRating }
+        guard !ratings.isEmpty else { return nil }
+        return Double(ratings.reduce(0, +)) / Double(ratings.count)
+    }
+
+    /// Shares grouped by sharer email with count + average rating, sorted by
+    /// share count desc.
+    var perUserStats: [GroupUserStat] {
+        let grouped = Dictionary(grouping: shares, by: { $0.sharedBy })
+        return grouped.map { (email, posts) in
+            let ratings = posts.compactMap { $0.sharerRating }
+            let avg = ratings.isEmpty ? nil : Double(ratings.reduce(0, +)) / Double(ratings.count)
+            let member = members.first { $0.email == email }
+            let resolvedName: String
+            if email == userEmail, let mine = viewerDisplayName, !mine.isEmpty {
+                resolvedName = mine
+            } else {
+                resolvedName = member?.label ?? email
+            }
+            let avatar = (email == userEmail) ? viewerAvatarURL : nil
+            return GroupUserStat(
+                email: email,
+                displayName: resolvedName,
+                avatarURL: avatar,
+                shareCount: posts.count,
+                averageRating: avg
+            )
+        }
+        .sorted { $0.shareCount > $1.shareCount }
     }
 
     // MARK: - Friends (for add-member picker)
