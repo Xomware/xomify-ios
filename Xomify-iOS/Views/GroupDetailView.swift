@@ -1,23 +1,35 @@
 import SwiftUI
 
-/// Detail view for a single group: Members + Tracks tabs.
+/// Detail view for a single group: Shares + Members tabs.
+///
+/// "Add song" routes through the standard composer pre-targeted at this
+/// group (no public, just this groupId). The legacy `/groups/add-song`
+/// flow has been retired from the UI; the shares stream below is sourced
+/// from `/shares/feed?groupId=…`.
 struct GroupDetailView: View {
 
     let groupId: String
     let viewerEmail: String
 
     @State private var viewModel = GroupDetailViewModel()
-    @State private var selectedTab: Tab = .tracks
+    @State private var selectedTab: Tab = .shares
     @State private var showingAddMembers = false
-    @State private var showingAddSong = false
+    @State private var showingComposer = false
     @State private var showingEditGroup = false
     @State private var showLeaveConfirm = false
     @State private var showDeleteConfirm = false
 
+    /// Composer VM is owned at the screen level so we can prefill it with the
+    /// current group + reset it on dismiss.
+    @State private var composerVM: ShareComposerViewModel?
+
+    /// Drives the push to ShareDetailView when a card body is tapped.
+    @State private var selectedShare: Share?
+
     @Environment(\.dismiss) private var dismiss
 
     enum Tab: String, CaseIterable, Identifiable {
-        case tracks = "Tracks"
+        case shares = "Shares"
         case members = "Members"
         var id: String { rawValue }
     }
@@ -40,7 +52,7 @@ struct GroupDetailView: View {
                 .padding()
 
                 switch selectedTab {
-                case .tracks:  tracksSection
+                case .shares:  sharesSection
                 case .members: membersSection
                 }
             }
@@ -64,19 +76,31 @@ struct GroupDetailView: View {
                     .background(Color.red.opacity(0.15))
             }
         }
+        .navigationDestination(item: $selectedShare) { share in
+            ShareDetailView(
+                share: share,
+                viewerEmail: viewerEmail,
+                sharerIdentity: identity(for: share.sharedBy)
+            )
+        }
         .sheet(isPresented: $showingAddMembers) {
             AddMemberSheet(
                 viewModel: viewModel,
                 onDismiss: { showingAddMembers = false }
             )
         }
-        .sheet(isPresented: $showingAddSong, onDismiss: {
-            viewModel.resetSongSearch()
+        .sheet(isPresented: $showingComposer, onDismiss: {
+            composerVM = nil
         }) {
-            AddSongSheet(
-                viewModel: viewModel,
-                onDismiss: { showingAddSong = false }
-            )
+            if let composerVM {
+                ShareComposerView(
+                    viewModel: composerVM,
+                    onSubmitted: { _ in
+                        showingComposer = false
+                        Task { await viewModel.loadShares() }
+                    }
+                )
+            }
         }
         .sheet(isPresented: $showingEditGroup) {
             EditGroupSheet(
@@ -162,32 +186,36 @@ struct GroupDetailView: View {
 
     private func tabTitle(_ tab: Tab) -> String {
         switch tab {
-        case .tracks:  return "Tracks (\(viewModel.tracks.count))"
+        case .shares:  return "Shares (\(viewModel.shares.count))"
         case .members: return "Members (\(viewModel.members.count))"
         }
     }
 
-    // MARK: - Tracks
+    // MARK: - Shares
 
-    private var tracksSection: some View {
+    private var sharesSection: some View {
         VStack(spacing: 0) {
             addSongButton
 
-            if viewModel.isLoading && viewModel.tracks.isEmpty {
+            if viewModel.isLoadingShares && viewModel.shares.isEmpty {
                 XomifyLoaderPulse()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.tracks.isEmpty {
-                emptyTab(icon: "music.note", title: "No tracks yet",
-                         message: "Tap Add song to search Spotify.")
+            } else if let error = viewModel.sharesError, viewModel.shares.isEmpty {
+                emptyTab(icon: "exclamationmark.triangle",
+                         title: "Couldn't load shares",
+                         message: error)
+            } else if viewModel.shares.isEmpty {
+                emptyTab(icon: "music.note", title: "No shares yet",
+                         message: "Tap Add song to post the first one to this group.")
             } else {
-                tracksList
+                sharesList
             }
         }
     }
 
     private var addSongButton: some View {
         Button {
-            showingAddSong = true
+            presentComposer()
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
@@ -204,87 +232,25 @@ struct GroupDetailView: View {
         .padding(.horizontal)
         .padding(.bottom, 8)
         .accessibilityLabel("Add song")
-        .accessibilityHint("Opens search to add a Spotify track to this group")
+        .accessibilityHint("Opens the share composer pre-targeted at this group")
     }
 
-    private var tracksList: some View {
+    private var sharesList: some View {
         ScrollView {
-            LazyVStack(spacing: 8) {
-                // Mark-all-listened shortcut
-                Button {
-                    Task { await viewModel.markAllListened() }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle")
-                        Text("Mark all listened")
-                    }
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(Color.white.opacity(0.08))
-                    .foregroundStyle(.white)
-                    .clipShape(.rect(cornerRadius: 16))
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 4)
-                .padding(.bottom, 8)
-
-                ForEach(viewModel.tracks) { track in
-                    trackRow(track)
+            LazyVStack(spacing: 12) {
+                ForEach(viewModel.shares) { share in
+                    ShareCardView(
+                        share: share,
+                        viewerEmail: viewerEmail,
+                        sharerIdentity: identity(for: share.sharedBy),
+                        onDelete: nil,
+                        onOpenDetail: { selectedShare = share }
+                    )
                 }
             }
             .padding(.horizontal)
+            .padding(.bottom, 16)
         }
-    }
-
-    private func trackRow(_ track: GroupTrack) -> some View {
-        HStack(spacing: 12) {
-            AsyncImage(url: track.image) { image in
-                image.resizable()
-            } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
-            }
-            .frame(width: 50, height: 50)
-            .clipShape(.rect(cornerRadius: 6))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(track.trackName ?? "Unknown")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                if let artist = track.artistName {
-                    Text(artist)
-                        .font(.caption)
-                        .foregroundStyle(.gray)
-                        .lineLimit(1)
-                }
-                if let by = track.addedBy {
-                    Text("Added by \(by)")
-                        .font(.caption2)
-                        .foregroundStyle(.gray.opacity(0.8))
-                }
-            }
-
-            Spacer()
-
-            if let tid = track.trackId, !tid.isEmpty {
-                QueueButton(uri: "spotify:track:\(tid)", trackName: track.trackName)
-            }
-
-            Button(role: .destructive) {
-                Task { await viewModel.removeSong(track) }
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(.red)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Remove \(track.trackName ?? "track")")
-        }
-        .padding(12)
-        .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 10))
     }
 
     // MARK: - Members
@@ -392,6 +358,27 @@ struct GroupDetailView: View {
         .padding(12)
         .background(Color.xomifyCard)
         .clipShape(.rect(cornerRadius: 10))
+    }
+
+    // MARK: - Composer plumbing
+
+    /// Spin up a composer VM pre-targeted at this group and present the sheet.
+    private func presentComposer() {
+        composerVM = ShareComposerViewModel(
+            prefilledGroupIds: [groupId],
+            defaultShareToPublic: false
+        )
+        showingComposer = true
+    }
+
+    /// Best-effort identity for a member email — falls back to the email.
+    /// Group detail doesn't have access to the friends-graph map FeedViewModel
+    /// builds, so we resolve from the loaded `members` list.
+    private func identity(for email: String) -> SharerIdentity {
+        if let member = viewModel.members.first(where: { $0.email == email }) {
+            return SharerIdentity(displayName: member.label, avatarURL: nil)
+        }
+        return SharerIdentity(displayName: email, avatarURL: nil)
     }
 
     // MARK: - Empty helper
