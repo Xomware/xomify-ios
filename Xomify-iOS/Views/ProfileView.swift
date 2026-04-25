@@ -95,6 +95,9 @@ struct ProfileView: View {
 
         case .playlists:
             ProfilePlaylistsTab(viewModel: viewModel.playlistsViewModel())
+
+        case .recent:
+            ProfileRecentTab()
         }
     }
 
