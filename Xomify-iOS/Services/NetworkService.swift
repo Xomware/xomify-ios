@@ -264,6 +264,25 @@ actor NetworkService {
         return try await performXomifyRequest(request)
     }
 
+    /// DELETE with a JSON body. Some newer endpoints (e.g. `/shares/comments`)
+    /// parse identifiers from the body so the path stays clean. URLSession
+    /// happily sends a body on DELETE — API Gateway forwards it through.
+    func xomifyDelete<T: Decodable>(_ endpoint: String, body: [String: Any]) async throws -> T {
+        let config = await getXomifyConfig()
+
+        let url = URL(string: "\(config.baseUrl)\(endpoint)")!
+
+        print("🌐 XomifyAPI DELETE: \(url.absoluteString)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(config.token, forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        return try await performXomifyRequest(request, allowEmpty: true)
+    }
+
     /// DELETE request to Xomify API. Backend DELETE handlers read
     /// `queryStringParameters`, not a JSON body — pass identifiers via
     /// `queryParams`. Most DELETE endpoints return `204 No Content`, so

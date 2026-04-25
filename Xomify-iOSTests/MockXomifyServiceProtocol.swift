@@ -129,6 +129,86 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
             totalCount: 0
         )
     }
+
+    // MARK: - Comments + Reactions (xomify-backend#139)
+    //
+    // Stub default returns; specific tests can prime the response/error.
+
+    var createCommentResponse: ShareComment?
+    var createCommentError: Error?
+
+    func createComment(
+        email: String,
+        shareId: String,
+        body: String
+    ) async throws -> ShareComment {
+        if let createCommentError { throw createCommentError }
+        return createCommentResponse ?? ShareComment(
+            commentId: UUID().uuidString,
+            shareId: shareId,
+            email: email,
+            displayName: nil,
+            avatar: nil,
+            body: body,
+            createdAt: nil
+        )
+    }
+
+    var listCommentsResponse: CommentsListResponse = CommentsListResponse(
+        comments: [], nextBefore: nil
+    )
+    var listCommentsError: Error?
+
+    func listComments(
+        email: String,
+        shareId: String,
+        limit: Int,
+        before: String?
+    ) async throws -> CommentsListResponse {
+        if let listCommentsError { throw listCommentsError }
+        return listCommentsResponse
+    }
+
+    var deleteCommentError: Error?
+
+    func deleteComment(
+        email: String,
+        shareId: String,
+        commentId: String
+    ) async throws -> CommentDeleteResponse {
+        if let deleteCommentError { throw deleteCommentError }
+        return CommentDeleteResponse(deleted: true, commentId: commentId)
+    }
+
+    var toggleReactionResponse: ReactionToggleResponse?
+    var toggleReactionError: Error?
+
+    func toggleReaction(
+        email: String,
+        shareId: String,
+        reaction: ShareReaction
+    ) async throws -> ReactionToggleResponse {
+        if let toggleReactionError { throw toggleReactionError }
+        return toggleReactionResponse ?? ReactionToggleResponse(
+            active: true,
+            reaction: reaction.rawValue,
+            counts: [reaction.rawValue: 1],
+            viewerReactions: [reaction.rawValue]
+        )
+    }
+
+    var listReactionsResponse: ReactionsListResponse = ReactionsListResponse(
+        counts: [:], viewerReactions: []
+    )
+    var listReactionsError: Error?
+
+    func listReactions(
+        email: String,
+        shareId: String
+    ) async throws -> ReactionsListResponse {
+        if let listReactionsError { throw listReactionsError }
+        return listReactionsResponse
+    }
 }
 
 // MARK: - SpotifyCurrentUserProviding mock

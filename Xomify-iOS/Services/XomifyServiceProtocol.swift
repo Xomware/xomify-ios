@@ -83,6 +83,38 @@ protocol XomifyServiceProtocol: Sendable {
     /// Full friends payload for the caller. Used by the self-profile header
     /// (friend count) and the Friends drawer.
     func getAllFriends(email: String) async throws -> FriendsAllResponse
+
+    // MARK: - Comments + Reactions (xomify-backend#139)
+
+    func createComment(
+        email: String,
+        shareId: String,
+        body: String
+    ) async throws -> ShareComment
+
+    func listComments(
+        email: String,
+        shareId: String,
+        limit: Int,
+        before: String?
+    ) async throws -> CommentsListResponse
+
+    func deleteComment(
+        email: String,
+        shareId: String,
+        commentId: String
+    ) async throws -> CommentDeleteResponse
+
+    func toggleReaction(
+        email: String,
+        shareId: String,
+        reaction: ShareReaction
+    ) async throws -> ReactionToggleResponse
+
+    func listReactions(
+        email: String,
+        shareId: String
+    ) async throws -> ReactionsListResponse
 }
 
 extension XomifyService: XomifyServiceProtocol {}

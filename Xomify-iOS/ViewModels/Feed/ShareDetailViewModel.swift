@@ -28,6 +28,27 @@ final class ShareDetailViewModel {
     var isRating: Bool = false
     var rateError: String?
 
+    // Comments thread (xomify-backend#139). Newest-first; loaded lazily on
+    // detail open and after the viewer posts a new comment.
+    var comments: [ShareComment] = []
+    var nextCommentBefore: String?
+    var isLoadingComments: Bool = false
+    var commentsError: String?
+
+    /// Composer state for the inline reply box.
+    var commentDraft: String = ""
+    var isPostingComment: Bool = false
+    var postCommentError: String?
+
+    /// IDs currently being deleted, so the per-row destructive button can
+    /// disable individually instead of blocking the whole thread.
+    var deletingCommentIds: Set<String> = []
+
+    // Reactions (xomify-backend#139). Slugs in flight so a fast double-tap
+    // doesn't fire two competing toggles for the same emoji.
+    var reactingSlugs: Set<String> = []
+    var reactError: String?
+
     // MARK: - Dependencies
 
     private let xomifyService: XomifyServiceProtocol
@@ -117,6 +138,142 @@ final class ShareDetailViewModel {
         } catch {
             myRating = previous
             rateError = error.localizedDescription
+        }
+    }
+
+    // MARK: - Comments
+
+    /// Load (or reload) the comment thread. First page only — pagination
+    /// support is wired but not exposed in the UI yet.
+    func loadComments() async {
+        guard !isLoadingComments else { return }
+        isLoadingComments = true
+        commentsError = nil
+        defer { isLoadingComments = false }
+
+        do {
+            let resp = try await xomifyService.listComments(
+                email: viewerEmail,
+                shareId: share.shareId,
+                limit: 50,
+                before: nil
+            )
+            comments = resp.comments
+            nextCommentBefore = resp.nextBefore
+            // Keep the cached commentCount in sync with what the thread shows
+            // — useful when the value on the parent feed is stale.
+            share = share.withCommentCount(comments.count)
+        } catch {
+            commentsError = error.localizedDescription
+        }
+    }
+
+    /// Post the current draft. On success: clears the draft, prepends the
+    /// newly-returned (hydrated) comment, and bumps the cached count.
+    func postComment() async {
+        let trimmed = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !isPostingComment else { return }
+        isPostingComment = true
+        postCommentError = nil
+        defer { isPostingComment = false }
+
+        do {
+            let comment = try await xomifyService.createComment(
+                email: viewerEmail,
+                shareId: share.shareId,
+                body: trimmed
+            )
+            comments.insert(comment, at: 0)
+            share = share.withCommentCount(share.commentCount + 1)
+            commentDraft = ""
+        } catch {
+            postCommentError = error.localizedDescription
+        }
+    }
+
+    /// Whether the viewer is allowed to delete `comment` — author of the
+    /// comment, or author of the share.
+    func canDelete(_ comment: ShareComment) -> Bool {
+        comment.email == viewerEmail || share.sharedBy == viewerEmail
+    }
+
+    /// Optimistically remove the comment from the local list; rollback on
+    /// failure. Backend re-checks the delete authorization rule.
+    func deleteComment(_ comment: ShareComment) async {
+        guard canDelete(comment), !deletingCommentIds.contains(comment.commentId) else { return }
+        deletingCommentIds.insert(comment.commentId)
+        defer { deletingCommentIds.remove(comment.commentId) }
+
+        guard let removeIndex = comments.firstIndex(where: { $0.commentId == comment.commentId }) else { return }
+        let removed = comments.remove(at: removeIndex)
+        share = share.withCommentCount(max(0, share.commentCount - 1))
+
+        do {
+            _ = try await xomifyService.deleteComment(
+                email: viewerEmail,
+                shareId: share.shareId,
+                commentId: comment.commentId
+            )
+        } catch {
+            comments.insert(removed, at: removeIndex)
+            share = share.withCommentCount(share.commentCount + 1)
+            commentsError = error.localizedDescription
+        }
+    }
+
+    // MARK: - Reactions
+
+    /// Has the viewer toggled this reaction on?
+    func viewerHasReacted(_ reaction: ShareReaction) -> Bool {
+        share.viewerReactions.contains(reaction.rawValue)
+    }
+
+    /// Count for a given reaction slug (0 when missing).
+    func count(for reaction: ShareReaction) -> Int {
+        share.reactionCounts[reaction.rawValue] ?? 0
+    }
+
+    /// Toggle a reaction on/off. Optimistic patch via `withReactionSummary`,
+    /// rollback on failure.
+    func toggleReaction(_ reaction: ShareReaction) async {
+        let slug = reaction.rawValue
+        guard !reactingSlugs.contains(slug) else { return }
+        reactingSlugs.insert(slug)
+        defer { reactingSlugs.remove(slug) }
+
+        let previousCounts = share.reactionCounts
+        let previousViewer = share.viewerReactions
+
+        // Optimistic patch
+        var nextCounts = previousCounts
+        var nextViewer = previousViewer
+        if previousViewer.contains(slug) {
+            nextViewer.removeAll { $0 == slug }
+            nextCounts[slug] = max(0, (nextCounts[slug] ?? 0) - 1)
+            if nextCounts[slug] == 0 { nextCounts.removeValue(forKey: slug) }
+        } else {
+            nextViewer.append(slug)
+            nextCounts[slug] = (nextCounts[slug] ?? 0) + 1
+        }
+        share = share.withReactionSummary(counts: nextCounts, viewerReactions: nextViewer)
+
+        do {
+            let resp = try await xomifyService.toggleReaction(
+                email: viewerEmail,
+                shareId: share.shareId,
+                reaction: reaction
+            )
+            // Trust server — it just walked DynamoDB for the canonical counts.
+            share = share.withReactionSummary(
+                counts: resp.counts,
+                viewerReactions: resp.viewerReactions
+            )
+        } catch {
+            share = share.withReactionSummary(
+                counts: previousCounts,
+                viewerReactions: previousViewer
+            )
+            reactError = error.localizedDescription
         }
     }
 }
