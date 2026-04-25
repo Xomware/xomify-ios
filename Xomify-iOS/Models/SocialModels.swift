@@ -193,6 +193,13 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
     let groupIds: [String]
     let isPublic: Bool
 
+    // Comments + emoji reactions (xomify-backend#139). Surfaced by
+    // `/shares/detail`; `/shares/feed` may omit these for now — defaults
+    // keep the row decodable either way.
+    let commentCount: Int
+    let reactionCounts: [String: Int]
+    let viewerReactions: [String]
+
     var id: String { shareId }
 
     /// Parse sharedAt ("2025-04-17 14:30:00" UTC) into a Date. Falls back to ISO8601.
@@ -257,6 +264,9 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         sharerRating    = try c.decodeIfPresent(Int.self, forKey: .sharerRating)
         groupIds        = try c.decodeIfPresent([String].self, forKey: .groupIds) ?? []
         isPublic        = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? true
+        commentCount    = try c.decodeIfPresent(Int.self, forKey: .commentCount) ?? 0
+        reactionCounts  = try c.decodeIfPresent([String: Int].self, forKey: .reactionCounts) ?? [:]
+        viewerReactions = try c.decodeIfPresent([String].self, forKey: .viewerReactions) ?? []
     }
 
     private enum FallbackAuthorKey: String, CodingKey {
@@ -283,7 +293,10 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         viewerRating: Int? = nil,
         sharerRating: Int? = nil,
         groupIds: [String] = [],
-        isPublic: Bool = true
+        isPublic: Bool = true,
+        commentCount: Int = 0,
+        reactionCounts: [String: Int] = [:],
+        viewerReactions: [String] = []
     ) {
         self.shareId = shareId
         self.sharedBy = sharedBy
@@ -304,6 +317,9 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         self.sharerRating = sharerRating
         self.groupIds = groupIds
         self.isPublic = isPublic
+        self.commentCount = commentCount
+        self.reactionCounts = reactionCounts
+        self.viewerReactions = viewerReactions
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -313,6 +329,42 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         case queuedCount, ratedCount, viewerHasQueued, viewerRating, sharerRating
         case groupIds
         case isPublic = "public"
+        case commentCount, reactionCounts, viewerReactions
+    }
+
+    /// Convenience for optimistic UI patches — produce a new Share with the
+    /// reaction summary swapped out, leaving every other field intact.
+    func withReactionSummary(counts: [String: Int], viewerReactions: [String]) -> Share {
+        Share(
+            shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt,
+            trackId: trackId, trackUri: trackUri, trackName: trackName,
+            artistName: artistName, albumName: albumName, albumArtUrl: albumArtUrl,
+            caption: caption, moodTag: moodTag, genreTags: genreTags,
+            queuedCount: queuedCount, ratedCount: ratedCount,
+            viewerHasQueued: viewerHasQueued, viewerRating: viewerRating,
+            sharerRating: sharerRating,
+            groupIds: groupIds, isPublic: isPublic,
+            commentCount: commentCount,
+            reactionCounts: counts,
+            viewerReactions: viewerReactions
+        )
+    }
+
+    /// Same idea for comment count adjustments.
+    func withCommentCount(_ newCount: Int) -> Share {
+        Share(
+            shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt,
+            trackId: trackId, trackUri: trackUri, trackName: trackName,
+            artistName: artistName, albumName: albumName, albumArtUrl: albumArtUrl,
+            caption: caption, moodTag: moodTag, genreTags: genreTags,
+            queuedCount: queuedCount, ratedCount: ratedCount,
+            viewerHasQueued: viewerHasQueued, viewerRating: viewerRating,
+            sharerRating: sharerRating,
+            groupIds: groupIds, isPublic: isPublic,
+            commentCount: newCount,
+            reactionCounts: reactionCounts,
+            viewerReactions: viewerReactions
+        )
     }
 }
 
@@ -746,4 +798,120 @@ struct ShareDetailResponse: Codable, Sendable {
     let share: Share
     let interactions: [ShareInteractionEntry]
     let friendRatings: [ShareFriendRating]
+}
+
+// MARK: - Reactions
+//
+// Backend contract: xomify-backend#139. Six fixed emoji slugs; per (user,
+// share, slug) toggle. Multiple emoji per user is allowed.
+
+enum ShareReaction: String, Codable, Sendable, CaseIterable, Identifiable {
+    case fire
+    case heart
+    case laugh
+    case mindBlown = "mind_blown"
+    case sad
+    case thumbsUp = "thumbs_up"
+
+    var id: String { rawValue }
+
+    var emoji: String {
+        switch self {
+        case .fire:       return "🔥"
+        case .heart:      return "❤️"
+        case .laugh:      return "😂"
+        case .mindBlown:  return "🤯"
+        case .sad:        return "😢"
+        case .thumbsUp:   return "👍"
+        }
+    }
+
+    var accessibilityLabel: String {
+        switch self {
+        case .fire:       return "Fire"
+        case .heart:      return "Heart"
+        case .laugh:      return "Laugh"
+        case .mindBlown:  return "Mind blown"
+        case .sad:        return "Sad"
+        case .thumbsUp:   return "Thumbs up"
+        }
+    }
+}
+
+/// Response for POST `/shares/reactions`.
+struct ReactionToggleResponse: Codable, Sendable {
+    let active: Bool
+    let reaction: String
+    let counts: [String: Int]
+    let viewerReactions: [String]
+}
+
+/// Response for GET `/shares/reactions`.
+struct ReactionsListResponse: Codable, Sendable {
+    let counts: [String: Int]
+    let viewerReactions: [String]
+}
+
+// MARK: - Comments
+//
+// Backend contract: xomify-backend#139. POST/GET/DELETE `/shares/comments`.
+
+struct ShareComment: Codable, Sendable, Identifiable, Hashable {
+    let commentId: String
+    let shareId: String
+    let email: String
+    let displayName: String?
+    let avatar: String?
+    let body: String
+    let createdAt: String?
+
+    var id: String { commentId }
+
+    var avatarURL: URL? {
+        guard let s = avatar, !s.isEmpty else { return nil }
+        return URL(string: s)
+    }
+
+    var resolvedName: String {
+        if let n = displayName, !n.isEmpty { return n }
+        return email
+    }
+
+    var createdAtDate: Date? {
+        guard let createdAt else { return nil }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = iso.date(from: createdAt) { return d }
+        iso.formatOptions = [.withInternetDateTime]
+        if let d = iso.date(from: createdAt) { return d }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.date(from: createdAt)
+    }
+
+    var relativeTime: String {
+        guard let date = createdAtDate else { return "" }
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 { return "just now" }
+        if interval < 3_600 { return "\(Int(interval / 60))m ago" }
+        if interval < 86_400 { return "\(Int(interval / 3_600))h ago" }
+        if interval < 604_800 { return "\(Int(interval / 86_400))d ago" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
+    }
+}
+
+/// Response for GET `/shares/comments`.
+struct CommentsListResponse: Codable, Sendable {
+    let comments: [ShareComment]
+    let nextBefore: String?
+}
+
+/// Response for DELETE `/shares/comments`.
+struct CommentDeleteResponse: Codable, Sendable {
+    let deleted: Bool
+    let commentId: String
 }

@@ -467,6 +467,94 @@ actor XomifyService {
         ])
     }
 
+    // MARK: - Social — Comments (xomify-backend#139)
+    //
+    // The deployed paths are verb-disambiguated (`/shares/comments-create`
+    // etc.) because the `api-gateway-service` Terraform module keys API GW
+    // resources by `path_part` and doesn't share a node across HTTP verbs
+    // yet. xomify-infrastructure#72 has the follow-up to collapse them into
+    // RESTful `/shares/comments` later — when that lands, just rename here.
+
+    /// Post a new comment on a share. Backend trims + caps at 500 chars and
+    /// rejects whitespace-only bodies. Returns the persisted, profile-hydrated
+    /// row so the UI can render it without a follow-up fetch.
+    @discardableResult
+    func createComment(
+        email: String,
+        shareId: String,
+        body: String
+    ) async throws -> ShareComment {
+        try await network.xomifyPost("/shares/comments-create", body: [
+            "email": email,
+            "shareId": shareId,
+            "body": body
+        ])
+    }
+
+    /// Page through the comment thread on a share. Newest first. `before`
+    /// is the `createdAt` cursor from the previous page; nil for the first
+    /// page. `limit` is capped at 100 server-side.
+    func listComments(
+        email: String,
+        shareId: String,
+        limit: Int = 20,
+        before: String? = nil
+    ) async throws -> CommentsListResponse {
+        var params: [String: String] = [
+            "email": email,
+            "shareId": shareId,
+            "limit": String(limit)
+        ]
+        if let before = before { params["before"] = before }
+        return try await network.xomifyGet("/shares/comments-list", queryParams: params)
+    }
+
+    /// Delete a single comment. Backend allows the comment author OR the
+    /// share author to delete; everyone else gets 403.
+    @discardableResult
+    func deleteComment(
+        email: String,
+        shareId: String,
+        commentId: String
+    ) async throws -> CommentDeleteResponse {
+        try await network.xomifyDelete("/shares/comments-delete", body: [
+            "email": email,
+            "shareId": shareId,
+            "commentId": commentId
+        ])
+    }
+
+    // MARK: - Social — Reactions (xomify-backend#139)
+    //
+    // Distinct from `/shares/react` (Spotify queued/rated). These are emoji
+    // reactions: fire / heart / laugh / mind_blown / sad / thumbs_up.
+
+    /// Toggle one reaction. If active for (viewer, share, slug) it's removed,
+    /// otherwise added. Multiple slugs per viewer per share is allowed.
+    @discardableResult
+    func toggleReaction(
+        email: String,
+        shareId: String,
+        reaction: ShareReaction
+    ) async throws -> ReactionToggleResponse {
+        try await network.xomifyPost("/shares/reactions-toggle", body: [
+            "email": email,
+            "shareId": shareId,
+            "reaction": reaction.rawValue
+        ])
+    }
+
+    /// Read-only fetch of the full reaction summary for a share.
+    func listReactions(
+        email: String,
+        shareId: String
+    ) async throws -> ReactionsListResponse {
+        try await network.xomifyGet("/shares/reactions-list", queryParams: [
+            "email": email,
+            "shareId": shareId
+        ])
+    }
+
     // MARK: - Ratings
 
     /// Publish (create or update) a rating for a track. Rating is 1-5.

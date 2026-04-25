@@ -34,11 +34,13 @@ struct ShareDetailView: View {
                     sharerBlock
                     statsRow
                     actionRow
+                    reactionBar
                     if let caption = viewModel.share.caption, !caption.isEmpty {
                         captionBlock(caption)
                     }
                     friendRatingsSection
                     listenersSection
+                    commentsSection
                     if let error = viewModel.errorMessage {
                         inlineErrorBanner(error)
                     }
@@ -53,9 +55,11 @@ struct ShareDetailView: View {
         .tint(Color.xomifyGreen)
         .task {
             await viewModel.load()
+            await viewModel.loadComments()
         }
         .refreshable {
             await viewModel.load()
+            await viewModel.loadComments()
         }
         .sheet(isPresented: $showRateSheet) {
             DetailRateSheet(viewModel: viewModel, isPresented: $showRateSheet)
@@ -433,6 +437,192 @@ struct ShareDetailView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .background(Color.xomifyCard)
+        .clipShape(.rect(cornerRadius: 10))
+    }
+
+    // MARK: - Reactions
+
+    /// Six-emoji bar. Each chip shows the count when > 0; tapping toggles
+    /// the viewer's reaction. The chip background flips green when active so
+    /// the viewer can see what they've already reacted with.
+    private var reactionBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                ForEach(ShareReaction.allCases) { reaction in
+                    reactionChip(reaction)
+                }
+            }
+            if let error = viewModel.reactError {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+
+    private func reactionChip(_ reaction: ShareReaction) -> some View {
+        let active = viewModel.viewerHasReacted(reaction)
+        let count = viewModel.count(for: reaction)
+        let inFlight = viewModel.reactingSlugs.contains(reaction.rawValue)
+        return Button {
+            Task { await viewModel.toggleReaction(reaction) }
+        } label: {
+            HStack(spacing: 4) {
+                Text(reaction.emoji)
+                    .font(.system(size: 18))
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(active ? Color.xomifyGreen : .white)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(minHeight: 36)
+            .background(active
+                ? Color.xomifyGreen.opacity(0.18)
+                : Color.white.opacity(0.08))
+            .overlay(
+                Capsule().strokeBorder(
+                    active ? Color.xomifyGreen.opacity(0.6) : Color.clear,
+                    lineWidth: 1
+                )
+            )
+            .clipShape(Capsule())
+            .opacity(inFlight ? 0.55 : 1)
+        }
+        .buttonStyle(.plain)
+        .disabled(inFlight)
+        .accessibilityLabel(reaction.accessibilityLabel)
+        .accessibilityValue(active ? "On, \(count)" : "Off, \(count)")
+    }
+
+    // MARK: - Comments
+
+    private var commentsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(
+                title: "Comments",
+                icon: "bubble.left",
+                count: viewModel.share.commentCount
+            )
+
+            commentComposer
+
+            if viewModel.isLoadingComments && viewModel.comments.isEmpty {
+                sectionPlaceholder(message: "Loading comments…")
+            } else if viewModel.comments.isEmpty {
+                Text("No comments yet. Be the first.")
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color.xomifyCard.opacity(0.5))
+                    .clipShape(.rect(cornerRadius: 10))
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(viewModel.comments) { comment in
+                        commentRow(comment)
+                    }
+                }
+            }
+
+            if let error = viewModel.commentsError {
+                inlineErrorBanner(error)
+            }
+        }
+    }
+
+    private var commentComposer: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField(
+                    "",
+                    text: Binding(
+                        get: { viewModel.commentDraft },
+                        set: { viewModel.commentDraft = $0 }
+                    ),
+                    prompt: Text("Add a comment").foregroundStyle(.gray),
+                    axis: .vertical
+                )
+                .lineLimit(1...4)
+                .textInputAutocapitalization(.sentences)
+                .foregroundStyle(.white)
+                .padding(10)
+                .background(Color.white.opacity(0.06))
+                .clipShape(.rect(cornerRadius: 10))
+
+                Button {
+                    Task { await viewModel.postComment() }
+                } label: {
+                    if viewModel.isPostingComment {
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .background(canPostComment ? LinearGradient.xomifyGradient : LinearGradient(
+                    colors: [Color.gray.opacity(0.4)], startPoint: .leading, endPoint: .trailing
+                ))
+                .clipShape(.rect(cornerRadius: 10))
+                .disabled(!canPostComment)
+                .accessibilityLabel("Post comment")
+            }
+            if let error = viewModel.postCommentError {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+
+    private var canPostComment: Bool {
+        !viewModel.isPostingComment
+            && !viewModel.commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func commentRow(_ comment: ShareComment) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            avatarView(url: comment.avatarURL, initial: comment.resolvedName.prefix(1))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(comment.resolvedName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(comment.relativeTime)
+                        .font(.caption2)
+                        .foregroundStyle(.gray)
+                    Spacer(minLength: 0)
+                    if viewModel.canDelete(comment) {
+                        Button(role: .destructive) {
+                            Task { await viewModel.deleteComment(comment) }
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.caption2)
+                                .foregroundStyle(.red.opacity(0.85))
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.deletingCommentIds.contains(comment.commentId))
+                        .accessibilityLabel("Delete comment")
+                    }
+                }
+                Text(comment.body)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.92))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
         .background(Color.xomifyCard)
         .clipShape(.rect(cornerRadius: 10))
     }
