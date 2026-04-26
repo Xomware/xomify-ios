@@ -24,6 +24,7 @@ struct SettingsView: View {
             aboutSection
             legalSection
             supportSection
+            developerSection
             dangerSection
         }
         .listStyle(.insetGrouped)
@@ -294,6 +295,26 @@ struct SettingsView: View {
             }
         } header: {
             Text("Support")
+                .foregroundStyle(.gray)
+        }
+        .listRowBackground(Color.xomifyCard)
+    }
+
+    // MARK: - Developer
+
+    private var developerSection: some View {
+        Section {
+            NavigationLink {
+                PlaybackDiagnosticsView()
+                    .environment(SpotifyPlaybackCoordinator.shared)
+            } label: {
+                Label("Playback Diagnostics", systemImage: "waveform.path.ecg")
+                    .foregroundStyle(.white)
+            }
+            .frame(minHeight: 44)
+            .accessibilityHint("SDK connection status, token info, and force-fallback toggle")
+        } header: {
+            Text("Developer")
                 .foregroundStyle(.gray)
         }
         .listRowBackground(Color.xomifyCard)

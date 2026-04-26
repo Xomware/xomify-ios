@@ -10,6 +10,20 @@
 - **Decisions**: Project uses `PBXFileSystemSynchronizedRootGroup` — no manual pbxproj file references needed for new Swift files. `SpotifyRemoteError.Sendable` conformance requires wrapping associated `Error` values; used `@unchecked Sendable` pattern is avoided since these errors are only thrown/caught in `@MainActor` context.
 - **Result**: BUILD SUCCEEDED (iphonesimulator)
 
+## [2026-04-26 00:04] — Final summary
+
+All 4 phases complete. PRs: #81 (infra), #82 (SDK wrapper + lifecycle), #83 (call site wiring), #84 (diagnostics). Version 1.6.0 → 1.7.1. Real-device testing required per the plan's test sections before relying on SDK playback.
+
+## [2026-04-26 00:03] — Phase 4: Settings diagnostics + force-fallback toggle
+
+- **Action**: Created `PlaybackDiagnosticsView.swift` under `Xomify-iOS/Views/Settings/`. Shows SDK connection state, last error, Spotify-app-install status, token expiry, force-fallback toggle, Reconnect + Open Spotify buttons. Added "Developer" section to `SettingsView` with `NavigationLink` to the diagnostics view. Toggle bound to `SpotifyPlaybackCoordinator.forceWebFallback` via `Binding(get:set:)`. Bumped version 1.7.0 → 1.7.1.
+- **Files changed**:
+  - `Xomify-iOS/Views/Settings/PlaybackDiagnosticsView.swift` — new
+  - `Xomify-iOS/Views/Shell/Destinations/SettingsView.swift` — Developer section
+  - `Xomify-iOS.xcodeproj/project.pbxproj` — version bump
+- **Decisions**: No developer-mode gate — SettingsView has no such pattern. Plain section keeps it accessible for Dom without extra ceremony. Used `Binding(get:set:)` for `forceWebFallback` since `@Environment` + `@Bindable` in computed property `@ViewBuilder` has tricky syntax. `tokenExpiringSoon` threshold set at 5 min (< 300s) as an opinionated warning.
+- **Result**: BUILD SUCCEEDED (iphonesimulator)
+
 ## [2026-04-26 00:02] — Phase 3: Wire call sites + Web API fallback
 
 - **Action**: Changed `QueueActionController.init` and `ShareCardViewModel.init` default `spotifyService` param from `SpotifyService.shared` to `SpotifyPlaybackCoordinator.shared`. Audited codebase — no other direct `queueTrack`/`playTrack` callers. Updated `handleNoDevice` copy to reflect that `.noActiveDevice` is now a rare last-resort path. Bumped version 1.6.2 → 1.7.0 (feat: first user-visible change).
