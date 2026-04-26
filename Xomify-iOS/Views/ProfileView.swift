@@ -98,6 +98,9 @@ struct ProfileView: View {
 
         case .recent:
             ProfileRecentTab()
+
+        case .likes:
+            ProfileLikesTab(viewModel: viewModel.likesViewModel())
         }
     }
 
