@@ -7,6 +7,8 @@ import SwiftUI
 enum SidebarDestination: Hashable {
     case profile
     case feed
+    case likes
+    case recentlyPlayed
     case musicTaste
     case wrapped
     case releaseRadar
