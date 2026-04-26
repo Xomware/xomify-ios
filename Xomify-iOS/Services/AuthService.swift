@@ -16,7 +16,13 @@ final class AuthService: NSObject, Sendable {
     private(set) var refreshToken: String?
     private(set) var tokenExpirationDate: Date?
     private(set) var isAuthenticated = false
-    
+
+    /// Called whenever a new access token is persisted (initial login or refresh).
+    /// `SpotifyPlaybackCoordinator` wires itself in here so it can push the
+    /// updated token into the live `SPTAppRemote` instance without polling.
+    @ObservationIgnored
+    var onTokenRefresh: (@Sendable (String) -> Void)?
+
     private var authSession: ASWebAuthenticationSession?
     private var codeVerifier: String?
     
@@ -104,6 +110,25 @@ final class AuthService: NSObject, Sendable {
         }
         
         print("✅ Auth: Tokens saved to Keychain, expires in \(expiresIn)s")
+
+        onTokenRefresh?(accessToken)
+    }
+
+    // MARK: - SDK Token Access
+
+    /// Returns a valid access token for the Spotify iOS SDK, auto-refreshing
+    /// if the current token is expired. Returns `nil` if not authenticated.
+    func accessTokenForSDK() async -> String? {
+        guard isAuthenticated else { return nil }
+        if isTokenExpired {
+            do {
+                try await refreshAccessToken()
+            } catch {
+                print("⚠️ Auth: Could not refresh token for SDK: \(error)")
+                return nil
+            }
+        }
+        return accessToken
     }
     
     var isTokenExpired: Bool {

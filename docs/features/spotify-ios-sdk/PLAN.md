@@ -100,7 +100,7 @@ holding a connection while the app isn't foregrounded.
 - [x] Bump version: `scripts/bump-version.sh fix` (no user-visible change yet). → 1.6.1
 
 ### Phase 2 — `SpotifyRemoteService` + connection lifecycle (PR #2)
-- [ ] Create `Xomify-iOS/Services/SpotifyRemoteService.swift`:
+- [x] Create `Xomify-iOS/Services/SpotifyRemoteService.swift`:
   - `@MainActor @Observable final class SpotifyRemoteService: NSObject, SpotifyQueueing, SPTAppRemoteDelegate`
   - Properties: `isConnected: Bool`, `lastError: SpotifyRemoteError?`
   - Initialiser builds `SPTConfiguration(clientID:redirectURL:)` from the
@@ -114,9 +114,9 @@ holding a connection while the app isn't foregrounded.
     otherwise. Calls `appRemote.playerAPI?.enqueueTrackUri(uri, callback:)`,
     bridges callback to `async throws`.
   - `playTrack(uri:)`: same pattern, calls `appRemote.playerAPI?.play(uri)`.
-  - `handleOpenURL(_:)`: forwards to `appRemote.authorizeAndPlayURI` /
+  - `handleOpenURL(_:)`: forwards to `appRemote.authorizationParameters(from:)`
     parameter parser as required by the auth-handover flow.
-- [ ] Create `Xomify-iOS/Services/SpotifyPlaybackCoordinator.swift`:
+- [x] Create `Xomify-iOS/Services/SpotifyPlaybackCoordinator.swift`:
   - `@MainActor @Observable final class SpotifyPlaybackCoordinator: SpotifyQueueing`
   - Holds `remote: SpotifyRemoteService` and `web: SpotifyService`.
   - `connectIfAuthenticated()` async — fetches token from `AuthService`, calls
@@ -126,18 +126,15 @@ holding a connection while the app isn't foregrounded.
     1. If `forceWebFallback` toggle is on → use `web` directly.
     2. Else try `remote.queueTrack(uri:)`. On `.notConnected` / `.notInstalled`
        fall through to `web.queueTrack(uri:)`.
-- [ ] Wire scene-phase + URL forwarding into the `App` struct:
-  - Inject the coordinator via `.environment(coordinator)` (or a singleton —
-    prefer environment so it's testable).
+- [x] Wire scene-phase + URL forwarding into the `App` struct:
+  - Inject the coordinator via `.environment(coordinator)`.
   - `.onChange(of: scenePhase)` → `.active` → `Task { await coordinator.connectIfAuthenticated() }`,
     `.background` → `coordinator.disconnect()`.
   - `.onOpenURL { coordinator.remote.handleOpenURL($0) }`.
-- [ ] Push token refreshes through: extend `AuthService` with a tiny callback
-      / async stream so the coordinator updates `appRemote.connectionParameters.accessToken`
-      after `refreshAccessToken()` succeeds. (Otherwise the SDK keeps the stale
-      token and starts failing after the first refresh.)
+- [x] Push token refreshes through: extended `AuthService` with `onTokenRefresh: (@Sendable (String) -> Void)?`
+      callback and `accessTokenForSDK() async -> String?`. Coordinator wires itself in at init.
 - [ ] Manual test on a real device — see Test Plan §Phase 2.
-- [ ] Bump version: `scripts/bump-version.sh fix`.
+- [x] Bump version: `scripts/bump-version.sh fix`. → 1.6.2
 
 ### Phase 3 — Wire call sites + Web-API fallback (PR #3)
 - [ ] Change `QueueActionController.init` default param from
