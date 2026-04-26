@@ -90,7 +90,7 @@ final class UserProfileViewModel {
     private var _sharesVM: SharesByUserViewModel?
     private var _ratingsVM: RatingsViewModel?
     private var _playlistsVM: ProfilePlaylistsViewModel?
-    private var _likesVM: ProfileLikesViewModel?
+    private var _likesVM: LikesViewModel?
 
     /// Tabs visible for this profile's context. `.playlists` surfaces the
     /// signed-in user's Spotify playlists for `.me`, and the friend's public
@@ -126,9 +126,9 @@ final class UserProfileViewModel {
     }
 
     /// Lazy accessor for the Likes tab view model.
-    func likesViewModel() -> ProfileLikesViewModel {
+    func likesViewModel() -> LikesViewModel {
         if let existing = _likesVM { return existing }
-        let vm = ProfileLikesViewModel()
+        let vm = LikesViewModel()
         _likesVM = vm
         return vm
     }
