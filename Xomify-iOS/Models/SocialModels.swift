@@ -350,6 +350,29 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         )
     }
 
+    /// Optimistically patch the viewer's own rating onto the share so the
+    /// downstream detail view (which builds its own VM from this Share) sees
+    /// the rating the user just set on the feed card. `bumpRatedCount` adds 1
+    /// to `ratedCount` when the viewer hadn't already rated this share —
+    /// keeps the friends-rated stat in sync without a refetch.
+    func withViewerRating(_ rating: Int?) -> Share {
+        let bumpRatedCount = (viewerRating == nil && rating != nil) ? 1
+            : (viewerRating != nil && rating == nil) ? -1 : 0
+        return Share(
+            shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt,
+            trackId: trackId, trackUri: trackUri, trackName: trackName,
+            artistName: artistName, albumName: albumName, albumArtUrl: albumArtUrl,
+            caption: caption, moodTag: moodTag, genreTags: genreTags,
+            queuedCount: queuedCount, ratedCount: max(0, ratedCount + bumpRatedCount),
+            viewerHasQueued: viewerHasQueued, viewerRating: rating,
+            sharerRating: sharerRating,
+            groupIds: groupIds, isPublic: isPublic,
+            commentCount: commentCount,
+            reactionCounts: reactionCounts,
+            viewerReactions: viewerReactions
+        )
+    }
+
     /// Same idea for comment count adjustments.
     func withCommentCount(_ newCount: Int) -> Share {
         Share(

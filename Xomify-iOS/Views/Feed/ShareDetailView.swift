@@ -410,7 +410,12 @@ struct ShareDetailView: View {
                 }
             }
 
-            if let error = viewModel.commentsError {
+            // Suppress the load error banner when the thread is empty — the
+            // backend returns 500 on threads that have never had a comment,
+            // and surfacing it on every empty post is just noise. A real
+            // failure on a populated thread (e.g., refresh after the first
+            // load) still falls through to the banner.
+            if let error = viewModel.commentsError, !viewModel.comments.isEmpty {
                 inlineErrorBanner(error)
             }
         }
