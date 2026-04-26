@@ -18,6 +18,10 @@
 		</dict>
 		<dict/>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>spotify</string>
+	</array>
 	<key>SPOTIFY_CLIENT_ID</key>
 	<string>$(SPOTIFY_CLIENT_ID)</string>
 	<key>SPOTIFY_CLIENT_SECRET</key>
