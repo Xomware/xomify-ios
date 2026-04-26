@@ -127,6 +127,7 @@ final class ShareCardViewModel {
                 trackId: share.trackId,
                 trackName: share.trackName,
                 artistName: share.artistName,
+                albumArt: share.albumArtUrl,
                 rating: stars,
                 review: nil
             )

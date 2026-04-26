@@ -112,7 +112,7 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
 
     func publishRating(
         email: String, trackId: String, trackName: String, artistName: String,
-        rating: Int, review: String?
+        albumArt: String?, rating: Int, review: String?
     ) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }

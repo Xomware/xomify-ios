@@ -70,6 +70,7 @@ protocol XomifyServiceProtocol: Sendable {
         trackId: String,
         trackName: String,
         artistName: String,
+        albumArt: String?,
         rating: Int,
         review: String?
     ) async throws -> SuccessResponse

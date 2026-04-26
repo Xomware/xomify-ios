@@ -55,14 +55,7 @@ struct ShareCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 8) {
-                detailTapZone
-                TrackActionsMenu(
-                    track: makeTrackForActions(),
-                    style: .icon,
-                    onDelete: (isOwnPost && onDelete != nil) ? { showDeleteConfirm = true } : nil
-                )
-            }
+            detailTapZone
             actionRow
             socialRow
             if let error = viewModel.queueError {
@@ -325,12 +318,22 @@ struct ShareCardView: View {
 
     // MARK: - Action row
 
+    /// `Queue` stays as a one-tap primary; the labeled `Actions` pill exposes
+    /// the rest of the track menu (play now, open in Spotify, add to playlist
+    /// builder, share to feed, plus delete on own posts) so the affordance is
+    /// as discoverable as on the detail view — the prior icon-only "…" at the
+    /// top of the card was too easy to miss.
     private var actionRow: some View {
         HStack(spacing: 10) {
             queueButton
             rateButton
-            commentButton
+            TrackActionsMenu(
+                track: makeTrackForActions(),
+                style: .pill,
+                onDelete: (isOwnPost && onDelete != nil) ? { showDeleteConfirm = true } : nil
+            )
             Spacer()
+            commentButton
             if viewModel.displayedQueueCount > 0 {
                 queueCountChip
             }

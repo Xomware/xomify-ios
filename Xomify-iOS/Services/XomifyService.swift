@@ -558,12 +558,16 @@ actor XomifyService {
     // MARK: - Ratings
 
     /// Publish (create or update) a rating for a track. Rating is 1-5.
+    /// `albumArt` is required by the backend (`/ratings/publish` rejects with
+    /// 400 when missing). Pass `share.albumArtUrl` from the feed; for non-feed
+    /// rate surfaces, hand in `track.imageUrl?.absoluteString`.
     @discardableResult
     func publishRating(
         email: String,
         trackId: String,
         trackName: String,
         artistName: String,
+        albumArt: String?,
         rating: Int,
         review: String? = nil
     ) async throws -> SuccessResponse {
@@ -572,6 +576,7 @@ actor XomifyService {
             "trackId": trackId,
             "trackName": trackName,
             "artistName": artistName,
+            "albumArt": albumArt ?? "",
             "rating": rating
         ]
         if let review = review, !review.isEmpty {
