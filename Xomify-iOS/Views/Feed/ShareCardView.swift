@@ -57,7 +57,6 @@ struct ShareCardView: View {
         VStack(alignment: .leading, spacing: 12) {
             detailTapZone
             actionRow
-            socialRow
             if let error = viewModel.queueError {
                 errorBanner(error)
             }
@@ -318,22 +317,29 @@ struct ShareCardView: View {
 
     // MARK: - Action row
 
-    /// `Queue` stays as a one-tap primary; the labeled `Actions` pill exposes
-    /// the rest of the track menu (play now, open in Spotify, add to playlist
-    /// builder, share to feed, plus delete on own posts) so the affordance is
-    /// as discoverable as on the detail view — the prior icon-only "…" at the
-    /// top of the card was too easy to miss.
+    /// Single icon-first row holding every front-of-card action so labels
+    /// never wrap. The `Queue` shortcut moved into the Actions menu and the
+    /// reaction bar (smiley + active pills) sits inline next to comment so
+    /// users don't have to scan a separate row to react.
+    /// Order: Actions ⋯ → Rate ☆ → 💬 N → 😊 reactions → friend-queued chip.
     private var actionRow: some View {
-        HStack(spacing: 10) {
-            queueButton
-            rateButton
+        HStack(spacing: 8) {
             TrackActionsMenu(
                 track: makeTrackForActions(),
-                style: .pill,
+                style: .icon,
                 onDelete: (isOwnPost && onDelete != nil) ? { showDeleteConfirm = true } : nil
             )
-            Spacer()
+            rateButton
             commentButton
+            ReactionsBar(
+                counts: viewModel.share.reactionCounts,
+                viewerReactions: viewModel.share.viewerReactions,
+                inFlightSlugs: viewModel.reactingSlugs,
+                onToggle: { reaction in
+                    Task { await viewModel.toggleReaction(reaction) }
+                }
+            )
+            Spacer(minLength: 0)
             if viewModel.displayedQueueCount > 0 {
                 queueCountChip
             }
@@ -346,16 +352,19 @@ struct ShareCardView: View {
         Button {
             onOpenDetail?()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 Image(systemName: "bubble.left")
-                Text("\(viewModel.share.commentCount)")
                     .font(.subheadline)
-                    .fontWeight(.medium)
+                if viewModel.share.commentCount > 0 {
+                    Text("\(viewModel.share.commentCount)")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .frame(minHeight: 44)
+            .frame(minWidth: 44, minHeight: 44)
             .background(Color.white.opacity(0.08))
             .clipShape(Capsule())
         }
@@ -363,79 +372,23 @@ struct ShareCardView: View {
         .accessibilityLabel("\(viewModel.share.commentCount) comments. Tap to open.")
     }
 
-    /// Reactions row — only renders pills for reactions with count ≥ 1, plus
-    /// the smiley menu to add a new one.
-    @ViewBuilder
-    private var socialRow: some View {
-        let counts = viewModel.share.reactionCounts
-        let viewer = viewModel.share.viewerReactions
-        if !counts.isEmpty || !viewer.isEmpty {
-            ReactionsBar(
-                counts: counts,
-                viewerReactions: viewer,
-                inFlightSlugs: viewModel.reactingSlugs,
-                onToggle: { reaction in
-                    Task { await viewModel.toggleReaction(reaction) }
-                }
-            )
-        } else {
-            // Empty state: just show the add button so a viewer can react first.
-            HStack {
-                ReactionsBar(
-                    counts: [:],
-                    viewerReactions: [],
-                    inFlightSlugs: viewModel.reactingSlugs,
-                    onToggle: { reaction in
-                        Task { await viewModel.toggleReaction(reaction) }
-                    }
-                )
-                Spacer()
-            }
-        }
-    }
-
-    private var queueButton: some View {
-        Button {
-            Task { await viewModel.queue() }
-        } label: {
-            HStack(spacing: 6) {
-                if viewModel.isQueuing {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(.white)
-                } else {
-                    Image(systemName: viewModel.queuedLocally ? "checkmark.circle.fill" : "text.badge.plus")
-                }
-                Text(viewModel.queuedLocally ? "Queued" : "Queue")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(minHeight: 44)
-            .background(viewModel.queuedLocally ? Color.xomifyGreen.opacity(0.25) : Color.xomifyPurple)
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .disabled(viewModel.isQueuing)
-        .accessibilityLabel(viewModel.queuedLocally ? "Queued on Spotify" : "Queue on Spotify")
-    }
-
     private var rateButton: some View {
         Button {
             showRateSheet = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 Image(systemName: viewModel.myRating != nil ? "star.fill" : "star")
-                Text(viewModel.myRating.map { "\($0)/5" } ?? "Rate")
                     .font(.subheadline)
-                    .fontWeight(.medium)
+                if let rating = viewModel.myRating {
+                    Text("\(rating)/5")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
             }
             .foregroundStyle(viewModel.myRating != nil ? Color.xomifyGreen : .white)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .frame(minHeight: 44)
+            .frame(minWidth: 44, minHeight: 44)
             .background(Color.white.opacity(0.08))
             .clipShape(Capsule())
         }

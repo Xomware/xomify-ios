@@ -144,6 +144,9 @@ final class ShareDetailViewModel {
                 rating: stars,
                 review: nil
             )
+            // Patch local share so a subsequent `load()` won't override the
+            // viewer rating with a stale server value.
+            share = share.withViewerRating(stars)
         } catch {
             myRating = previous
             rateError = error.localizedDescription

@@ -131,6 +131,11 @@ final class ShareCardViewModel {
                 rating: stars,
                 review: nil
             )
+            // Patch the share so when the user navigates to the detail view,
+            // the freshly-pushed Share carries `viewerRating = stars`.
+            // Without this, ShareDetailViewModel.init reads the stale
+            // server-side `nil` and the detail screen shows no rating.
+            share = share.withViewerRating(stars)
         } catch {
             myRating = previous
             rateError = error.localizedDescription
