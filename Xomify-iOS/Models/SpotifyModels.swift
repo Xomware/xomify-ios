@@ -226,6 +226,14 @@ struct RecentlyPlayedResponse: Codable, Sendable {
     let items: [SpotifyPlayHistory]
     let next: String?
     let limit: Int?
+    /// Cursor for backwards pagination. `before` is a string-encoded epoch
+    /// timestamp (ms) — pass it as `before=` to get history older than that point.
+    let cursors: RecentlyPlayedCursors?
+
+    struct RecentlyPlayedCursors: Codable, Sendable {
+        let before: String?
+        let after: String?
+    }
 }
 
 struct SearchResponse: Codable, Sendable {

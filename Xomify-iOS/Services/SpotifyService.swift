@@ -198,11 +198,19 @@ actor SpotifyService {
 
     /// User's recently played tracks, newest-first. Requires the
     /// `user-read-recently-played` scope.
-    func getRecentlyPlayed(limit: Int = 25) async throws -> [SpotifyPlayHistory] {
-        let response: RecentlyPlayedResponse = try await network.spotifyGet(
-            "/me/player/recently-played?limit=\(limit)"
-        )
-        return response.items
+    ///
+    /// - Parameters:
+    ///   - limit: Number of items to return (max 50).
+    ///   - before: Optional cursor (string-encoded epoch ms). When provided,
+    ///     returns history older than that timestamp, enabling cursor-based
+    ///     backwards pagination.
+    /// - Returns: Full `RecentlyPlayedResponse` so callers can read `cursors.before`.
+    func getRecentlyPlayed(limit: Int = 25, before: String? = nil) async throws -> RecentlyPlayedResponse {
+        var path = "/me/player/recently-played?limit=\(limit)"
+        if let before {
+            path += "&before=\(before)"
+        }
+        return try await network.spotifyGet(path)
     }
 
     // MARK: - Tracks

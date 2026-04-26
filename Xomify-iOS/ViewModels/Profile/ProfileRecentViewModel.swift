@@ -44,7 +44,8 @@ final class ProfileRecentViewModel {
         defer { isLoading = false }
 
         do {
-            recentlyPlayed = try await spotifyService.getRecentlyPlayed(limit: 25).map { $0.track }
+            let response = try await spotifyService.getRecentlyPlayed(limit: 25, before: nil)
+            recentlyPlayed = response.items.map { $0.track }
         } catch {
             recentError = error.localizedDescription
             recentlyPlayed = []
@@ -57,7 +58,7 @@ final class ProfileRecentViewModel {
 /// Narrow protocol so the VM can be unit-tested without standing up the full
 /// `SpotifyService` actor. Mirrors the pattern other Profile VMs use.
 protocol SpotifyRecentProviding: Sendable {
-    func getRecentlyPlayed(limit: Int) async throws -> [SpotifyPlayHistory]
+    func getRecentlyPlayed(limit: Int, before: String?) async throws -> RecentlyPlayedResponse
 }
 
 extension SpotifyService: SpotifyRecentProviding {}
