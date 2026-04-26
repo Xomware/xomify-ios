@@ -31,6 +31,8 @@ struct DrawerView: View {
     /// duplicated as a row.
     private let primaryEntries: [DrawerEntry] = [
         .init(destination: .feed,             label: "Feed",              systemImage: "sparkles"),
+        .init(destination: .likes,            label: "Likes",             systemImage: "heart.fill"),
+        .init(destination: .recentlyPlayed,   label: "Recently Played",   systemImage: "clock.arrow.circlepath"),
         .init(destination: .musicTaste,       label: "Music Taste",       systemImage: "waveform"),
         .init(destination: .wrapped,          label: "Wrapped",           systemImage: "chart.bar.fill"),
         .init(destination: .releaseRadar,     label: "Release Radar",     systemImage: "antenna.radiowaves.left.and.right"),

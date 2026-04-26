@@ -77,6 +77,10 @@ struct MainShell: View {
             ProfileView()
         case .feed:
             FeedView()
+        case .likes:
+            LikesView()
+        case .recentlyPlayed:
+            RecentlyPlayedView()
         case .musicTaste:
             TopItemsView()
         case .wrapped:
