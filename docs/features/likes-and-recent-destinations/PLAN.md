@@ -1,6 +1,6 @@
 # Plan: Likes & Recently Played — Top-Level Destinations + Friend-Profile Parity
 
-**Status**: In Progress
+**Status**: Done
 **Created**: 2026-04-26
 **Last updated**: 2026-04-26
 
@@ -89,52 +89,52 @@ Search UX decision: **filter only the currently-loaded pages** (cheap, immediate
 - [ ] Manual: open drawer, confirm both entries appear, tap each, confirm stub renders.
 
 ### Phase 2 — LikesView (top-level) (PR 2)
-- [ ] Rename `ProfileLikesViewModel.swift` → `LikesViewModel.swift`. Rename type. Move to `ViewModels/Library/`.
-- [ ] Add `var searchQuery: String = ""` to `LikesViewModel`.
-- [ ] Add computed `var filteredTracks: [SpotifyTrack]` — case-insensitive contains on `name` and joined `artistNames`. When `searchQuery.isEmpty`, return `tracks` directly (no copy).
-- [ ] Rename `ProfileLikesTab.swift` → `LikesView.swift`. Rename struct. Move to `Views/Library/`.
-- [ ] Wrap body in a `NavigationStack` (top-level destinations stand alone, not inside ProfileView's stack).
-- [ ] Add `.searchable(text: $viewModel.searchQuery, prompt: "Search liked songs")`.
-- [ ] Replace `viewModel.tracks` references with `viewModel.filteredTracks` in the list `ForEach`.
-- [ ] Add "Showing X of Y — load more to search older" hint footer when `!searchQuery.isEmpty && viewModel.hasMore`.
-- [ ] Keep existing pagination trigger (`onAppear` near end-of-list).
-- [ ] Replace stub in `MainShell.destinationRoot` with real `LikesView()`.
-- [ ] Update any other `ProfileLikesViewModel` references — there should be one (the lazy accessor in `UserProfileViewModel`) and that gets removed in Phase 4.
-- [ ] Build green per command above.
+- [x] Rename `ProfileLikesViewModel.swift` → `LikesViewModel.swift`. Rename type. Move to `ViewModels/Library/`.
+- [x] Add `var searchQuery: String = ""` to `LikesViewModel`.
+- [x] Add computed `var filteredTracks: [SpotifyTrack]` — case-insensitive contains on `name` and joined `artistNames`. When `searchQuery.isEmpty`, return `tracks` directly (no copy).
+- [x] Rename `ProfileLikesTab.swift` → `LikesView.swift`. Rename struct. Move to `Views/Library/`.
+- [x] Wrap body in a `NavigationStack` (top-level destinations stand alone, not inside ProfileView's stack).
+- [x] Add `.searchable(text: $viewModel.searchQuery, prompt: "Search liked songs")`.
+- [x] Replace `viewModel.tracks` references with `viewModel.filteredTracks` in the list `ForEach`.
+- [x] Add "Showing X of Y — load more to search older" hint footer when `!searchQuery.isEmpty && viewModel.hasMore`.
+- [x] Keep existing pagination trigger (`onAppear` near end-of-list).
+- [x] Replace stub in `MainShell.destinationRoot` with real `LikesView()`.
+- [x] Update any other `ProfileLikesViewModel` references — there should be one (the lazy accessor in `UserProfileViewModel`) and that gets removed in Phase 4.
+- [x] Build green per command above.
 - [ ] Manual: open Likes from drawer, confirm pagination still works, type into search and confirm filter is responsive, tap "load more" hint and confirm older results appear in filtered results.
 
 ### Phase 3 — RecentlyPlayedView (top-level) (PR 3)
-- [ ] In `SpotifyService.swift`, extend `getRecentlyPlayed`: change signature to `(limit: Int = 25, before: String? = nil) async throws -> RecentlyPlayedResponse`. Build URL with `&before=\(cursor)` when provided. Return the full response, not just `items`.
-- [ ] Update `ProfileRecentViewModel` to call the new signature: `let response = try await spotifyService.getRecentlyPlayed(limit: 25, before: nil); recentlyPlayed = response.items.map { $0.track }`. Update `SpotifyRecentProviding` protocol method signature accordingly.
-- [ ] Verify `RecentlyPlayedResponse` model decodes `cursors.before` (string-encoded epoch ms). Add the field if missing.
-- [ ] Create `Xomify-iOS/ViewModels/Library/RecentlyPlayedViewModel.swift`. Model on `LikesViewModel`: `@Observable @MainActor`, narrow protocol `SpotifyRecentlyPlayedProviding`, page size 50, state for `tracks`, `cursorBefore`, `isLoading`, `isLoadingMore`, `hasMore`, `errorMessage`, `searchQuery`, computed `filteredTracks`.
-- [ ] `loadMore` passes `before: cursorBefore`. `hasMore = response.cursors?.before != nil`.
-- [ ] Note: `/me/player/recently-played` does not return a total count; treat `hasMore` purely off cursor presence and don't render a `total` chip.
-- [ ] Create `Xomify-iOS/Views/Library/RecentlyPlayedView.swift` mirroring `LikesView` structure (header without count chip, `.searchable`, infinite scroll, hint footer, states). Use `TrackActionsMenu` for row actions.
-- [ ] Replace stub in `MainShell.destinationRoot`.
-- [ ] Build green.
+- [x] In `SpotifyService.swift`, extend `getRecentlyPlayed`: change signature to `(limit: Int = 25, before: String? = nil) async throws -> RecentlyPlayedResponse`. Build URL with `&before=\(cursor)` when provided. Return the full response, not just `items`.
+- [x] Update `ProfileRecentViewModel` to call the new signature: `let response = try await spotifyService.getRecentlyPlayed(limit: 25, before: nil); recentlyPlayed = response.items.map { $0.track }`. Update `SpotifyRecentProviding` protocol method signature accordingly.
+- [x] Verify `RecentlyPlayedResponse` model decodes `cursors.before` (string-encoded epoch ms). Add the field if missing.
+- [x] Create `Xomify-iOS/ViewModels/Library/RecentlyPlayedViewModel.swift`. Model on `LikesViewModel`: `@Observable @MainActor`, narrow protocol `SpotifyRecentlyPlayedProviding`, page size 50, state for `tracks`, `cursorBefore`, `isLoading`, `isLoadingMore`, `hasMore`, `errorMessage`, `searchQuery`, computed `filteredTracks`.
+- [x] `loadMore` passes `before: cursorBefore`. `hasMore = response.cursors?.before != nil`.
+- [x] Note: `/me/player/recently-played` does not return a total count; treat `hasMore` purely off cursor presence and don't render a `total` chip.
+- [x] Create `Xomify-iOS/Views/Library/RecentlyPlayedView.swift` mirroring `LikesView` structure (header without count chip, `.searchable`, infinite scroll, hint footer, states). Use `TrackActionsMenu` for row actions.
+- [x] Replace stub in `MainShell.destinationRoot`.
+- [x] Build green.
 - [ ] Manual: open Recently Played from drawer, scroll to trigger pagination, confirm older history loads, search filters loaded pages.
 
 ### Phase 4 — Profile updates (PR 4)
-- [ ] In `UserProfileViewModel.swift`: remove `case likes` from `ProfileTab` enum, remove the corresponding `title` / `systemImage` switch arms, remove `.likes` from `visibleTabs` for both contexts (already absent on `.other`), delete `_likesVM` storage and `likesViewModel()` accessor.
-- [ ] Find ProfileView (or whichever screen renders the tab content switch) and remove the `case .likes:` branch. Build will tell you where.
-- [ ] In `ProfileRecentTab.swift`: change `tracks: viewModel.recentlyPlayed` → `tracks: Array(viewModel.recentlyPlayed.prefix(10))`. After the `VStack(spacing: 8)` rendering rows, append a "See all" button (lift the gradient style from `ProfileRatingsTab.viewAllButton`) that calls `navStore.select(.recentlyPlayed)`. Show the button only when `viewModel.recentlyPlayed.count >= 10` (no point if there are fewer than 10).
-- [ ] Inject `@Environment(NavigationStore.self) private var navStore` into `ProfileRecentTab` (currently doesn't have it).
-- [ ] In `ProfileHeaderView.swift`: add a Likes count chip. Recommended: a fourth `statItem` in `statsRow` (icon-led tile with `heart.fill` color `.xomifyGreen`), self-only (`if viewModel.context.isSelf`). Tap → `navStore.select(.likes)`. Source the count from a new lightweight `loadLikesCount()` in `UserProfileViewModel` that calls `spotifyService.getSavedTracks(limit: 1, offset: 0)` and stores `response.total` in a new `var likesCount: Int?`.
-- [ ] Add `loadLikesCount` to the `loadSelfHeader` parallel `async let` block; ignore failures (chip just doesn't render).
-- [ ] Build green.
+- [x] In `UserProfileViewModel.swift`: remove `case likes` from `ProfileTab` enum, remove the corresponding `title` / `systemImage` switch arms, remove `.likes` from `visibleTabs` for both contexts (already absent on `.other`), delete `_likesVM` storage and `likesViewModel()` accessor.
+- [x] Find ProfileView (or whichever screen renders the tab content switch) and remove the `case .likes:` branch. Build will tell you where.
+- [x] In `ProfileRecentTab.swift`: change `tracks: viewModel.recentlyPlayed` → `tracks: Array(viewModel.recentlyPlayed.prefix(10))`. After the `VStack(spacing: 8)` rendering rows, append a "See all" button (lift the gradient style from `ProfileRatingsTab.viewAllButton`) that calls `navStore.select(.recentlyPlayed)`. Show the button only when `viewModel.recentlyPlayed.count >= 10` (no point if there are fewer than 10).
+- [x] Inject `@Environment(NavigationStore.self) private var navStore` into `ProfileRecentTab` (currently doesn't have it).
+- [x] In `ProfileHeaderView.swift`: add a Likes count chip. Recommended: a fourth `statItem` in `statsRow` (icon-led tile with `heart.fill` color `.xomifyGreen`), self-only (`if viewModel.context.isSelf`). Tap → `navStore.select(.likes)`. Source the count from a new lightweight `loadLikesCount()` in `UserProfileViewModel` that calls `spotifyService.getSavedTracks(limit: 1, offset: 0)` and stores `response.total` in a new `var likesCount: Int?`.
+- [x] Add `loadLikesCount` to the `loadSelfHeader` parallel `async let` block; ignore failures (chip just doesn't render).
+- [x] Build green.
 - [ ] Manual: profile no longer shows Likes pill in tab picker; Recent tab shows max 10 with "See all" footer; tap → lands on Recently Played destination; back button returns to profile (verify push/swap behavior — see risks). Header shows Likes chip with count; tap → lands on Likes destination.
 
 ### Phase 5 — Friend-profile parity (PR 5)
-- [ ] In `ProfileHeaderView.statItem`, change `let isTappable = destination != nil && viewModel.context.isSelf` → `let isTappable = destination != nil`. Both contexts can tap.
-- [ ] Verify accessibility hints still make sense in `.other` context (they say "Opens \(label) page" — fine).
-- [ ] **Decide and document** the destination behavior on `.other`:
-  - Friends tile → `.friends` destination shows viewer's own friends, not the profile-owner's. If `FriendsView` already accepts a target email param, route there with `context.email`. Otherwise, ship the un-gate **and** file a follow-up issue for friend-scoped friends/ratings/posts views — flag this in the PR description as known partial parity.
-  - Same call applies to Ratings (`viewAllButton` in `ProfileRatingsTab` line 96) and Posts (no current drill-down — only the header tile).
-- [ ] Re-audit `ProfileSharesTab`, `ProfileRatingsTab`, `ProfileTasteTab`, `ProfilePlaylistsTab` against the table in the Approach section. If anything else surfaces during implementation (e.g. tap targets disabled, menus hidden), enumerate it in the PR description.
-- [ ] Confirm Likes chip is **not** rendered on `.other` (Spotify endpoint is self-scoped — chip would always be empty/wrong).
-- [ ] Confirm Recent sub-tab is still self-only on profile (it's only in `.me` `visibleTabs`).
-- [ ] Build green.
+- [x] In `ProfileHeaderView.statItem`, change `let isTappable = destination != nil && viewModel.context.isSelf` → `let isTappable = destination != nil`. Both contexts can tap.
+- [x] Verify accessibility hints still make sense in `.other` context (they say "Opens \(label) page" — fine).
+- [x] **Decide and document** the destination behavior on `.other`:
+  - Shipped with viewer-scoped destinations (friend stat tiles land on your own Friends/Ratings/Feed). Filed as follow-up — FriendsView/RatingsView don't accept target email params yet.
+  - Same acknowledged for Ratings viewAllButton.
+- [x] Re-audit `ProfileSharesTab`, `ProfileRatingsTab`, `ProfileTasteTab`, `ProfilePlaylistsTab` — all consistent with parity table in Approach section. No additional gating found beyond documented items.
+- [x] Confirm Likes chip is **not** rendered on `.other` (gated by `viewModel.context.isSelf`).
+- [x] Confirm Recent sub-tab is still self-only on profile (not in `.other` `visibleTabs`).
+- [x] Build green.
 - [ ] Manual: navigate to a known friend's profile, tap each of the three stat tiles, confirm each navigates to a sensible destination (or note any gaps in PR). Tap a friend's share card → `ShareDetailView` should open. Confirm no delete buttons appear.
 
 ## Out of Scope
