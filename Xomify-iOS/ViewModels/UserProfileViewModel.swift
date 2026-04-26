@@ -6,10 +6,11 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
     case ratings
     case taste
     case playlists
-    /// Last-25 liked + last-25 recently played from Spotify. Self-only
-    /// because the underlying Spotify endpoints are scoped to the
-    /// authenticated user — we have no way to fetch a friend's library.
+    /// Last-25 recently played tracks from Spotify. Self-only because the
+    /// underlying endpoint is scoped to the authenticated user.
     case recent
+    /// Full saved-tracks (liked) library with pagination. Self-only.
+    case likes
 
     var title: String {
         switch self {
@@ -18,6 +19,7 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .taste:     return "Taste"
         case .playlists: return "Playlists"
         case .recent:    return "Recent"
+        case .likes:     return "Likes"
         }
     }
 
@@ -30,6 +32,7 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .taste:     return "waveform"
         case .playlists: return "music.note.list"
         case .recent:    return "clock.arrow.circlepath"
+        case .likes:     return "heart.fill"
         }
     }
 }
@@ -87,13 +90,16 @@ final class UserProfileViewModel {
     private var _sharesVM: SharesByUserViewModel?
     private var _ratingsVM: RatingsViewModel?
     private var _playlistsVM: ProfilePlaylistsViewModel?
+    private var _likesVM: ProfileLikesViewModel?
 
     /// Tabs visible for this profile's context. `.playlists` surfaces the
     /// signed-in user's Spotify playlists for `.me`, and the friend's public
     /// playlists for `.other` once the `FriendProfile` payload has loaded.
+    /// `.recent` and `.likes` are self-only because the underlying Spotify
+    /// endpoints are scoped to the authenticated user.
     var visibleTabs: [ProfileTab] {
         switch context {
-        case .me:    return [.shares, .ratings, .taste, .playlists, .recent]
+        case .me:    return [.shares, .ratings, .taste, .playlists, .recent, .likes]
         case .other: return [.shares, .ratings, .taste, .playlists]
         }
     }
@@ -116,6 +122,14 @@ final class UserProfileViewModel {
         if let existing = _ratingsVM { return existing }
         let vm = RatingsViewModel()
         _ratingsVM = vm
+        return vm
+    }
+
+    /// Lazy accessor for the Likes tab view model.
+    func likesViewModel() -> ProfileLikesViewModel {
+        if let existing = _likesVM { return existing }
+        let vm = ProfileLikesViewModel()
+        _likesVM = vm
         return vm
     }
 

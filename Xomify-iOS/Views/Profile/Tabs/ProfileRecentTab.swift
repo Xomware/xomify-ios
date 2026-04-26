@@ -1,12 +1,11 @@
 import SwiftUI
 
 /// Self-only tab on `ProfileView` that lists the signed-in user's last-25
-/// liked tracks and last-25 recently-played tracks. Powers Dom's ask:
-/// a quick way to find songs to share to the feed without bouncing into
-/// the Spotify app.
+/// recently-played tracks. Powers the "what was I just listening to?" quick
+/// lookup so tracks can be shared to the feed without bouncing to Spotify.
 ///
-/// Each row uses the shared `TrackActionsMenu` so users can play / queue /
-/// open / add to playlist builder / share to feed inline.
+/// Liked songs have moved to the dedicated Likes tab.
+/// Each row uses the shared `TrackActionsMenu` for play / queue / share actions.
 struct ProfileRecentTab: View {
 
     @State private var viewModel = ProfileRecentViewModel()
@@ -19,14 +18,6 @@ struct ProfileRecentTab: View {
                 tracks: viewModel.recentlyPlayed,
                 error: viewModel.recentError,
                 emptyText: "Nothing played recently."
-            )
-
-            section(
-                title: "Liked songs",
-                icon: "heart.fill",
-                tracks: viewModel.likedTracks,
-                error: viewModel.likedError,
-                emptyText: "You haven't liked any songs yet."
             )
         }
         .padding(.horizontal, 16)

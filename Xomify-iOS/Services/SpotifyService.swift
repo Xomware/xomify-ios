@@ -188,11 +188,12 @@ actor SpotifyService {
 
     /// User's saved (liked) tracks, newest-first. Requires the
     /// `user-library-read` scope on the Spotify token.
-    func getSavedTracks(limit: Int = 25) async throws -> [SpotifySavedTrack] {
-        let response: SavedTracksResponse = try await network.spotifyGet(
-            "/me/tracks?limit=\(limit)"
+    /// Returns the full `SavedTracksResponse` so callers can read `total` for
+    /// count display and use `offset` for paginated fetches.
+    func getSavedTracks(limit: Int = 50, offset: Int = 0) async throws -> SavedTracksResponse {
+        try await network.spotifyGet(
+            "/me/tracks?limit=\(limit)&offset=\(offset)"
         )
-        return response.items
     }
 
     /// User's recently played tracks, newest-first. Requires the
