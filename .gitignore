@@ -73,6 +73,8 @@ playground.xcworkspace
 
 # Claude Code session memory (personal, not shared)
 .claude/memory/
+# Claude worktrees (agent-spawned, never commit)
+.claude/worktrees/
 # Claude setup backups
 .claude/.backups/
 # Personal Claude overrides (not shared)

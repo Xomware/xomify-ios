@@ -1,13 +1,25 @@
 import Foundation
 
+// MARK: - Protocol
+
+/// Narrow protocol for unit-testing without standing up the full
+/// `SpotifyService` actor.
+protocol SpotifyLikesProviding: Sendable {
+    func getSavedTracks(limit: Int, offset: Int) async throws -> SavedTracksResponse
+}
+
+extension SpotifyService: SpotifyLikesProviding {}
+
+// MARK: - ViewModel
+
 /// Loads the signed-in user's full Spotify saved-tracks library in paginated
-/// 50-track pages so the Likes tab can display an infinite-scroll list with
-/// a total count chip.
+/// 50-track pages. Powers the top-level Likes destination with infinite scroll,
+/// search, and a total count chip.
 ///
 /// Self-only: `/me/tracks` is scoped to the authenticated user.
 @Observable
 @MainActor
-final class ProfileLikesViewModel {
+final class LikesViewModel {
 
     // MARK: - State
 
@@ -17,10 +29,22 @@ final class ProfileLikesViewModel {
     private(set) var isLoading: Bool = false
     private(set) var isLoadingMore: Bool = false
     var errorMessage: String?
+    var searchQuery: String = ""
 
     var hasMore: Bool {
         guard let total else { return false }
         return tracks.count < total
+    }
+
+    /// Tracks filtered by `searchQuery` (case-insensitive, name + artist names).
+    /// When the query is empty the full list is returned without copying.
+    var filteredTracks: [SpotifyTrack] {
+        guard !searchQuery.isEmpty else { return tracks }
+        let q = searchQuery.lowercased()
+        return tracks.filter { track in
+            track.name.lowercased().contains(q)
+                || track.artists.compactMap { $0.name }.joined(separator: " ").lowercased().contains(q)
+        }
     }
 
     private var hasLoaded: Bool = false
@@ -88,11 +112,3 @@ final class ProfileLikesViewModel {
         }
     }
 }
-
-/// Narrow protocol for unit-testing without standing up the full
-/// `SpotifyService` actor.
-protocol SpotifyLikesProviding: Sendable {
-    func getSavedTracks(limit: Int, offset: Int) async throws -> SavedTracksResponse
-}
-
-extension SpotifyService: SpotifyLikesProviding {}

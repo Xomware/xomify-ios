@@ -100,7 +100,7 @@ struct ProfileView: View {
             ProfileRecentTab()
 
         case .likes:
-            ProfileLikesTab(viewModel: viewModel.likesViewModel())
+            LikesView()
         }
     }
 
