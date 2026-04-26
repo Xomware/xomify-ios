@@ -1,6 +1,6 @@
 # Plan: Spotify iOS SDK Integration (SPTAppRemote)
 
-**Status**: In Progress
+**Status**: Done
 **Created**: 2026-04-26
 **Last updated**: 2026-04-26
 
@@ -151,7 +151,7 @@ holding a connection while the app isn't foregrounded.
 - [x] Bump version: `scripts/bump-version.sh feat` (first user-visible change). → 1.7.0
 
 ### Phase 4 — Settings diagnostics + force-fallback toggle (PR #4)
-- [ ] Add `PlaybackDiagnosticsView.swift` under `Xomify-iOS/Views/Settings/`.
+- [x] Add `PlaybackDiagnosticsView.swift` under `Xomify-iOS/Views/Settings/`.
       Shows:
   - Spotify app installed: `UIApplication.shared.canOpenURL("spotify:")`
   - SDK connection state: `coordinator.remote.isConnected`
@@ -160,11 +160,12 @@ holding a connection while the app isn't foregrounded.
   - Toggle: `Force fallback to Web API` (persisted in `UserDefaults` under
     `xomify.playback.forceWebFallback`).
   - Buttons: `Reconnect SDK`, `Open Spotify app`.
-- [ ] Hook the toggle into `SpotifyPlaybackCoordinator.forceWebFallback`.
-- [ ] Add a Settings entry to launch this view (developer-mode-gated if the
-      Settings screen has that pattern; otherwise plain entry).
+- [x] Hook the toggle into `SpotifyPlaybackCoordinator.forceWebFallback`.
+- [x] Add a Settings entry: "Developer" section in `SettingsView` with
+      `NavigationLink` to `PlaybackDiagnosticsView` (no developer-mode gate —
+      Settings screen had no such pattern).
 - [ ] Manual test on real device — see Test Plan §Phase 4.
-- [ ] Bump version: `scripts/bump-version.sh fix`.
+- [x] Bump version: `scripts/bump-version.sh fix`. → 1.7.1
 
 ## Test Plan
 
