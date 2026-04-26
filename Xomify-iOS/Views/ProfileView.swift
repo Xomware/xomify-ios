@@ -98,9 +98,6 @@ struct ProfileView: View {
 
         case .recent:
             ProfileRecentTab()
-
-        case .likes:
-            LikesView()
         }
     }
 

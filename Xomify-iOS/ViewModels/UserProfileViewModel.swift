@@ -6,11 +6,10 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
     case ratings
     case taste
     case playlists
-    /// Last-25 recently played tracks from Spotify. Self-only because the
+    /// Last-10 recently played tracks from Spotify. Self-only because the
     /// underlying endpoint is scoped to the authenticated user.
+    /// A "See all" CTA deep-links to the top-level Recently Played destination.
     case recent
-    /// Full saved-tracks (liked) library with pagination. Self-only.
-    case likes
 
     var title: String {
         switch self {
@@ -19,7 +18,6 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .taste:     return "Taste"
         case .playlists: return "Playlists"
         case .recent:    return "Recent"
-        case .likes:     return "Likes"
         }
     }
 
@@ -32,7 +30,6 @@ enum ProfileTab: String, CaseIterable, Hashable, Sendable {
         case .taste:     return "waveform"
         case .playlists: return "music.note.list"
         case .recent:    return "clock.arrow.circlepath"
-        case .likes:     return "heart.fill"
         }
     }
 }
@@ -68,6 +65,8 @@ final class UserProfileViewModel {
     var friendCount: Int?
     var followersCount: Int?
     var followingCount: Int?
+    /// Total liked songs count — self-only. Nil until loaded; chip hides when nil.
+    var likesCount: Int?
 
     /// Raw `FriendProfile` payload for `.other` — retained so the Taste tab
     /// can read `topArtists` / `topSongs` / `topGenres` without a second fetch.
@@ -90,16 +89,15 @@ final class UserProfileViewModel {
     private var _sharesVM: SharesByUserViewModel?
     private var _ratingsVM: RatingsViewModel?
     private var _playlistsVM: ProfilePlaylistsViewModel?
-    private var _likesVM: LikesViewModel?
 
     /// Tabs visible for this profile's context. `.playlists` surfaces the
     /// signed-in user's Spotify playlists for `.me`, and the friend's public
     /// playlists for `.other` once the `FriendProfile` payload has loaded.
-    /// `.recent` and `.likes` are self-only because the underlying Spotify
-    /// endpoints are scoped to the authenticated user.
+    /// `.recent` is self-only because the underlying Spotify endpoint is
+    /// scoped to the authenticated user. Likes has moved to the sidebar.
     var visibleTabs: [ProfileTab] {
         switch context {
-        case .me:    return [.shares, .ratings, .taste, .playlists, .recent, .likes]
+        case .me:    return [.shares, .ratings, .taste, .playlists, .recent]
         case .other: return [.shares, .ratings, .taste, .playlists]
         }
     }
@@ -122,14 +120,6 @@ final class UserProfileViewModel {
         if let existing = _ratingsVM { return existing }
         let vm = RatingsViewModel()
         _ratingsVM = vm
-        return vm
-    }
-
-    /// Lazy accessor for the Likes tab view model.
-    func likesViewModel() -> LikesViewModel {
-        if let existing = _likesVM { return existing }
-        let vm = LikesViewModel()
-        _likesVM = vm
         return vm
     }
 
@@ -241,11 +231,13 @@ final class UserProfileViewModel {
         async let shares: FeedResponse?       = try? xomifyService.getSharesByUser(
             email: callerEmail, targetEmail: callerEmail, limit: 1, before: nil
         )
+        async let likedPage: SavedTracksResponse? = try? SpotifyService.shared.getSavedTracks(limit: 1, offset: 0)
 
-        let (r, f, s) = await (ratings, friends, shares)
+        let (r, f, s, l) = await (ratings, friends, shares, likedPage)
         ratingCount = r?.totalCount ?? r?.ratings?.count
         friendCount = f?.acceptedCount ?? f?.accepted?.count
         shareCount  = s?.totalCount ?? s?.shares.count
+        likesCount  = l?.total
     }
 
     private func loadOtherHeader(email: String) async throws {

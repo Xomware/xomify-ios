@@ -126,6 +126,16 @@ struct ProfileHeaderView: View {
                     color: .xomifyGreen,
                     destination: .feed
                 )
+                // Likes chip — self-only, hidden on friend profiles.
+                if viewModel.context.isSelf, let likesCount = viewModel.likesCount {
+                    divider
+                    statItem(
+                        value: likesCount,
+                        label: "Likes",
+                        color: .xomifyGreen,
+                        destination: .likes
+                    )
+                }
             }
         }
         .padding(.vertical, 12)

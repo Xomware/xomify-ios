@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Self-only tab on `ProfileView` that lists the signed-in user's last-25
-/// recently-played tracks. Powers the "what was I just listening to?" quick
-/// lookup so tracks can be shared to the feed without bouncing to Spotify.
+/// Self-only tab on `ProfileView` that shows the signed-in user's last 10
+/// recently-played tracks — a quick "what was I just listening to?" lookup.
+/// Tapping "See all" deep-links to the full Recently Played destination.
 ///
-/// Liked songs have moved to the dedicated Likes tab.
 /// Each row uses the shared `TrackActionsMenu` for play / queue / share actions.
 struct ProfileRecentTab: View {
 
+    @Environment(NavigationStore.self) private var navStore
     @State private var viewModel = ProfileRecentViewModel()
 
     var body: some View {
@@ -15,10 +15,14 @@ struct ProfileRecentTab: View {
             section(
                 title: "Recently played",
                 icon: "clock.arrow.circlepath",
-                tracks: viewModel.recentlyPlayed,
+                tracks: Array(viewModel.recentlyPlayed.prefix(10)),
                 error: viewModel.recentError,
                 emptyText: "Nothing played recently."
             )
+
+            if viewModel.recentlyPlayed.count >= 10 {
+                seeAllButton
+            }
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -28,6 +32,36 @@ struct ProfileRecentTab: View {
         .refreshable {
             await viewModel.load()
         }
+    }
+
+    private var seeAllButton: some View {
+        Button {
+            navStore.select(.recentlyPlayed)
+        } label: {
+            HStack {
+                Text("See all recently played")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+            }
+            .foregroundStyle(.white)
+            .padding(14)
+            .background(
+                LinearGradient(
+                    colors: [Color.xomifyPurple.opacity(0.45), Color.xomifyGreen.opacity(0.35)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens full recently played history")
     }
 
     @ViewBuilder
