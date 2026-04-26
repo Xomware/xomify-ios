@@ -10,6 +10,16 @@
 - **Decisions**: Project uses `PBXFileSystemSynchronizedRootGroup` — no manual pbxproj file references needed for new Swift files. `SpotifyRemoteError.Sendable` conformance requires wrapping associated `Error` values; used `@unchecked Sendable` pattern is avoided since these errors are only thrown/caught in `@MainActor` context.
 - **Result**: BUILD SUCCEEDED (iphonesimulator)
 
+## [2026-04-26 00:02] — Phase 3: Wire call sites + Web API fallback
+
+- **Action**: Changed `QueueActionController.init` and `ShareCardViewModel.init` default `spotifyService` param from `SpotifyService.shared` to `SpotifyPlaybackCoordinator.shared`. Audited codebase — no other direct `queueTrack`/`playTrack` callers. Updated `handleNoDevice` copy to reflect that `.noActiveDevice` is now a rare last-resort path. Bumped version 1.6.2 → 1.7.0 (feat: first user-visible change).
+- **Files changed**:
+  - `Xomify-iOS/Services/QueueActionController.swift` — default injection + toast copy
+  - `Xomify-iOS/ViewModels/Feed/ShareCardViewModel.swift` — default injection
+  - `Xomify-iOS.xcodeproj/project.pbxproj` — version bump
+- **Decisions**: No call-site changes needed beyond the default parameter — protocol shape is identical. Toast copy updated to signal "SDK tried, fell all the way through" rather than the old "open Spotify first" instruction.
+- **Result**: BUILD SUCCEEDED (iphonesimulator)
+
 ## [2026-04-26 00:01] — Phase 2: SpotifyRemoteService + connection lifecycle
 
 - **Action**: Created `SpotifyRemoteService.swift` — `@MainActor @Observable NSObject` wrapping `SPTAppRemote`, conforming to `SpotifyQueueing`. Bridges delegate callbacks (`appRemoteDidEstablishConnection`, `didFailConnectionAttemptWithError`, `didDisconnectWithError`) via `CheckedContinuation`. Created `SpotifyPlaybackCoordinator.swift` — `@MainActor @Observable` class implementing `SpotifyQueueing`, routing SDK-first with Web API fallback. Added `onTokenRefresh` hook and `accessTokenForSDK()` to `AuthService`. Updated `Xomify_iOSApp.swift` to inject coordinator into environment, wire `scenePhase` observer, and forward `onOpenURL` to SDK. Bumped version 1.6.1 → 1.6.2.

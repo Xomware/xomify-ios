@@ -137,19 +137,18 @@ holding a connection while the app isn't foregrounded.
 - [x] Bump version: `scripts/bump-version.sh fix`. → 1.6.2
 
 ### Phase 3 — Wire call sites + Web-API fallback (PR #3)
-- [ ] Change `QueueActionController.init` default param from
+- [x] Change `QueueActionController.init` default param from
       `SpotifyService.shared` to `SpotifyPlaybackCoordinator.shared`.
       The protocol shape (`SpotifyQueueing`) means zero call-site churn.
-- [ ] Same for `ShareCardViewModel.init`'s `spotifyService` param.
-- [ ] Audit the codebase for any other direct `SpotifyService.shared.queueTrack`
-      / `playTrack` callers and route them through the coordinator. (Quick
-      search of the project — the two known consumers above are the only ones.)
-- [ ] Update `QueueActionController.handleNoDevice` user copy: with the SDK
-      online, `.noActiveDevice` should now be a rare edge case (Web-API
-      fallback hit while Spotify wasn't running). Keep the deep-link rescue
-      path as a last resort.
+- [x] Same for `ShareCardViewModel.init`'s `spotifyService` param.
+- [x] Audit the codebase for any other direct `SpotifyService.shared.queueTrack`
+      / `playTrack` callers and route them through the coordinator. (Confirmed:
+      only the two above.)
+- [x] Update `QueueActionController.handleNoDevice` user copy: with the SDK
+      online, `.noActiveDevice` is now a rare last-resort path. Deep-link
+      rescue kept; toast copy updated.
 - [ ] Manual test on real device — see Test Plan §Phase 3.
-- [ ] Bump version: `scripts/bump-version.sh feat` (first user-visible change).
+- [x] Bump version: `scripts/bump-version.sh feat` (first user-visible change). → 1.7.0
 
 ### Phase 4 — Settings diagnostics + force-fallback toggle (PR #4)
 - [ ] Add `PlaybackDiagnosticsView.swift` under `Xomify-iOS/Views/Settings/`.

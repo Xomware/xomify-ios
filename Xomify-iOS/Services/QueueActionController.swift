@@ -29,7 +29,7 @@ final class QueueActionController {
 
     private let spotifyService: SpotifyQueueing
 
-    init(spotifyService: SpotifyQueueing = SpotifyService.shared) {
+    init(spotifyService: SpotifyQueueing = SpotifyPlaybackCoordinator.shared) {
         self.spotifyService = spotifyService
     }
 
@@ -95,14 +95,14 @@ final class QueueActionController {
         }
     }
 
-    /// When the Web API reports no active device, the user simply hasn't
-    /// opened Spotify yet. Deep-link them into the track page so Spotify
-    /// launches and they can tap Play — the next action will then hit a
-    /// live device.
+    /// Web API fallback reported no active device. This is a rare edge case now
+    /// that the SDK can wake Spotify directly — it typically means both the SDK
+    /// path failed *and* Spotify isn't running. Deep-link into the track page as
+    /// a last resort so the user can open Spotify and resume.
     private func handleNoDevice(uri: String, action: String) {
         if let url = URL(string: uri), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
-            toast = "Open Spotify to finish the \(action)."
+            toast = "Opening Spotify — try again once it's playing."
         } else {
             toast = SpotifyServiceError.noActiveDevice.errorDescription
         }

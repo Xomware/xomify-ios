@@ -48,7 +48,7 @@ final class ShareCardViewModel {
         share: Share,
         viewerEmail: String,
         xomifyService: XomifyServiceProtocol = XomifyService.shared,
-        spotifyService: SpotifyQueueing = SpotifyService.shared
+        spotifyService: SpotifyQueueing = SpotifyPlaybackCoordinator.shared
     ) {
         self.share = share
         self.viewerEmail = viewerEmail
