@@ -175,7 +175,11 @@ struct ProfileHeaderView: View {
         color: Color,
         destination: SidebarDestination?
     ) -> some View {
-        let isTappable = destination != nil && viewModel.context.isSelf
+        // Both self and friend profiles can tap stat tiles to drill in.
+        // Friend-scoped FriendsView / RatingsView / posts-feed scoping is a
+        // follow-up item — for now taps land on viewer-scoped destinations,
+        // which is better than being silently disabled.
+        let isTappable = destination != nil
 
         let content = VStack(spacing: 4) {
             Text("\(value)")
