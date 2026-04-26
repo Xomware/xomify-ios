@@ -195,13 +195,16 @@ actor NetworkService {
     
     // MARK: - Xomify API Requests
     
-    /// Get Xomify API base URL from config
+    /// Get Xomify API base URL from config. Bearer header now resolves to the
+    /// per-user JWT minted via `POST /auth/login` when present, falling back
+    /// to the static `XOMIFY_API_TOKEN` from `secrets.xcconfig` so requests
+    /// keep working on fresh installs and during the (0a)→(1l) migration.
     @MainActor
     private func getXomifyConfig() -> (baseUrl: String, token: String) {
         let apiId = Bundle.main.object(forInfoDictionaryKey: "XOMIFY_API_ID") as? String ?? ""
-        let apiToken = Bundle.main.object(forInfoDictionaryKey: "XOMIFY_API_TOKEN") as? String ?? ""
         let baseUrl = "https://\(apiId).execute-api.us-east-1.amazonaws.com/dev"
-        return (baseUrl, "Bearer \(apiToken)")
+        let bearer = AuthService.shared.currentXomifyBearerToken()
+        return (baseUrl, "Bearer \(bearer)")
     }
     
     /// GET request to Xomify API
@@ -314,7 +317,18 @@ actor NetworkService {
     /// legitimately returns no body — we synthesise `{}` so the generic
     /// `T` decoder can still materialise a `SuccessResponse`-like struct
     /// with all-optional fields.
-    private func performXomifyRequest<T: Decodable>(_ request: URLRequest, allowEmpty: Bool = false) async throws -> T {
+    ///
+    /// On a 401 from the backend, attempts to recover **once**: refreshes the
+    /// Spotify access token, re-mints the per-user Xomify JWT via
+    /// `POST /auth/login`, swaps the new bearer onto the request, and retries
+    /// the same call. If the retried request still 401s the failure is
+    /// propagated — we never loop. This keeps users from being silently
+    /// kicked out when the JWT (TTL=7d) expires.
+    private func performXomifyRequest<T: Decodable>(
+        _ request: URLRequest,
+        allowEmpty: Bool = false,
+        retryOn401: Bool = true
+    ) async throws -> T {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -323,6 +337,19 @@ actor NetworkService {
             }
 
             print("🌐 XomifyAPI Response: \(httpResponse.statusCode)")
+
+            if httpResponse.statusCode == 401, retryOn401 {
+                if let retried: T = try await retryAfterReauth(
+                    originalRequest: request,
+                    allowEmpty: allowEmpty
+                ) {
+                    return retried
+                }
+                // Fall through — the retry itself threw or the reauth could
+                // not produce a fresh bearer; surface the original 401.
+                let message = String(data: data, encoding: .utf8) ?? "Unauthorized"
+                throw NetworkError.serverError(statusCode: 401, message: message)
+            }
 
             guard (200...299).contains(httpResponse.statusCode) else {
                 let message = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -349,6 +376,42 @@ actor NetworkService {
         } catch {
             throw NetworkError.unknown(error)
         }
+    }
+
+    /// Single-shot reauth + retry for a 401. Refreshes the Spotify access
+    /// token (so we have a known-good upstream credential), mints a fresh
+    /// Xomify JWT, swaps the Authorization header on the original request,
+    /// and replays it. Returns `nil` if reauth could not produce a new bearer
+    /// — caller surfaces the original 401.
+    private func retryAfterReauth<T: Decodable>(
+        originalRequest: URLRequest,
+        allowEmpty: Bool
+    ) async throws -> T? {
+        print("🔄 XomifyAPI: 401 received — attempting reauth + single retry")
+
+        // Step 1: ensure a fresh Spotify access token. If the refresh fails
+        // there's nothing we can do; bail and let the original 401 propagate.
+        do {
+            try await AuthService.shared.refreshAccessToken()
+        } catch {
+            print("⚠️ XomifyAPI: Spotify refresh failed during 401-retry: \(error)")
+            return nil
+        }
+
+        // Step 2: mint a fresh Xomify JWT off the new Spotify access token.
+        let minted = await AuthService.shared.mintXomifyJwt()
+        guard minted else {
+            print("⚠️ XomifyAPI: JWT mint failed during 401-retry")
+            return nil
+        }
+
+        // Step 3: swap the Authorization header onto a copy of the original
+        // request and replay. `retryOn401: false` ensures we never recurse.
+        var retried = originalRequest
+        let bearer = AuthService.shared.currentXomifyBearerToken()
+        retried.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+
+        return try await performXomifyRequest(retried, allowEmpty: allowEmpty, retryOn401: false)
     }
     
     // MARK: - Token Management
