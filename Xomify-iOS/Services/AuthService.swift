@@ -292,9 +292,10 @@ final class AuthService: NSObject, Sendable {
         request.setValue("Bearer \(currentXomifyBearerToken())", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
+        // Caller identity (email + userId) is now read from the JWT context
+        // server-side per sub-feature (1i). Body carries only the mutable
+        // profile fields the backend persists.
         let body: [String: Any] = [
-            "email": userProfile.email,
-            "userId": userProfile.id,
             "displayName": userProfile.displayName ?? userProfile.email,
             "refreshToken": refresh,
             "avatar": userProfile.images?.first?.url ?? ""

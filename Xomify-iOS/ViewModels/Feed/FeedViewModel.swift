@@ -267,7 +267,6 @@ final class FeedViewModel {
 
         do {
             let response = try await xomifyService.getFeed(
-                email: userEmail,
                 groupId: selectedFilter.groupId,
                 limit: FeedCacheService.maxSharesPerFilter,
                 before: nil
@@ -304,7 +303,6 @@ final class FeedViewModel {
 
         do {
             let response = try await xomifyService.getFeed(
-                email: userEmail,
                 groupId: selectedFilter.groupId,
                 limit: FeedCacheService.maxSharesPerFilter,
                 before: before
@@ -342,7 +340,7 @@ final class FeedViewModel {
         guard !userEmail.isEmpty else { return }
 
         do {
-            let response = try await xomifyService.listGroups(email: userEmail)
+            let response = try await xomifyService.listGroups()
             groups = response.groups ?? []
         } catch {
             // Non-fatal — chips just show `Friends` without group rows.
@@ -367,7 +365,7 @@ final class FeedViewModel {
 
         // Friends — `email` on the row is the CALLER's email, `friendEmail`
         // is the other party. Always key by `targetEmail`.
-        if let response = try? await xomifyService.getAllFriends(email: userEmail) {
+        if let response = try? await xomifyService.getAllFriends() {
             for friend in response.accepted ?? [] {
                 let email = friend.targetEmail
                 guard !email.isEmpty else { continue }
@@ -451,7 +449,6 @@ final class FeedViewModel {
 
         do {
             _ = try await xomifyService.deleteShare(
-                email: userEmail,
                 shareId: share.shareId,
                 sharedAt: share.sharedAt
             )

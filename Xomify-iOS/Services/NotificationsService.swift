@@ -108,6 +108,11 @@ final class NotificationsService: NSObject {
 
     /// Called from `XomifyAppDelegate.didRegisterForRemoteNotificationsWithDeviceToken`.
     /// Hex-encodes the raw token, caches it, and upserts to the backend.
+    ///
+    /// Caller identity is read from the JWT context server-side
+    /// (sub-feature 1f). We still gate on a resolvable Spotify email so we
+    /// don't register a device against an empty session, and we still cache
+    /// it so `unregister()` can run after the session has been torn down.
     func handleDeviceToken(_ data: Data) async {
         let hex = Self.hexString(from: data)
         defaults.set(hex, forKey: Self.cachedTokenKey)
@@ -125,7 +130,6 @@ final class NotificationsService: NSObject {
         for attempt in 1...2 {
             do {
                 _ = try await xomify.registerPushToken(
-                    email: email,
                     deviceToken: hex,
                     queueNotificationsEnabled: queueEnabled,
                     digestEnabled: digestEnabled
@@ -147,26 +151,23 @@ final class NotificationsService: NSObject {
 
     /// Flipped by `SettingsViewModel` when the user toggles either switch.
     /// Re-POSTs to `/notifications/register` as an upsert using the cached token.
+    ///
+    /// Caller identity is taken from the JWT context server-side
+    /// (sub-feature 1f); this method only sends the token + preference flags.
+    /// We still gate on having a session anchor (cached email or current
+    /// Spotify user) to avoid issuing register requests for signed-out users.
     func updatePreferences(queueNotificationsEnabled: Bool, digestEnabled: Bool) async {
         guard let hex = defaults.string(forKey: Self.cachedTokenKey) else {
             // No token yet — next `handleDeviceToken` call will pick up the
             // latest flags from UserDefaults and POST them.
             return
         }
-        // Prefer the cached email (written on first successful register) so
-        // this call path stays independent of the Spotify session.
-        let email: String
-        if let cached = defaults.string(forKey: Self.cachedEmailKey), !cached.isEmpty {
-            email = cached
-        } else if let fetched = await currentUserEmail() {
-            email = fetched
-        } else {
-            return
-        }
+        let hasCachedEmail = defaults.string(forKey: Self.cachedEmailKey)?.isEmpty == false
+        let hasCurrentSpotifyEmail = await currentUserEmail() != nil
+        guard hasCachedEmail || hasCurrentSpotifyEmail else { return }
 
         do {
             _ = try await xomify.registerPushToken(
-                email: email,
                 deviceToken: hex,
                 queueNotificationsEnabled: queueNotificationsEnabled,
                 digestEnabled: digestEnabled
@@ -179,8 +180,11 @@ final class NotificationsService: NSObject {
     /// Called on sign-out. Swallows errors — the user is leaving anyway, and a
     /// stale backend token expires on the next failed send (APNs 410).
     ///
-    /// Uses the cached email (written after the first successful register) so
-    /// this works even after the Spotify access token has been cleared.
+    /// Caller identity is read from the JWT context server-side
+    /// (sub-feature 1f); we only send the device token. The cached email is
+    /// still consulted as a session anchor — when present we still had a
+    /// signed-in user to whom this token belonged. This call must run before
+    /// the JWT is cleared.
     func unregister() async {
         let hex = defaults.string(forKey: Self.cachedTokenKey)
         let cachedEmail = defaults.string(forKey: Self.cachedEmailKey)
@@ -194,7 +198,7 @@ final class NotificationsService: NSObject {
         guard let hex, let cachedEmail, !cachedEmail.isEmpty else { return }
 
         do {
-            _ = try await xomify.unregisterPushToken(email: cachedEmail, deviceToken: hex)
+            _ = try await xomify.unregisterPushToken(deviceToken: hex)
         } catch {
             print("ℹ️ Notifications: unregister failed (swallowed) — \(error.localizedDescription)")
         }

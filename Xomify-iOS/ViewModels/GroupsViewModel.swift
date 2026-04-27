@@ -39,7 +39,7 @@ final class GroupsViewModel {
         errorMessage = nil
 
         do {
-            let response = try await xomify.listGroups(email: email)
+            let response = try await xomify.listGroups()
             groups = response.groups ?? []
         } catch {
             errorMessage = error.localizedDescription
@@ -65,7 +65,7 @@ final class GroupsViewModel {
         defer { isLoadingFriends = false }
 
         do {
-            let response = try await xomify.getAllFriends(email: userEmail)
+            let response = try await xomify.getAllFriends()
             friends = response.accepted ?? []
         } catch {
             friendsError = error.localizedDescription
@@ -92,7 +92,6 @@ final class GroupsViewModel {
 
         do {
             let response = try await xomify.createGroup(
-                email: userEmail,
                 name: name,
                 description: description
             )
@@ -114,7 +113,6 @@ final class GroupsViewModel {
                 for email in memberEmails {
                     do {
                         _ = try await xomify.addMember(
-                            email: userEmail,
                             groupId: group.groupId,
                             memberEmail: email
                         )
@@ -142,7 +140,7 @@ final class GroupsViewModel {
 
     func leave(_ group: XomifyGroup) async {
         do {
-            _ = try await xomify.leaveGroup(email: userEmail, groupId: group.groupId)
+            _ = try await xomify.leaveGroup(groupId: group.groupId)
             groups.removeAll { $0.groupId == group.groupId }
         } catch {
             errorMessage = "Failed to leave group: \(error.localizedDescription)"
@@ -155,7 +153,7 @@ final class GroupsViewModel {
     @discardableResult
     func delete(_ group: XomifyGroup) async -> Bool {
         do {
-            _ = try await xomify.removeGroup(email: userEmail, groupId: group.groupId)
+            _ = try await xomify.removeGroup(groupId: group.groupId)
             groups.removeAll { $0.groupId == group.groupId }
             return true
         } catch {

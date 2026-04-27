@@ -61,7 +61,6 @@ final class SharesByUserViewModel {
 
         do {
             let response = try await xomifyService.getSharesByUser(
-                email: callerEmail,
                 targetEmail: targetEmail,
                 limit: 50,
                 before: nil
@@ -88,7 +87,6 @@ final class SharesByUserViewModel {
 
         do {
             _ = try await xomifyService.deleteShare(
-                email: callerEmail,
                 shareId: share.shareId,
                 sharedAt: share.sharedAt
             )
@@ -111,7 +109,6 @@ final class SharesByUserViewModel {
 
         do {
             let response = try await xomifyService.getSharesByUser(
-                email: callerEmail,
                 targetEmail: targetEmail,
                 limit: 50,
                 before: before

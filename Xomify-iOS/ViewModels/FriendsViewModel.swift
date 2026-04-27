@@ -59,9 +59,9 @@ final class FriendsViewModel {
         isLoading = true
         errorMessage = nil
 
-        async let friendsBucket = xomify.getAllFriends(email: email)
-        async let allUsers = xomify.listUsers(email: email)
-        async let pendingInvites = loadPendingInvitesResult(email: email)
+        async let friendsBucket = xomify.getAllFriends()
+        async let allUsers = xomify.listUsers()
+        async let pendingInvites = loadPendingInvitesResult()
 
         do {
             let (friendsResp, usersResp, invitesResp) = try await (friendsBucket, allUsers, pendingInvites)
@@ -81,9 +81,9 @@ final class FriendsViewModel {
     /// Defensive wrapper around `listPendingInvites` — the backend endpoint is
     /// pending, so any error is swallowed here to avoid nuking the whole load.
     /// Returns an empty list on failure.
-    private func loadPendingInvitesResult(email: String) async -> [PendingInvite] {
+    private func loadPendingInvitesResult() async -> [PendingInvite] {
         do {
-            let response = try await xomify.listPendingInvites(email: email)
+            let response = try await xomify.listPendingInvites()
             return response.invites ?? []
         } catch {
             // Endpoint not yet deployed — render an empty list. Not a fatal error.
@@ -108,7 +108,7 @@ final class FriendsViewModel {
         defer { inFlight.remove(targetEmail) }
 
         do {
-            _ = try await xomify.requestFriend(email: userEmail, requestEmail: targetEmail)
+            _ = try await xomify.requestFriend(requestEmail: targetEmail)
             // Optimistic: add to outgoing, flag discovery row.
             let friend = Friend(
                 email: userEmail,
@@ -135,7 +135,7 @@ final class FriendsViewModel {
         defer { inFlight.remove(targetEmail) }
 
         do {
-            _ = try await xomify.acceptFriend(email: userEmail, requestEmail: targetEmail)
+            _ = try await xomify.acceptFriend(requestEmail: targetEmail)
             incoming.removeAll { $0.targetEmail == targetEmail }
             accepted.append(friend)
             updateDiscoverFlags(for: targetEmail, isFriend: true)
@@ -155,7 +155,7 @@ final class FriendsViewModel {
         defer { inFlight.remove(targetEmail) }
 
         do {
-            _ = try await xomify.rejectFriend(email: userEmail, requestEmail: targetEmail)
+            _ = try await xomify.rejectFriend(requestEmail: targetEmail)
             incoming.removeAll { $0.targetEmail == targetEmail }
             updateDiscoverFlags(for: targetEmail, clearAll: true)
         } catch {
@@ -172,7 +172,7 @@ final class FriendsViewModel {
         defer { inFlight.remove(targetEmail) }
 
         do {
-            _ = try await xomify.rejectFriend(email: userEmail, requestEmail: targetEmail)
+            _ = try await xomify.rejectFriend(requestEmail: targetEmail)
             outgoing.removeAll { $0.targetEmail == targetEmail }
             updateDiscoverFlags(for: targetEmail, clearAll: true)
         } catch {
@@ -188,7 +188,7 @@ final class FriendsViewModel {
         defer { inFlight.remove(targetEmail) }
 
         do {
-            _ = try await xomify.removeFriend(email: userEmail, friendEmail: targetEmail)
+            _ = try await xomify.removeFriend(friendEmail: targetEmail)
             accepted.removeAll { $0.targetEmail == targetEmail }
             updateDiscoverFlags(for: targetEmail, clearAll: true)
         } catch {
@@ -213,7 +213,7 @@ final class FriendsViewModel {
         lastMintedInvite = nil
 
         do {
-            let response = try await xomify.createInvite(email: userEmail)
+            let response = try await xomify.createInvite()
             guard let shareUrl = response.shareUrl, let url = URL(string: shareUrl) else {
                 inviteMintError = "Invite minted but URL was missing"
                 isMintingInvite = false
@@ -253,7 +253,7 @@ final class FriendsViewModel {
         defer { inFlight.remove(code) }
 
         do {
-            let response = try await xomify.acceptInvite(email: userEmail, inviteCode: code)
+            let response = try await xomify.acceptInvite(inviteCode: code)
             // Value-moment: accepting a deep-link invite = user just crossed a
             // meaningful threshold. Prompt for push permission if we haven't.
             Task { await NotificationsService.shared.requestPermissionIfNeeded() }
@@ -300,7 +300,7 @@ final class FriendsViewModel {
         incomingInvites.removeAll { $0.inviteCode == code }
 
         do {
-            _ = try await xomify.declineInvite(email: userEmail, inviteCode: code)
+            _ = try await xomify.declineInvite(inviteCode: code)
         } catch {
             // Restore the row and surface the error — but only if the failure
             // wasn't "endpoint missing" (404/5xx). We still clear client-side

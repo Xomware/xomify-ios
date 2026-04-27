@@ -49,18 +49,20 @@ final class WrappedViewModel {
     // MARK: - Actions
     
     func loadWraps() async {
-        guard let email = userEmail else {
+        // Caller email rides the per-user JWT; we still gate on having a
+        // resolved Spotify session locally so we don't fire when signed-out.
+        guard userEmail?.isEmpty == false else {
             errorMessage = "Please log in first"
             return
         }
-        
+
         guard !isLoading else { return }
         
         isLoading = true
         errorMessage = nil
         
         do {
-            wraps = try await xomifyService.getWraps(email: email)
+            wraps = try await xomifyService.getWraps()
             
             // Auto-select most recent wrap
             if let mostRecent = wraps.first {

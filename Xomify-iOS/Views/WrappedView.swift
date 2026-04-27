@@ -523,7 +523,8 @@ struct WrappedContent: View {
                 return
             }
 
-            wraps = try await xomifyService.getWraps(email: email)
+            _ = email
+            wraps = try await xomifyService.getWraps()
 
             if selectedMonth == nil {
                 selectedMonth = wraps.first

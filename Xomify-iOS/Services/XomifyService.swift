@@ -1,69 +1,73 @@
 import Foundation
 
 /// Service for Xomify backend API calls
+///
+/// Caller identity is sourced from the per-user JWT in the Authorization
+/// header (sub-feature 0d). Backend handlers extract `email` + `userId` from
+/// the API Gateway authorizer context (sub-features 1a–1i). Methods here
+/// therefore no longer take or transmit the caller's email — only target
+/// identifiers (`friendEmail`, `requestEmail`, `targetEmail`,
+/// `memberEmail`, `groupId`, `shareId`, `inviteCode`, `trackId`, etc.) ride
+/// the wire.
 actor XomifyService {
-    
+
     // MARK: - Singleton
-    
+
     static let shared = XomifyService()
-    
+
     private let network = NetworkService.shared
-    
+
     private init() {}
-    
+
     // MARK: - User / Enrollment
-    
+
     /// Get user enrollment status and wraps
-    func getUserData(email: String) async throws -> WrappedDataResponse {
-        try await network.xomifyGet("/wrapped/all", queryParams: ["email": email])
+    func getUserData() async throws -> WrappedDataResponse {
+        try await network.xomifyGet("/wrapped/all")
     }
 
     /// Get user table data
-    func getUserTableData(email: String) async throws -> XomifyUser {
-        try await network.xomifyGet("/user/data", queryParams: ["email": email])
+    func getUserTableData() async throws -> XomifyUser {
+        try await network.xomifyGet("/user/data")
     }
 
     /// Enroll or update user enrollments
     func updateEnrollments(
-        email: String,
         activeWrapped: Bool,
         activeReleaseRadar: Bool
     ) async throws {
         let _: EmptyResponse = try await network.xomifyPost("/user/update", body: [
-            "email": email,
             "wrappedEnrolled": activeWrapped,
             "releaseRadarEnrolled": activeReleaseRadar
         ])
     }
-    
+
     // MARK: - Release Radar
-    
+
     /// Get release radar history (past weeks)
-    func getReleaseRadarHistory(email: String, limit: Int = 12) async throws -> ReleaseRadarHistoryResponse {
+    func getReleaseRadarHistory(limit: Int = 12) async throws -> ReleaseRadarHistoryResponse {
         try await network.xomifyGet("/release-radar/history", queryParams: [
-            "email": email,
             "limit": String(limit)
         ])
     }
-    
+
     /// Check release radar status
-    func checkReleaseRadar(email: String) async throws -> ReleaseRadarCheckResponse {
-        try await network.xomifyGet("/release-radar/check", queryParams: ["email": email])
+    func checkReleaseRadar() async throws -> ReleaseRadarCheckResponse {
+        try await network.xomifyGet("/release-radar/check")
     }
-    
-    
+
+
     // MARK: - Wrapped
-    
+
     /// Get all wraps
-    func getWraps(email: String) async throws -> [MonthlyWrap] {
-        let response: WrappedDataResponse = try await network.xomifyGet("/wrapped/all", queryParams: ["email": email])
+    func getWraps() async throws -> [MonthlyWrap] {
+        let response: WrappedDataResponse = try await network.xomifyGet("/wrapped/all")
         return response.wraps ?? []
     }
-    
+
     /// Get specific wrap by month
-    func getWrap(email: String, monthKey: String) async throws -> MonthlyWrap {
+    func getWrap(monthKey: String) async throws -> MonthlyWrap {
         try await network.xomifyGet("/wrapped/month", queryParams: [
-            "email": email,
             "monthKey": monthKey
         ])
     }
@@ -97,7 +101,6 @@ actor XomifyService {
     /// Backend rejects `public=false` with empty `groupIds`.
     @discardableResult
     func createShare(
-        email: String,
         trackId: String,
         trackUri: String,
         trackName: String,
@@ -111,7 +114,6 @@ actor XomifyService {
         isPublic: Bool? = nil
     ) async throws -> ShareCreateResponse {
         var body: [String: Any] = [
-            "email": email,
             "trackId": trackId,
             "trackUri": trackUri,
             "trackName": trackName,
@@ -128,16 +130,14 @@ actor XomifyService {
         return try await network.xomifyPost("/shares/create", body: body)
     }
 
-    /// Fetch the social feed for a user. Supports optional group scoping and
+    /// Fetch the social feed for the caller. Supports optional group scoping and
     /// keyset pagination via `before` (the `sharedAt` of the last received share).
     func getFeed(
-        email: String,
         groupId: String? = nil,
         limit: Int = 50,
         before: String? = nil
     ) async throws -> FeedResponse {
         var params: [String: String] = [
-            "email": email,
             "limit": String(limit)
         ]
         if let groupId = groupId { params["groupId"] = groupId }
@@ -145,20 +145,17 @@ actor XomifyService {
         return try await network.xomifyGet("/shares/feed", queryParams: params)
     }
 
-    /// Fetch shares authored by a specific user. Both `email` (the caller) and
-    /// `targetEmail` (the author) are required — backend keeps the caller for
-    /// future friendship gating and enrichment.
+    /// Fetch shares authored by a specific user (`targetEmail`). Caller
+    /// identity is read from the JWT context server-side.
     ///
     /// Response shape is identical to `/shares/feed` — reuse `FeedResponse`.
     /// `nextBefore` is the pagination cursor (ISO8601 `createdAt`).
     func getSharesByUser(
-        email: String,
         targetEmail: String,
         limit: Int = 50,
         before: String? = nil
     ) async throws -> FeedResponse {
         var params: [String: String] = [
-            "email": email,
             "targetEmail": targetEmail,
             "limit": String(limit)
         ]
@@ -173,13 +170,11 @@ actor XomifyService {
     /// Endpoint is query-param only; backend accepts `sharedBy` / `sharedAt`
     /// for forward-compat but ignores them today.
     func getShareDetail(
-        email: String,
         shareId: String,
         sharedBy: String? = nil,
         sharedAt: String? = nil
     ) async throws -> ShareDetailResponse {
         var params: [String: String] = [
-            "email": email,
             "shareId": shareId
         ]
         if let sharedBy = sharedBy { params["sharedBy"] = sharedBy }
@@ -190,12 +185,10 @@ actor XomifyService {
     /// Delete a share (author only). Backend expects composite key via body.
     @discardableResult
     func deleteShare(
-        email: String,
         shareId: String,
         sharedAt: String
     ) async throws -> SuccessResponse {
         try await network.xomifyPost("/shares/delete", body: [
-            "email": email,
             "shareId": shareId,
             "sharedAt": sharedAt
         ])
@@ -208,14 +201,12 @@ actor XomifyService {
     @discardableResult
     func interactWithShare(
         shareId: String,
-        email: String,
         sharedAt: String,
         interaction: String,
         rating: Int? = nil
     ) async throws -> ShareInteractionResponse {
         var body: [String: Any] = [
             "shareId": shareId,
-            "email": email,
             "sharedAt": sharedAt,
             "interaction": interaction
         ]
@@ -229,27 +220,24 @@ actor XomifyService {
     @discardableResult
     func reactToShare(
         shareId: String,
-        email: String,
         sharedAt: String,
         reaction: String
     ) async throws -> ReactionResponse {
         try await network.xomifyPost("/shares/react", body: [
             "shareId": shareId,
-            "email": email,
             "sharedAt": sharedAt,
             "reaction": reaction
         ])
     }
 
     /// Create a friend invite code
-    func createInvite(email: String) async throws -> InviteCreateResponse {
-        try await network.xomifyPost("/invites/create", body: ["email": email])
+    func createInvite() async throws -> InviteCreateResponse {
+        try await network.xomifyPost("/invites/create", body: [:])
     }
 
     /// Accept a friend invite code
-    func acceptInvite(email: String, inviteCode: String) async throws -> InviteAcceptResponse {
+    func acceptInvite(inviteCode: String) async throws -> InviteAcceptResponse {
         try await network.xomifyPost("/invites/accept", body: [
-            "email": email,
             "inviteCode": inviteCode
         ])
     }
@@ -258,89 +246,80 @@ actor XomifyService {
     /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
     /// Until the backend ships, this will raise a server error; the UI renders
     /// an empty state against that failure.
-    func listPendingInvites(email: String) async throws -> PendingInvitesResponse {
-        try await network.xomifyGet("/invites/pending", queryParams: ["email": email])
+    func listPendingInvites() async throws -> PendingInvitesResponse {
+        try await network.xomifyGet("/invites/pending")
     }
 
     /// Decline a deep-link invite.
     /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
     @discardableResult
-    func declineInvite(email: String, inviteCode: String) async throws -> SuccessResponse {
+    func declineInvite(inviteCode: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/invites/decline", body: [
-            "email": email,
             "inviteCode": inviteCode
         ])
     }
 
     // MARK: - Friends
 
-    /// Send a friend request.
+    /// Send a friend request to `requestEmail`.
     @discardableResult
-    func requestFriend(email: String, requestEmail: String) async throws -> SuccessResponse {
+    func requestFriend(requestEmail: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/friends/request", body: [
-            "email": email,
             "requestEmail": requestEmail
         ])
     }
 
-    /// Accept an incoming friend request.
+    /// Accept an incoming friend request from `requestEmail`.
     @discardableResult
-    func acceptFriend(email: String, requestEmail: String) async throws -> SuccessResponse {
+    func acceptFriend(requestEmail: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/friends/accept", body: [
-            "email": email,
             "requestEmail": requestEmail
         ])
     }
 
     /// Reject an incoming friend request (or cancel an outgoing one).
     @discardableResult
-    func rejectFriend(email: String, requestEmail: String) async throws -> SuccessResponse {
+    func rejectFriend(requestEmail: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/friends/reject", body: [
-            "email": email,
             "requestEmail": requestEmail
         ])
     }
 
     /// Remove an accepted friend.
     @discardableResult
-    func removeFriend(email: String, friendEmail: String) async throws -> SuccessResponse {
+    func removeFriend(friendEmail: String) async throws -> SuccessResponse {
         // Backend expects DELETE with body; use POST-style body via helper that
         // targets DELETE via a query-param workaround -- the simplest reliable
         // shape is POST to /friends/remove. If the lambda strictly requires
         // DELETE, swap to an http DELETE helper later.
         try await network.xomifyPost("/friends/remove", body: [
-            "email": email,
             "friendEmail": friendEmail
         ])
     }
 
     /// Bucketed list of friends (accepted / requested / pending / blocked).
-    /// Hits `/friends/list?email=` — the real user-scoped endpoint.
+    /// Hits `/friends/list` — backend resolves the caller from JWT context.
     /// `/friends/all` is a full-table scan helper and must not be used here.
-    func getAllFriends(email: String) async throws -> FriendsAllResponse {
-        try await network.xomifyGet("/friends/list", queryParams: ["email": email])
+    func getAllFriends() async throws -> FriendsAllResponse {
+        try await network.xomifyGet("/friends/list")
     }
 
     /// Discovery list: every other user on the platform. `/user/all` returns a
-    /// bare JSON array; the backend filters self out server-side when `email`
-    /// is passed.
-    func listUsers(email: String) async throws -> UserListResponse {
-        let users: [SearchResult] = try await network.xomifyGet(
-            "/user/all",
-            queryParams: ["email": email]
-        )
+    /// bare JSON array; the backend filters self out server-side using the
+    /// caller email from the JWT context.
+    func listUsers() async throws -> UserListResponse {
+        let users: [SearchResult] = try await network.xomifyGet("/user/all")
         return UserListResponse(users: users, totalCount: users.count)
     }
 
     /// Incoming friend requests only (subset of /friends/all).
-    func getPendingFriends(email: String) async throws -> FriendsAllResponse {
-        try await network.xomifyGet("/friends/pending", queryParams: ["email": email])
+    func getPendingFriends() async throws -> FriendsAllResponse {
+        try await network.xomifyGet("/friends/pending")
     }
 
     /// Public profile of another user. Backend expects `friendEmail` and
-    /// resolves the caller from the auth header — previous shape
-    /// (`email` + `profileEmail`) returns 400.
-    func getFriendProfile(email: String, profileEmail: String) async throws -> FriendProfile {
+    /// resolves the caller from the JWT context.
+    func getFriendProfile(profileEmail: String) async throws -> FriendProfile {
         try await network.xomifyGet("/friends/profile", queryParams: [
             "friendEmail": profileEmail
         ])
@@ -349,8 +328,8 @@ actor XomifyService {
     // MARK: - Groups
 
     /// Create a group. Description is optional.
-    func createGroup(email: String, name: String, description: String? = nil) async throws -> GroupCreateResponse {
-        var body: [String: Any] = ["email": email, "name": name]
+    func createGroup(name: String, description: String? = nil) async throws -> GroupCreateResponse {
+        var body: [String: Any] = ["name": name]
         if let description = description, !description.isEmpty {
             body["description"] = description
         }
@@ -361,8 +340,8 @@ actor XomifyService {
     /// /groups/update` — sending POST here would be rejected by API Gateway
     /// before reaching the lambda.
     @discardableResult
-    func updateGroup(email: String, groupId: String, name: String? = nil, description: String? = nil) async throws -> SuccessResponse {
-        var body: [String: Any] = ["email": email, "groupId": groupId]
+    func updateGroup(groupId: String, name: String? = nil, description: String? = nil) async throws -> SuccessResponse {
+        var body: [String: Any] = ["groupId": groupId]
         if let name = name { body["name"] = name }
         if let description = description { body["description"] = description }
         return try await network.xomifyPut("/groups/update", body: body)
@@ -371,27 +350,24 @@ actor XomifyService {
     /// Delete a group (owner only). Backend route is `DELETE
     /// /groups/remove` and reads identifiers from query params (not body).
     @discardableResult
-    func removeGroup(email: String, groupId: String) async throws -> SuccessResponse {
+    func removeGroup(groupId: String) async throws -> SuccessResponse {
         try await network.xomifyDelete("/groups/remove", queryParams: [
-            "email": email,
             "groupId": groupId
         ])
     }
 
     /// Leave a group.
     @discardableResult
-    func leaveGroup(email: String, groupId: String) async throws -> SuccessResponse {
+    func leaveGroup(groupId: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/groups/leave", body: [
-            "email": email,
             "groupId": groupId
         ])
     }
 
     /// Add a member to a group.
     @discardableResult
-    func addMember(email: String, groupId: String, memberEmail: String) async throws -> SuccessResponse {
+    func addMember(groupId: String, memberEmail: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/groups/add-member", body: [
-            "email": email,
             "groupId": groupId,
             "memberEmail": memberEmail
         ])
@@ -400,30 +376,26 @@ actor XomifyService {
     /// Remove a member from a group. Backend is `DELETE
     /// /groups/remove-member` with query params.
     @discardableResult
-    func removeMember(email: String, groupId: String, memberEmail: String) async throws -> SuccessResponse {
+    func removeMember(groupId: String, memberEmail: String) async throws -> SuccessResponse {
         try await network.xomifyDelete("/groups/remove-member", queryParams: [
-            "email": email,
             "groupId": groupId,
             "memberEmail": memberEmail
         ])
     }
 
-    /// Groups the user belongs to.
-    func listGroups(email: String) async throws -> GroupsListResponse {
-        try await network.xomifyGet("/groups/list", queryParams: ["email": email])
+    /// Groups the caller belongs to.
+    func listGroups() async throws -> GroupsListResponse {
+        try await network.xomifyGet("/groups/list")
     }
 
     /// Group detail — members + tracks.
-    func getGroupInfo(groupId: String, email: String? = nil) async throws -> GroupInfo {
-        var params: [String: String] = ["groupId": groupId]
-        if let email = email { params["email"] = email }
-        return try await network.xomifyGet("/groups/info", queryParams: params)
+    func getGroupInfo(groupId: String) async throws -> GroupInfo {
+        try await network.xomifyGet("/groups/info", queryParams: ["groupId": groupId])
     }
 
     /// Add a track to a group.
     @discardableResult
     func addSong(
-        email: String,
         groupId: String,
         trackId: String,
         trackName: String,
@@ -432,7 +404,6 @@ actor XomifyService {
         imageUrl: String? = nil
     ) async throws -> SuccessResponse {
         var body: [String: Any] = [
-            "email": email,
             "groupId": groupId,
             "trackId": trackId,
             "trackName": trackName,
@@ -445,9 +416,8 @@ actor XomifyService {
 
     /// Add a track to a group by pasting a Spotify URL (backend parses it).
     @discardableResult
-    func addSongByUrl(email: String, groupId: String, trackUrl: String) async throws -> SuccessResponse {
+    func addSongByUrl(groupId: String, trackUrl: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/groups/add-song-url", body: [
-            "email": email,
             "groupId": groupId,
             "trackUrl": trackUrl
         ])
@@ -457,28 +427,25 @@ actor XomifyService {
     /// /groups/remove-song` and reads `songId` (not `trackIdTimestamp`)
     /// from query params.
     @discardableResult
-    func removeSong(email: String, groupId: String, trackIdTimestamp: String) async throws -> SuccessResponse {
+    func removeSong(groupId: String, trackIdTimestamp: String) async throws -> SuccessResponse {
         try await network.xomifyDelete("/groups/remove-song", queryParams: [
-            "email": email,
             "groupId": groupId,
             "songId": trackIdTimestamp
         ])
     }
 
-    /// Check my listen-status for a single group track.
-    func getSongStatus(email: String, groupId: String, trackIdTimestamp: String) async throws -> SongStatusResponse {
+    /// Check the caller's listen-status for a single group track.
+    func getSongStatus(groupId: String, trackIdTimestamp: String) async throws -> SongStatusResponse {
         try await network.xomifyGet("/groups/song-status", queryParams: [
-            "email": email,
             "groupId": groupId,
             "trackIdTimestamp": trackIdTimestamp
         ])
     }
 
-    /// Mark every track in the group as listened by me.
+    /// Mark every track in the group as listened by the caller.
     @discardableResult
-    func markAllListened(email: String, groupId: String) async throws -> SuccessResponse {
+    func markAllListened(groupId: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/groups/mark-all-listened", body: [
-            "email": email,
             "groupId": groupId
         ])
     }
@@ -496,12 +463,10 @@ actor XomifyService {
     /// row so the UI can render it without a follow-up fetch.
     @discardableResult
     func createComment(
-        email: String,
         shareId: String,
         body: String
     ) async throws -> ShareComment {
         try await network.xomifyPost("/shares/comments-create", body: [
-            "email": email,
             "shareId": shareId,
             "body": body
         ])
@@ -511,13 +476,11 @@ actor XomifyService {
     /// is the `createdAt` cursor from the previous page; nil for the first
     /// page. `limit` is capped at 100 server-side.
     func listComments(
-        email: String,
         shareId: String,
         limit: Int = 20,
         before: String? = nil
     ) async throws -> CommentsListResponse {
         var params: [String: String] = [
-            "email": email,
             "shareId": shareId,
             "limit": String(limit)
         ]
@@ -529,12 +492,10 @@ actor XomifyService {
     /// share author to delete; everyone else gets 403.
     @discardableResult
     func deleteComment(
-        email: String,
         shareId: String,
         commentId: String
     ) async throws -> CommentDeleteResponse {
         try await network.xomifyDelete("/shares/comments-delete", body: [
-            "email": email,
             "shareId": shareId,
             "commentId": commentId
         ])
@@ -549,12 +510,10 @@ actor XomifyService {
     /// otherwise added. Multiple slugs per viewer per share is allowed.
     @discardableResult
     func toggleReaction(
-        email: String,
         shareId: String,
         reaction: ShareReaction
     ) async throws -> ReactionToggleResponse {
         try await network.xomifyPost("/shares/reactions-toggle", body: [
-            "email": email,
             "shareId": shareId,
             "reaction": reaction.rawValue
         ])
@@ -562,11 +521,9 @@ actor XomifyService {
 
     /// Read-only fetch of the full reaction summary for a share.
     func listReactions(
-        email: String,
         shareId: String
     ) async throws -> ReactionsListResponse {
         try await network.xomifyGet("/shares/reactions-list", queryParams: [
-            "email": email,
             "shareId": shareId
         ])
     }
@@ -579,7 +536,6 @@ actor XomifyService {
     /// rate surfaces, hand in `track.imageUrl?.absoluteString`.
     @discardableResult
     func publishRating(
-        email: String,
         trackId: String,
         trackName: String,
         artistName: String,
@@ -588,7 +544,6 @@ actor XomifyService {
         review: String? = nil
     ) async throws -> SuccessResponse {
         var body: [String: Any] = [
-            "email": email,
             "trackId": trackId,
             "trackName": trackName,
             "artistName": artistName,
@@ -603,29 +558,27 @@ actor XomifyService {
 
     /// Delete a rating.
     @discardableResult
-    func removeRating(email: String, trackId: String) async throws -> SuccessResponse {
+    func removeRating(trackId: String) async throws -> SuccessResponse {
         try await network.xomifyPost("/ratings/remove", body: [
-            "email": email,
             "trackId": trackId
         ])
     }
 
-    /// All ratings the user has posted.
-    func getAllRatings(email: String) async throws -> RatingsAllResponse {
+    /// All ratings the caller has posted.
+    func getAllRatings() async throws -> RatingsAllResponse {
         // Try dict shape first; fall back to bare array.
         do {
-            return try await network.xomifyGet("/ratings/all", queryParams: ["email": email])
+            return try await network.xomifyGet("/ratings/all")
         } catch {
-            let ratings: [TrackRating] = try await network.xomifyGet("/ratings/all", queryParams: ["email": email])
-            return RatingsAllResponse(email: email, ratings: ratings, totalCount: ratings.count)
+            let ratings: [TrackRating] = try await network.xomifyGet("/ratings/all")
+            return RatingsAllResponse(email: nil, ratings: ratings, totalCount: ratings.count)
         }
     }
 
     /// A single track's rating (or nil).
-    func getTrackRating(email: String, trackId: String) async throws -> TrackRating? {
+    func getTrackRating(trackId: String) async throws -> TrackRating? {
         do {
             let rating: TrackRating = try await network.xomifyGet("/ratings/track", queryParams: [
-                "email": email,
                 "trackId": trackId
             ])
             return rating
@@ -638,33 +591,30 @@ actor XomifyService {
     //
     // Thin wrappers over the deployed `notifications_register` /
     // `notifications_unregister` lambdas. Body shape is camelCase and matches
-    // the Python handlers exactly.
+    // the Python handlers exactly. Caller identity is read from the JWT
+    // context server-side.
 
-    /// Upsert the user's APNs device token + push preferences. Idempotent —
+    /// Upsert the caller's APNs device token + push preferences. Idempotent —
     /// safe to call on every cold launch when the APNs token refreshes.
     @discardableResult
     func registerPushToken(
-        email: String,
         deviceToken: String,
         queueNotificationsEnabled: Bool,
         digestEnabled: Bool
     ) async throws -> SuccessResponse {
         try await network.xomifyPost("/notifications/register", body: [
-            "email": email,
             "deviceToken": deviceToken,
             "queueNotificationsEnabled": queueNotificationsEnabled,
             "digestEnabled": digestEnabled
         ])
     }
 
-    /// Delete the user's APNs device token from the backend. Called on sign-out.
+    /// Delete the caller's APNs device token from the backend. Called on sign-out.
     @discardableResult
     func unregisterPushToken(
-        email: String,
         deviceToken: String
     ) async throws -> SuccessResponse {
         try await network.xomifyPost("/notifications/unregister", body: [
-            "email": email,
             "deviceToken": deviceToken
         ])
     }

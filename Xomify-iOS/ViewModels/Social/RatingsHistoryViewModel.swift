@@ -37,7 +37,8 @@ final class RatingsHistoryViewModel {
                 return
             }
 
-            let response = try await xomifyService.getAllRatings(email: email)
+            _ = email
+            let response = try await xomifyService.getAllRatings()
             let loaded = response.ratings ?? []
             ratings = loaded.sorted(by: Self.isMoreRecent)
             print("✅ RatingsHistory: loaded \(ratings.count) ratings")
@@ -82,7 +83,8 @@ final class RatingsHistoryViewModel {
                 errorMessage = "Could not delete rating — missing email."
                 return
             }
-            _ = try await xomifyService.removeRating(email: email, trackId: rating.trackId)
+            _ = email
+            _ = try await xomifyService.removeRating(trackId: rating.trackId)
             print("🗑️ RatingsHistory: removed rating for \(rating.trackId)")
         } catch {
             ratings.insert(removed, at: index)
