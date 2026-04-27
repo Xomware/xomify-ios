@@ -46,7 +46,7 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     var getFriendProfileResponse: FriendProfile = FriendProfile(
         email: nil, displayName: nil, userId: nil, avatar: nil,
         followersCount: nil, followingCount: nil, playlistCount: nil,
-        friendsCount: nil, shareCount: nil,
+        friendsCount: nil, shareCount: nil, likesCount: nil, likesUpdatedAt: nil,
         topSongs: nil, topArtists: nil, topGenres: nil, playlists: nil
     )
     var getFriendProfileError: Error?

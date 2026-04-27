@@ -255,6 +255,7 @@ final class UserProfileViewModel {
         followersCount = profile.followersCount
         followingCount = profile.followingCount
         friendCount = profile.friendsCount
+        likesCount = profile.likesCount
     }
 }
 
