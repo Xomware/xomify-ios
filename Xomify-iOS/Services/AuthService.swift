@@ -415,9 +415,18 @@ final class AuthService: NSObject, Sendable {
                 return false
             }
 
-            let envelope = try JSONDecoder().decode(AuthLoginEnvelope.self, from: data)
-            guard let payload = envelope.data else {
-                print("❌ Auth: /auth/login missing data envelope")
+            // Backend's success_response returns the body raw (no envelope).
+            // Try unwrapped first, fall back to a wrapped { data: ... } shape
+            // in case the envelope ever gets adopted.
+            let payload: AuthLoginPayload
+            if let raw = try? JSONDecoder().decode(AuthLoginPayload.self, from: data) {
+                payload = raw
+            } else if let env = try? JSONDecoder().decode(AuthLoginEnvelope.self, from: data),
+                      let inner = env.data {
+                payload = inner
+            } else {
+                let bodyPreview = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+                print("❌ Auth: /auth/login response did not match payload or envelope shape: \(bodyPreview.prefix(300))")
                 return false
             }
 
