@@ -183,12 +183,14 @@ actor XomifyService {
     }
 
     /// Delete a share (author only). Backend expects composite key via body.
+    /// Route is wired as DELETE in api-gateway-service; using POST here
+    /// triggers a 403 ForbiddenException from API GW (unmatched method).
     @discardableResult
     func deleteShare(
         shareId: String,
         sharedAt: String
     ) async throws -> SuccessResponse {
-        try await network.xomifyPost("/shares/delete", body: [
+        try await network.xomifyDelete("/shares/delete", body: [
             "shareId": shareId,
             "sharedAt": sharedAt
         ])
