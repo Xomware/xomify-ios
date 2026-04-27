@@ -938,3 +938,52 @@ struct CommentDeleteResponse: Codable, Sendable {
     let deleted: Bool
     let commentId: String
 }
+
+// MARK: - Likes Push / By-User
+
+/// A single track payload sent to POST `/likes/push`.
+struct LikesPushTrack: Codable, Sendable {
+    let trackId: String
+    let addedAt: String?
+    let name: String
+    let artist: String
+    let albumArt: String?
+}
+
+/// Request body for POST `/likes/push`.
+struct LikesPushRequest: Codable, Sendable {
+    let email: String
+    let total: Int
+    let tracks: [LikesPushTrack]
+}
+
+/// Response from POST `/likes/push`.
+struct LikesPushResponse: Codable, Sendable {
+    let success: Bool?
+    let deduped: Bool?
+    let count: Int?
+}
+
+/// A single track row returned by GET `/likes/by-user`.
+struct LikesByUserTrack: Codable, Sendable, Identifiable, Hashable {
+    let trackId: String
+    let trackName: String?
+    let artistName: String?
+    let albumArt: String?
+    let addedAt: String?
+
+    var id: String { trackId }
+
+    var albumArtURL: URL? {
+        guard let s = albumArt, !s.isEmpty else { return nil }
+        return URL(string: s)
+    }
+}
+
+/// Response from GET `/likes/by-user`.
+struct LikesByUserResponse: Codable, Sendable {
+    let tracks: [LikesByUserTrack]
+    let total: Int?
+    let hasMore: Bool?
+    let likesPublic: Bool?
+}
