@@ -442,6 +442,56 @@ final class AuthService: NSObject, Sendable {
         }
     }
 
+    /// True when the cached Xomify JWT is present and not within its 60s
+    /// expiry buffer. Used by `ensureXomifyJwt()` to short-circuit the
+    /// bootstrap when we already have a usable token.
+    private var hasFreshXomifyJwt: Bool {
+        guard let jwt = xomifyJwt, !jwt.isEmpty else { return false }
+        // No expiration recorded → trust the token; backend will 401 if
+        // it's actually expired and the NetworkService retry will remint.
+        guard let exp = xomifyJwtExpiration else { return true }
+        return Date() < exp.addingTimeInterval(-60)
+    }
+
+    /// Bootstrap-only mint that mirrors the web hotfix `ensureXomifyJwt`.
+    /// Called once at app launch *before* any view's `.task` fires API
+    /// calls. Cold-start contract:
+    ///
+    /// 1. If the keychain already holds a non-expired Xomify JWT → no-op,
+    ///    return `true` (normal cache hit on every launch).
+    /// 2. If there is no Spotify refresh token in the keychain → user is
+    ///    not logged in; return `false` so the bootstrap can complete and
+    ///    the root view falls through to `LoginView`.
+    /// 3. Otherwise the stored Spotify access token is almost certainly
+    ///    stale (Spotify access tokens TTL=1h, app may have been idle
+    ///    overnight). Refresh it first, then mint the Xomify JWT off the
+    ///    fresh access token. Same root cause the web hotfix #263 fixes.
+    ///
+    /// Failures (refresh `invalid_grant`, mint network error, etc.) are
+    /// swallowed and surfaced via `false`. The caller does **not** block
+    /// startup on a failed mint — the 401-retry path in `NetworkService`
+    /// is still in place and the user sees `LoginView` if they're truly
+    /// signed out.
+    @discardableResult
+    func ensureXomifyJwt() async -> Bool {
+        if hasFreshXomifyJwt {
+            return true
+        }
+        guard let refresh = refreshToken, !refresh.isEmpty else {
+            // Not logged in — bootstrap completes, ContentView shows LoginView.
+            return false
+        }
+
+        do {
+            try await refreshAccessToken()
+        } catch {
+            print("⚠️ Auth: ensureXomifyJwt — Spotify refresh failed: \(error)")
+            return false
+        }
+
+        return await mintXomifyJwt()
+    }
+
     /// Best-effort ISO8601 parse — backend may return fractional seconds.
     private func parseISO8601(_ value: String) -> Date? {
         let withFractional = ISO8601DateFormatter()
