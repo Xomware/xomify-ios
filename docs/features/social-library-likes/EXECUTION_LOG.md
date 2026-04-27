@@ -81,3 +81,48 @@ Backend chain is unblocked. Per the plan, iOS work splits into three PRs:
 - Phase 5: service methods + cold-open push hook.
 - Phase 6: un-gate the Likes chip + read `likesCount` from `FriendProfile`.
 - Phase 7: friend-scoped `LikesView` + settings toggle.
+
+---
+
+## 2026-04-27 — iOS Phases 5-7 (xomify-ios)
+
+### PR #97 — Phase 5: service methods, push coordinator, cold-open hook ✅ MERGED
+- **Branch**: `feature/social-library-likes-phase-5-service` off master
+- **Version**: 1.12.0 → 1.13.0 (feat bump)
+- **Files changed**:
+  - `Xomify-iOS/Models/SocialModels.swift` — Added `LikesPushTrack`, `LikesPushRequest`, `LikesPushResponse`, `LikesByUserTrack`, `LikesByUserResponse`
+  - `Xomify-iOS/Services/XomifyService.swift` — Added `pushUserLikes`, `getLikesByUser`, `setLikesPublic`
+  - `Xomify-iOS/Services/XomifyServiceProtocol.swift` — Extended protocol with the three new methods
+  - `Xomify-iOS/Services/LikesPushCoordinator.swift` — New actor; fires once per process lifetime; paginates `/me/tracks` up to 200 (4 × 50 pages), calls `pushUserLikes` fire-and-forget
+  - `Xomify-iOS/Views/Shell/MainShell.swift` — Added `LikesPushCoordinator.shared.triggerIfNeeded()` in `.task` after `fetchAvatar()`
+  - `Xomify-iOSTests/MockXomifyServiceProtocol.swift` — Added recording stubs for all three new methods
+- **Decision**: Cold-open hook confirmed as `MainShell.task`; coordinator is an actor to guarantee the single-fire guard is thread-safe.
+
+### PR #98 — Phase 6: likesCount on FriendProfile, un-gate Likes chip ✅ MERGED
+- **Branch**: `feature/social-library-likes-phase-6-chip` off master (after phase 5 merged)
+- **Version**: 1.13.0 → 1.14.0 (feat bump)
+- **Files changed**:
+  - `Xomify-iOS/Models/SocialModels.swift` — Added `likesCount: Int?` and `likesUpdatedAt: String?` to `FriendProfile`
+  - `Xomify-iOS/ViewModels/UserProfileViewModel.swift` — Set `likesCount = profile.likesCount` in `loadOtherHeader`
+  - `Xomify-iOS/Views/Profile/ProfileHeaderView.swift` — Removed `viewModel.context.isSelf` gate from Likes chip; chip routes to `.likes` as Phase 7 placeholder
+  - `Xomify-iOSTests/MockXomifyServiceProtocol.swift` — Updated `FriendProfile` default with new optional fields
+
+### PR #99 — Phase 7: friend-scoped LikesView, LikesSource, privacy toggle ✅ MERGED
+- **Branch**: `feature/social-library-likes-phase-7-friend-likes` off master (after phase 6 merged)
+- **Version**: 1.14.0 → 1.15.0 (feat bump)
+- **Files changed**:
+  - `Xomify-iOS/ViewModels/Library/LikesViewModel.swift` — Refactored: added `LikesSource` enum, `LikesTrackDisplayItem` unified display model; `items`/`spotifyTracks` replace `tracks`; two `fetchPage` branches; lazy caller-email resolution for backend path
+  - `Xomify-iOS/Views/Library/LikesView.swift` — Accepts `targetEmail: String?`; renders from `vm.items`; `TrackActionsMenu` gated to Spotify path; friend-path empty state copy adjusted
+  - `Xomify-iOS/Navigation/NavigationStore.swift` — Added `friendLikes(email: String)` case to `SidebarDestination`
+  - `Xomify-iOS/Views/Shell/MainShell.swift` — Added `case .friendLikes(let email): LikesView(targetEmail: email)` route
+  - `Xomify-iOS/Views/Profile/ProfileHeaderView.swift` — Chip tap on `.other` navigates to `.friendLikes(email: profileEmail)`; `.me` navigates to `.likes`
+  - `Xomify-iOS/ViewModels/SettingsViewModel.swift` — Added `likesPublic: Bool` + `isUpdatingLikesPublic`; `syncLikesPublic()` calls `setLikesPublic` on toggle
+  - `Xomify-iOS/Views/Shell/Destinations/SettingsView.swift` — Added "Privacy" section with "Show my likes to friends" toggle
+  - `Xomify-iOSTests/ProfileLikesViewModelTests.swift` — Updated for new VM API (`vm.items`); added `test_backendSource_populatesItemsFromBackend`
+
+### Infra dependency
+New endpoints (`/likes/push`, `/likes/by-user`, `/users/likes-public`) return 404 until `xomify-infrastructure` provisions the API GW routes. Errors are caught in `LikesPushCoordinator` and `LikesViewModel` with warning prints — nothing surfaces to the UI.
+
+### Build health
+- All three phases: `xcodebuild -scheme Xomify-iOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' build` → BUILD SUCCEEDED
+- No new compiler warnings introduced

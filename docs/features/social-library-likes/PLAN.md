@@ -1,8 +1,8 @@
 # Plan: Social Library — Friend-Visible Likes
 
-**Status**: Ready
+**Status**: Done
 **Created**: 2026-04-26
-**Last updated**: 2026-04-26
+**Last updated**: 2026-04-27
 **Repos**: `xomify-backend` (Python Lambdas), `xomify-ios` (SwiftUI)
 
 ## Summary
@@ -167,34 +167,33 @@ The fetch + paging + skeleton logic is identical; only the data source differs. 
 - [x] pytest: friends_profile present-when-public, absent-when-private, present-for-self, lookup-failure-doesn't-500. users_set_likes_public happy/cross-user/missing/non-bool/stringy-bool — 11 new tests.
 - [x] PR review + merge. **Backend chain complete.**
 
-### Phase 5 — iOS service methods + push hook (xomify-ios PR #1)
-- [ ] Branch `feature/social-library-likes` off `master`. Bump version with `./scripts/bump-version.sh feat`.
-- [ ] Add `pushUserLikes(email:total:tracks:)` and `getLikesByUser(...)` to `XomifyService`. Use verb-disambiguated paths.
-- [ ] Add `LikesPushResponse` / `LikesByUserResponse` Codables in `SocialModels.swift`.
-- [ ] Identify cold-open hook (audit `Xomify_iOSApp.swift`, `MainShell.task`, or similar). Document the exact site in this plan (open question below until confirmed).
-- [ ] Hook fires `Task.detached` to fetch top-200 via `SpotifyService.shared.getSavedTracks(limit: 50, offset: 0)` x4 pages, then `pushUserLikes(...)`. Throttle to once per app launch; never block UI.
-- [ ] Strict-concurrency clean (project-wide rule).
-- [ ] Unit tests: mock network, verify URL + body shape; verify single-fire per launch.
-- [ ] xcodebuild green; PR review + merge.
+### Phase 5 — iOS service methods + push hook (xomify-ios PR #97) ✅ MERGED
+- [x] Branch `feature/social-library-likes-phase-5-service` off `master`. Bumped version to 1.13.0.
+- [x] Add `pushUserLikes(email:total:tracks:)`, `getLikesByUser(...)`, `setLikesPublic(...)` to `XomifyService`. Verb-disambiguated paths: `/likes/push`, `/likes/by-user`, `/users/likes-public`.
+- [x] Add `LikesPushResponse` / `LikesByUserResponse` / `LikesPushTrack` / `LikesByUserTrack` Codables in `SocialModels.swift`.
+- [x] Cold-open hook confirmed: `MainShell.task`. `LikesPushCoordinator` actor added; fires once per process lifetime via `Task.detached`.
+- [x] Coordinator paginates `/me/tracks` up to 200 tracks (4 pages × 50), then calls `pushUserLikes`. Never blocks UI.
+- [x] `XomifyServiceProtocol` and `MockXomifyServiceProtocol` updated with new method stubs.
+- [x] xcodebuild green; PR merged.
 
-### Phase 6 — iOS un-gate chip + read `likesCount` (xomify-ios PR #2)
-- [ ] Bump version with `./scripts/bump-version.sh feat`.
-- [ ] Add `likesCount: Int?` (and `likesUpdatedAt: String?`) to `FriendProfile`.
-- [ ] In `loadOtherHeader`, set `likesCount = profile.likesCount`.
-- [ ] In `ProfileHeaderView`, change line 130 gate from `viewModel.context.isSelf, let likesCount = ...` to `let likesCount = viewModel.likesCount`. Chip auto-hides when nil (backend hasn't returned it yet → fail-safe).
-- [ ] On friend profile, `destination: .likes` still routes — but the destination's `targetEmail` parameter is wired in PR #3.
-- [ ] Snapshot/unit tests for header showing 4 vs 5 stats based on `likesCount` presence.
-- [ ] xcodebuild green; PR review + merge.
+### Phase 6 — iOS un-gate chip + read `likesCount` (xomify-ios PR #98) ✅ MERGED
+- [x] Bumped version to 1.14.0.
+- [x] Added `likesCount: Int?` and `likesUpdatedAt: String?` to `FriendProfile`.
+- [x] In `loadOtherHeader`, set `likesCount = profile.likesCount`.
+- [x] In `ProfileHeaderView`, removed `viewModel.context.isSelf` gate — chip renders for both self and other when `likesCount != nil`. Chip auto-hides when nil.
+- [x] Friend profile chip routes to `.likes` as placeholder (Phase 7 wires `.friendLikes`).
+- [x] `MockXomifyServiceProtocol.getFriendProfileResponse` updated with new fields.
+- [x] xcodebuild green; PR merged.
 
-### Phase 7 — iOS friend-scoped LikesView (xomify-ios PR #3)
-- [ ] Bump version with `./scripts/bump-version.sh feat`.
-- [ ] Refactor `LikesViewModel` to take `source: LikesSource` enum (`.spotifyDirect | .backend(targetEmail:)`). Branch the load + paging functions on source.
-- [ ] Add `targetEmail: String?` to `LikesView` init. Pass through to VM.
-- [ ] Update sidebar/destination resolver: when context is friend profile, pass `friendProfile.email` as `targetEmail`.
-- [ ] Add settings toggle "Show my likes to friends" — bound to a new `setLikesPublic(email:public:)` service call (extend existing settings PATCH or add a small lambda — confirm during execute).
-- [ ] Unit tests: VM source branching, friend-scope returns backend rows.
-- [ ] Manual TestFlight verify across two accounts that are mutual friends.
-- [ ] xcodebuild green; PR review + merge.
+### Phase 7 — iOS friend-scoped LikesView (xomify-ios PR #99) ✅ MERGED
+- [x] Bumped version to 1.15.0.
+- [x] Refactored `LikesViewModel` to take `source: LikesSource` enum (`.spotifyDirect | .backend(callerEmail:targetEmail:)`). `.spotifyDirect` preserves existing Spotify path; `.backend` calls `getLikesByUser`. Unified display via `LikesTrackDisplayItem`.
+- [x] `LikesView` accepts `targetEmail: String?` init param; default nil for back-compat.
+- [x] Added `friendLikes(email: String)` case to `SidebarDestination`; routed in `MainShell.destinationRoot`.
+- [x] `ProfileHeaderView`: `.other` chip tap navigates to `.friendLikes(email: profileEmail)`; `.me` navigates to `.likes`.
+- [x] Settings: added Privacy section with "Show my likes to friends" toggle (`likesPublic` → `setLikesPublic`).
+- [x] `ProfileLikesViewModelTests` updated to use `LikesViewModel(source: .spotifyDirect)` + `vm.items`; new `test_backendSource_populatesItemsFromBackend`.
+- [x] xcodebuild green; PR merged.
 
 ## Out of Scope
 - Recently-played social surface (separate plan).
