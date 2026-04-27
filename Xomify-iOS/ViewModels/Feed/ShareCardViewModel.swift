@@ -123,7 +123,6 @@ final class ShareCardViewModel {
 
         do {
             _ = try await xomifyService.publishRating(
-                email: viewerEmail,
                 trackId: share.trackId,
                 trackName: share.trackName,
                 artistName: share.artistName,
@@ -170,7 +169,6 @@ final class ShareCardViewModel {
 
         do {
             let resp = try await xomifyService.toggleReaction(
-                email: viewerEmail,
                 shareId: share.shareId,
                 reaction: reaction
             )

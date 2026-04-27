@@ -35,7 +35,7 @@ final class InvitesViewModel {
         errorMessage = nil
 
         do {
-            let response = try await xomify.createInvite(email: email)
+            let response = try await xomify.createInvite()
             inviteCode = response.inviteCode
             shareUrl = response.shareUrl
             expiresAt = response.expiresAt
@@ -62,7 +62,7 @@ final class InvitesViewModel {
         acceptSuccessMessage = nil
 
         do {
-            let response = try await xomify.acceptInvite(email: email, inviteCode: code)
+            let response = try await xomify.acceptInvite(inviteCode: code)
             if let friend = response.friendEmail {
                 acceptSuccessMessage = "You're now friends with \(friend)"
             } else {

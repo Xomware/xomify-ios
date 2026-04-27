@@ -164,12 +164,11 @@ final class SettingsViewModel {
     // MARK: - Enrollment
 
     func toggleWrappedEnrollment() async {
-        guard !isUpdatingEnrollment, let email = user?.email else { return }
+        guard !isUpdatingEnrollment, user?.email != nil else { return }
         isUpdatingEnrollment = true
         let newValue = !isWrappedEnrolled
         do {
             try await xomifyService.updateEnrollments(
-                email: email,
                 activeWrapped: newValue,
                 activeReleaseRadar: isReleaseRadarEnrolled
             )
@@ -182,12 +181,11 @@ final class SettingsViewModel {
     }
 
     func toggleReleaseRadarEnrollment() async {
-        guard !isUpdatingEnrollment, let email = user?.email else { return }
+        guard !isUpdatingEnrollment, user?.email != nil else { return }
         isUpdatingEnrollment = true
         let newValue = !isReleaseRadarEnrolled
         do {
             try await xomifyService.updateEnrollments(
-                email: email,
                 activeWrapped: isWrappedEnrolled,
                 activeReleaseRadar: newValue
             )
@@ -209,7 +207,8 @@ final class SettingsViewModel {
 
     private func loadXomifyStatus(email: String) async {
         do {
-            let userData = try await xomifyService.getUserData(email: email)
+            _ = email
+            let userData = try await xomifyService.getUserData()
             isWrappedEnrolled = userData.activeWrapped
             isReleaseRadarEnrolled = userData.activeReleaseRadar
             print("✅ Settings: enrollment loaded — Wrapped: \(isWrappedEnrolled), RR: \(isReleaseRadarEnrolled)")

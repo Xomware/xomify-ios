@@ -108,7 +108,7 @@ final class ShareComposerViewModel {
             }
         }
         if !userEmail.isEmpty, availableGroups.isEmpty {
-            if let response = try? await xomifyService.listGroups(email: userEmail) {
+            if let response = try? await xomifyService.listGroups() {
                 availableGroups = response.groups ?? []
             }
         }
@@ -258,7 +258,6 @@ final class ShareComposerViewModel {
 
         do {
             let response = try await xomifyService.createShare(
-                email: userEmail,
                 trackId: track.id,
                 trackUri: track.uri ?? "",
                 trackName: track.name,

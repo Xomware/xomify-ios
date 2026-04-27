@@ -83,7 +83,7 @@ final class ReleaseRadarViewModel {
         print("📡 ReleaseRadar: Loading history for \(email)...")
         
         do {
-            let response = try await xomifyService.getReleaseRadarHistory(email: email)
+            let response = try await xomifyService.getReleaseRadarHistory()
             
             print("✅ ReleaseRadar: Got response")
             print("   - weeks count: \(response.weeks?.count ?? 0)")
@@ -144,7 +144,7 @@ final class ReleaseRadarViewModel {
         print("🔄 ReleaseRadar: Refreshing for \(email)...")
         
         do {
-            let response = try await xomifyService.getReleaseRadarHistory(email: email)
+            let response = try await xomifyService.getReleaseRadarHistory()
             historyWeeks = response.weeks ?? []
             currentWeekKey = response.currentWeek
             

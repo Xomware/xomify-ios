@@ -45,7 +45,7 @@ final class RatingsViewModel {
         errorMessage = nil
 
         do {
-            let response = try await xomify.getAllRatings(email: email)
+            let response = try await xomify.getAllRatings()
             ratings = response.ratings ?? []
             await resolveArtwork()
         } catch {
@@ -83,7 +83,7 @@ final class RatingsViewModel {
 
     func delete(_ rating: TrackRating) async {
         do {
-            _ = try await xomify.removeRating(email: userEmail, trackId: rating.trackId)
+            _ = try await xomify.removeRating(trackId: rating.trackId)
             ratings.removeAll { $0.trackId == rating.trackId }
         } catch {
             errorMessage = "Failed to delete rating: \(error.localizedDescription)"

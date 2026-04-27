@@ -6,47 +6,49 @@ import Foundation
 ///
 /// Only the operations exercised by Friends / Invites flows are included here —
 /// keep this surface tight and expand incrementally as other screens adopt it.
+///
+/// Caller identity rides the per-user JWT (sub-feature 0d) and is resolved
+/// server-side (1a–1i). Methods here only carry target identifiers.
 protocol XomifyServicing: Sendable {
 
     // MARK: - Friends
 
-    func getAllFriends(email: String) async throws -> FriendsAllResponse
-    func listUsers(email: String) async throws -> UserListResponse
+    func getAllFriends() async throws -> FriendsAllResponse
+    func listUsers() async throws -> UserListResponse
 
     @discardableResult
-    func requestFriend(email: String, requestEmail: String) async throws -> SuccessResponse
+    func requestFriend(requestEmail: String) async throws -> SuccessResponse
 
     @discardableResult
-    func acceptFriend(email: String, requestEmail: String) async throws -> SuccessResponse
+    func acceptFriend(requestEmail: String) async throws -> SuccessResponse
 
     @discardableResult
-    func rejectFriend(email: String, requestEmail: String) async throws -> SuccessResponse
+    func rejectFriend(requestEmail: String) async throws -> SuccessResponse
 
     @discardableResult
-    func removeFriend(email: String, friendEmail: String) async throws -> SuccessResponse
+    func removeFriend(friendEmail: String) async throws -> SuccessResponse
 
     // MARK: - Invites
 
-    func createInvite(email: String) async throws -> InviteCreateResponse
+    func createInvite() async throws -> InviteCreateResponse
 
-    func acceptInvite(email: String, inviteCode: String) async throws -> InviteAcceptResponse
+    func acceptInvite(inviteCode: String) async throws -> InviteAcceptResponse
 
     /// List deep-link invites sent to this user and awaiting accept/decline.
     /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
-    func listPendingInvites(email: String) async throws -> PendingInvitesResponse
+    func listPendingInvites() async throws -> PendingInvitesResponse
 
     /// Decline a deep-link invite.
     /// TODO: endpoint lands in backend-interactions-and-friends-handlers PR.
     @discardableResult
-    func declineInvite(email: String, inviteCode: String) async throws -> SuccessResponse
+    func declineInvite(inviteCode: String) async throws -> SuccessResponse
 
     // MARK: - Notifications
 
-    /// Upsert an APNs device token + preference flags for the user.
-    /// Idempotent on `(email, deviceToken)` — safe to call on every cold launch.
+    /// Upsert an APNs device token + preference flags for the caller.
+    /// Idempotent on `(caller, deviceToken)` — safe to call on every cold launch.
     @discardableResult
     func registerPushToken(
-        email: String,
         deviceToken: String,
         queueNotificationsEnabled: Bool,
         digestEnabled: Bool
@@ -55,7 +57,6 @@ protocol XomifyServicing: Sendable {
     /// Delete a device token from the backend. Called on sign-out.
     @discardableResult
     func unregisterPushToken(
-        email: String,
         deviceToken: String
     ) async throws -> SuccessResponse
 }

@@ -226,10 +226,10 @@ final class UserProfileViewModel {
         // Populate the three header stats (Friends / Ratings / Posts) with
         // parallel fetches. Missing counts fall through to nil so the header
         // skeleton keeps working if any single call fails.
-        async let ratings: RatingsAllResponse? = try? xomifyService.getAllRatings(email: callerEmail)
-        async let friends: FriendsAllResponse? = try? xomifyService.getAllFriends(email: callerEmail)
+        async let ratings: RatingsAllResponse? = try? xomifyService.getAllRatings()
+        async let friends: FriendsAllResponse? = try? xomifyService.getAllFriends()
         async let shares: FeedResponse?       = try? xomifyService.getSharesByUser(
-            email: callerEmail, targetEmail: callerEmail, limit: 1, before: nil
+            targetEmail: callerEmail, limit: 1, before: nil
         )
         async let likedPage: SavedTracksResponse? = try? SpotifyService.shared.getSavedTracks(limit: 1, offset: 0)
 
@@ -242,7 +242,6 @@ final class UserProfileViewModel {
 
     private func loadOtherHeader(email: String) async throws {
         let profile = try await xomifyService.getFriendProfile(
-            email: callerEmail,
             profileEmail: email
         )
         friendProfile = profile

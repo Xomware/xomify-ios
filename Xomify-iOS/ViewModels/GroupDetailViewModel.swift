@@ -78,7 +78,7 @@ final class GroupDetailViewModel {
         errorMessage = nil
 
         do {
-            let info = try await xomify.getGroupInfo(groupId: groupId, email: email)
+            let info = try await xomify.getGroupInfo(groupId: groupId)
             group = info.group
             members = info.members ?? []
             tracks = info.tracks ?? []
@@ -127,7 +127,6 @@ final class GroupDetailViewModel {
 
         do {
             let response = try await xomify.getFeed(
-                email: userEmail,
                 groupId: groupId,
                 limit: 50,
                 before: nil
@@ -196,7 +195,7 @@ final class GroupDetailViewModel {
         defer { isLoadingFriends = false }
 
         do {
-            let response = try await xomify.getAllFriends(email: userEmail)
+            let response = try await xomify.getAllFriends()
             friends = response.accepted ?? []
         } catch {
             friendsError = error.localizedDescription
@@ -213,7 +212,7 @@ final class GroupDetailViewModel {
         defer { isAddingMember = false }
 
         do {
-            _ = try await xomify.addMember(email: userEmail, groupId: groupId, memberEmail: target)
+            _ = try await xomify.addMember(groupId: groupId, memberEmail: target)
             addMemberEmail = ""
             await refresh()
         } catch {
@@ -249,7 +248,6 @@ final class GroupDetailViewModel {
 
             do {
                 _ = try await xomify.addMember(
-                    email: userEmail,
                     groupId: groupId,
                     memberEmail: email
                 )
@@ -278,7 +276,6 @@ final class GroupDetailViewModel {
     func removeMember(_ member: GroupMember) async {
         do {
             _ = try await xomify.removeMember(
-                email: userEmail,
                 groupId: groupId,
                 memberEmail: member.email
             )
@@ -308,7 +305,6 @@ final class GroupDetailViewModel {
 
         do {
             _ = try await xomify.updateGroup(
-                email: userEmail,
                 groupId: groupId,
                 name: trimmedName,
                 description: trimmedDesc
@@ -343,7 +339,7 @@ final class GroupDetailViewModel {
     func leave() async -> Bool {
         guard !userEmail.isEmpty, !groupId.isEmpty else { return false }
         do {
-            _ = try await xomify.leaveGroup(email: userEmail, groupId: groupId)
+            _ = try await xomify.leaveGroup(groupId: groupId)
             return true
         } catch {
             errorMessage = "Failed to leave group: \(error.localizedDescription)"
@@ -358,7 +354,7 @@ final class GroupDetailViewModel {
     func delete() async -> Bool {
         guard !userEmail.isEmpty, !groupId.isEmpty else { return false }
         do {
-            _ = try await xomify.removeGroup(email: userEmail, groupId: groupId)
+            _ = try await xomify.removeGroup(groupId: groupId)
             return true
         } catch {
             errorMessage = "Failed to delete group: \(error.localizedDescription)"
@@ -417,7 +413,6 @@ final class GroupDetailViewModel {
 
         do {
             _ = try await xomify.addSong(
-                email: userEmail,
                 groupId: groupId,
                 trackId: track.id,
                 trackName: track.name,
@@ -440,7 +435,6 @@ final class GroupDetailViewModel {
 
         do {
             _ = try await xomify.addSongByUrl(
-                email: userEmail,
                 groupId: groupId,
                 trackUrl: url
             )
@@ -455,7 +449,6 @@ final class GroupDetailViewModel {
     func removeSong(_ track: GroupTrack) async {
         do {
             _ = try await xomify.removeSong(
-                email: userEmail,
                 groupId: groupId,
                 trackIdTimestamp: track.trackIdTimestamp
             )
@@ -468,7 +461,7 @@ final class GroupDetailViewModel {
 
     func markAllListened() async {
         do {
-            _ = try await xomify.markAllListened(email: userEmail, groupId: groupId)
+            _ = try await xomify.markAllListened(groupId: groupId)
             await refresh()
         } catch {
             errorMessage = "Failed to mark listened: \(error.localizedDescription)"

@@ -79,7 +79,6 @@ final class ShareDetailViewModel {
 
         do {
             let resp = try await xomifyService.getShareDetail(
-                email: viewerEmail,
                 shareId: share.shareId,
                 sharedBy: share.sharedBy,
                 sharedAt: share.sharedAt
@@ -136,7 +135,6 @@ final class ShareDetailViewModel {
 
         do {
             _ = try await xomifyService.publishRating(
-                email: viewerEmail,
                 trackId: share.trackId,
                 trackName: share.trackName,
                 artistName: share.artistName,
@@ -165,7 +163,6 @@ final class ShareDetailViewModel {
 
         do {
             let resp = try await xomifyService.listComments(
-                email: viewerEmail,
                 shareId: share.shareId,
                 limit: 50,
                 before: nil
@@ -191,7 +188,6 @@ final class ShareDetailViewModel {
 
         do {
             let comment = try await xomifyService.createComment(
-                email: viewerEmail,
                 shareId: share.shareId,
                 body: trimmed
             )
@@ -222,7 +218,6 @@ final class ShareDetailViewModel {
 
         do {
             _ = try await xomifyService.deleteComment(
-                email: viewerEmail,
                 shareId: share.shareId,
                 commentId: comment.commentId
             )
@@ -271,7 +266,6 @@ final class ShareDetailViewModel {
 
         do {
             let resp = try await xomifyService.toggleReaction(
-                email: viewerEmail,
                 shareId: share.shareId,
                 reaction: reaction
             )

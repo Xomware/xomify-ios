@@ -6,12 +6,14 @@ import Foundation
 ///
 /// `XomifyService` (the concrete actor singleton) conforms via the extension
 /// at the bottom of this file.
+///
+/// Caller identity rides the per-user JWT (sub-feature 0d) and is resolved
+/// server-side (1a–1i). Methods here only carry target identifiers.
 protocol XomifyServiceProtocol: Sendable {
 
     // MARK: - Shares
 
     func createShare(
-        email: String,
         trackId: String,
         trackUri: String,
         trackName: String,
@@ -26,27 +28,23 @@ protocol XomifyServiceProtocol: Sendable {
     ) async throws -> ShareCreateResponse
 
     func getFeed(
-        email: String,
         groupId: String?,
         limit: Int,
         before: String?
     ) async throws -> FeedResponse
 
     func getSharesByUser(
-        email: String,
         targetEmail: String,
         limit: Int,
         before: String?
     ) async throws -> FeedResponse
 
     func deleteShare(
-        email: String,
         shareId: String,
         sharedAt: String
     ) async throws -> SuccessResponse
 
     func getShareDetail(
-        email: String,
         shareId: String,
         sharedBy: String?,
         sharedAt: String?
@@ -55,18 +53,16 @@ protocol XomifyServiceProtocol: Sendable {
     // MARK: - Friend profile (used by UserProfileViewModel)
 
     func getFriendProfile(
-        email: String,
         profileEmail: String
     ) async throws -> FriendProfile
 
     // MARK: - Groups (for filter chips)
 
-    func listGroups(email: String) async throws -> GroupsListResponse
+    func listGroups() async throws -> GroupsListResponse
 
     // MARK: - Ratings (used by ShareCardViewModel)
 
     func publishRating(
-        email: String,
         trackId: String,
         trackName: String,
         artistName: String,
@@ -79,41 +75,36 @@ protocol XomifyServiceProtocol: Sendable {
 
     /// All ratings authored by the caller. Used by the self-profile header to
     /// populate the Ratings stat without a dedicated counts endpoint.
-    func getAllRatings(email: String) async throws -> RatingsAllResponse
+    func getAllRatings() async throws -> RatingsAllResponse
 
     /// Full friends payload for the caller. Used by the self-profile header
     /// (friend count) and the Friends drawer.
-    func getAllFriends(email: String) async throws -> FriendsAllResponse
+    func getAllFriends() async throws -> FriendsAllResponse
 
     // MARK: - Comments + Reactions (xomify-backend#139)
 
     func createComment(
-        email: String,
         shareId: String,
         body: String
     ) async throws -> ShareComment
 
     func listComments(
-        email: String,
         shareId: String,
         limit: Int,
         before: String?
     ) async throws -> CommentsListResponse
 
     func deleteComment(
-        email: String,
         shareId: String,
         commentId: String
     ) async throws -> CommentDeleteResponse
 
     func toggleReaction(
-        email: String,
         shareId: String,
         reaction: ShareReaction
     ) async throws -> ReactionToggleResponse
 
     func listReactions(
-        email: String,
         shareId: String
     ) async throws -> ReactionsListResponse
 }
