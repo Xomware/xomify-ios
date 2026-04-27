@@ -17,6 +17,16 @@ final class AuthService: NSObject, Sendable {
     private(set) var tokenExpirationDate: Date?
     private(set) var isAuthenticated = false
 
+    /// Per-user Xomify JWT minted from the Spotify access token via `POST
+    /// /auth/login`. Cached in memory; persisted in the keychain alongside the
+    /// Spotify refresh token (same access group — the default, since the
+    /// Spotify refresh token is stored without `kSecAttrAccessGroup`). When
+    /// `nil`, callers fall back to the static `XOMIFY_API_TOKEN` from
+    /// `secrets.xcconfig` (legacy path; backend authorizer is dual-mode during
+    /// the migration).
+    private(set) var xomifyJwt: String?
+    private(set) var xomifyJwtExpiration: Date?
+
     /// Called whenever a new access token is persisted (initial login or refresh).
     /// `SpotifyPlaybackCoordinator` wires itself in here so it can push the
     /// updated token into the live `SPTAppRemote` instance without polling.
@@ -44,6 +54,8 @@ final class AuthService: NSObject, Sendable {
     private let accessTokenKey = "xomify.spotify.accessToken"
     private let refreshTokenKey = "xomify.spotify.refreshToken"
     private let expirationKey = "xomify.spotify.expiration"
+    private let xomifyJwtKey = "xomify.api.jwt"
+    private let xomifyJwtExpirationKey = "xomify.api.jwt.expiration"
     
     // MARK: - Init
     
@@ -82,16 +94,28 @@ final class AuthService: NSObject, Sendable {
     private func loadTokens() {
         accessToken = KeychainHelper.read(key: accessTokenKey)
         refreshToken = KeychainHelper.read(key: refreshTokenKey)
-        
+
         if let expirationString = KeychainHelper.read(key: expirationKey),
            let timestamp = Double(expirationString) {
             tokenExpirationDate = Date(timeIntervalSince1970: timestamp)
         }
-        
+
+        // Restore the Xomify JWT (per-user, ~7d TTL). If absent we'll mint one
+        // on the next call to `saveRefreshTokenToXomify` or, failing that, on
+        // a 401-retry inside `NetworkService`.
+        xomifyJwt = KeychainHelper.read(key: xomifyJwtKey)
+        if let jwtExpString = KeychainHelper.read(key: xomifyJwtExpirationKey),
+           let timestamp = Double(jwtExpString) {
+            xomifyJwtExpiration = Date(timeIntervalSince1970: timestamp)
+        }
+
         isAuthenticated = accessToken != nil && !isTokenExpired
-        
+
         if isAuthenticated {
             print("✅ Auth: Loaded existing session")
+        }
+        if xomifyJwt != nil {
+            print("✅ Auth: Restored Xomify JWT from keychain")
         }
     }
     
@@ -262,7 +286,10 @@ final class AuthService: NSObject, Sendable {
         let url = URL(string: "\(xomifyApiUrl)/user/update")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(xomifyApiToken)", forHTTPHeaderField: "Authorization")
+        // Prefer the per-user Xomify JWT once minted; fall back to the static
+        // token while the keychain is empty (fresh install / pre-(0a) deploy).
+        // The backend authorizer is dual-mode so both work during migration.
+        request.setValue("Bearer \(currentXomifyBearerToken())", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
@@ -281,13 +308,22 @@ final class AuthService: NSObject, Sendable {
             if let httpResponse = response as? HTTPURLResponse,
                (200...299).contains(httpResponse.statusCode) {
                 print("✅ Auth: Refresh token saved to Xomify backend!")
-                
+
                 // Parse response to get enrollment status
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     let wrappedEnrolled = json["activeWrapped"] as? Bool ?? false
                     let radarEnrolled = json["activeReleaseRadar"] as? Bool ?? false
                     print("   Wrapped enrolled: \(wrappedEnrolled)")
                     print("   Release Radar enrolled: \(radarEnrolled)")
+                }
+
+                // Now that the user row exists in DDB, mint a per-user Xomify
+                // JWT off the same Spotify access token. Best-effort: if the
+                // mint fails we still have a usable session via the static
+                // token fallback (dual-mode authorizer).
+                let minted = await mintXomifyJwt()
+                if !minted {
+                    print("⚠️ Auth: JWT mint failed — falling back to static token until next attempt")
                 }
             } else {
                 print("❌ Auth: Failed to save refresh token to Xomify")
@@ -322,8 +358,102 @@ final class AuthService: NSObject, Sendable {
         }
     }
     
+    // MARK: - Xomify JWT (per-user)
+
+    /// Returns the Bearer-header value to attach to Xomify backend requests.
+    /// Prefers the per-user JWT when present; falls back to the static token
+    /// from `secrets.xcconfig` so requests still succeed during the migration
+    /// window (backend authorizer is dual-mode per (0b)).
+    nonisolated func currentXomifyBearerToken() -> String {
+        if let jwt = xomifyJwt, !jwt.isEmpty {
+            return jwt
+        }
+        return xomifyApiToken
+    }
+
+    /// Mint a per-user Xomify JWT by exchanging the current Spotify access
+    /// token at `POST /auth/login`. Stores the resulting token in the keychain
+    /// under `xomify.api.jwt`. Returns `true` on success.
+    ///
+    /// Called automatically after a successful `saveRefreshTokenToXomify`. May
+    /// also be invoked by `NetworkService` 401-retry logic after refreshing
+    /// the Spotify access token.
+    @discardableResult
+    func mintXomifyJwt() async -> Bool {
+        guard let access = accessToken else {
+            print("⚠️ Auth: Cannot mint Xomify JWT — no Spotify access token")
+            return false
+        }
+
+        let url = URL(string: "\(xomifyApiUrl)/auth/login")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // /auth/login is a public route on the API GW (authorization=NONE per
+        // (0a-infra)). We still attach the static Bearer header so we don't
+        // depend on the gateway accepting unauthenticated requests during the
+        // module-bump rollout — it's a no-op if the route is truly public,
+        // and a safety net if someone redeploys with the wrong auth setting.
+        request.setValue("Bearer \(xomifyApiToken)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = ["spotifyAccessToken": access]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Auth: /auth/login returned no HTTP response")
+                return false
+            }
+
+            guard (200...299).contains(httpResponse.statusCode) else {
+                let message = String(data: data, encoding: .utf8) ?? "<no body>"
+                print("❌ Auth: /auth/login \(httpResponse.statusCode): \(message.prefix(300))")
+                return false
+            }
+
+            let envelope = try JSONDecoder().decode(AuthLoginEnvelope.self, from: data)
+            guard let payload = envelope.data else {
+                print("❌ Auth: /auth/login missing data envelope")
+                return false
+            }
+
+            self.xomifyJwt = payload.token
+            KeychainHelper.save(key: xomifyJwtKey, value: payload.token)
+
+            if let exp = payload.expiresAt {
+                if let parsed = parseISO8601(exp) {
+                    self.xomifyJwtExpiration = parsed
+                    KeychainHelper.save(
+                        key: xomifyJwtExpirationKey,
+                        value: String(parsed.timeIntervalSince1970)
+                    )
+                }
+            }
+
+            print("✅ Auth: Minted Xomify JWT (expires \(payload.expiresAt ?? "unknown"))")
+            return true
+        } catch {
+            print("❌ Auth: Error minting Xomify JWT: \(error)")
+            return false
+        }
+    }
+
+    /// Best-effort ISO8601 parse — backend may return fractional seconds.
+    private func parseISO8601(_ value: String) -> Date? {
+        let withFractional = ISO8601DateFormatter()
+        withFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = withFractional.date(from: value) { return d }
+
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: value)
+    }
+
     // MARK: - Refresh Token
-    
+
     func refreshAccessToken() async throws {
         guard let refresh = refreshToken else {
             throw AuthError.noRefreshToken
@@ -386,10 +516,14 @@ final class AuthService: NSObject, Sendable {
         refreshToken = nil
         tokenExpirationDate = nil
         isAuthenticated = false
+        xomifyJwt = nil
+        xomifyJwtExpiration = nil
 
         KeychainHelper.delete(key: accessTokenKey)
         KeychainHelper.delete(key: refreshTokenKey)
         KeychainHelper.delete(key: expirationKey)
+        KeychainHelper.delete(key: xomifyJwtKey)
+        KeychainHelper.delete(key: xomifyJwtExpirationKey)
 
         print("👋 Auth: Logged out")
     }
@@ -447,6 +581,20 @@ private struct TokenResponse: Codable {
         case refreshToken = "refresh_token"
         case scope
     }
+}
+
+// MARK: - Xomify /auth/login response
+
+/// Backend envelope for `POST /auth/login` per the standard response shape:
+/// `{ data: { token, expiresAt }, error: null, meta: {} }`.
+struct AuthLoginEnvelope: Codable {
+    let data: AuthLoginPayload?
+    let error: String?
+}
+
+struct AuthLoginPayload: Codable {
+    let token: String
+    let expiresAt: String?
 }
 
 // MARK: - Spotify User Profile (for saving to Xomify)
