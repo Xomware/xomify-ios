@@ -129,15 +129,15 @@ struct ProfileHeaderView: View {
                 // Likes chip — shown for self and friends when likesCount is
                 // present. Backend omits likesCount when likes_public=false
                 // (or when the backend hasn't synced yet), so nil auto-hides.
-                // Phase 7 wires the friend-scoped destination; for now both
-                // contexts route to .likes (self-scoped as a placeholder).
                 if let likesCount = viewModel.likesCount {
                     divider
                     statItem(
                         value: likesCount,
                         label: "Likes",
                         color: .xomifyGreen,
-                        destination: .likes
+                        destination: viewModel.context.isSelf
+                            ? .likes
+                            : .friendLikes(email: viewModel.profileEmail)
                     )
                 }
             }

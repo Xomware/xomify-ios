@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - Mock
 
-/// Canned `SpotifyLikesProviding` for unit-testing `ProfileLikesViewModel`.
+/// Canned `SpotifyLikesProviding` for unit-testing `LikesViewModel`.
 final class MockSpotifyLikesProviding: SpotifyLikesProviding, @unchecked Sendable {
 
     struct Call: Equatable {
@@ -62,15 +62,15 @@ final class ProfileLikesViewModelTests: XCTestCase {
 
     // MARK: - Initial load
 
-    func test_loadIfNeeded_populatesTracksAndTotal() async {
+    func test_loadIfNeeded_populatesItemsAndTotal() async {
         let mock = MockSpotifyLikesProviding()
         let tracks = (0..<3).map { makeSavedTrack(id: "t\($0)") }
         mock.responses = [makeResponse(items: tracks, total: 3)]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
 
-        XCTAssertEqual(vm.tracks.count, 3)
+        XCTAssertEqual(vm.items.count, 3)
         XCTAssertEqual(vm.total, 3)
         XCTAssertFalse(vm.isLoading)
         XCTAssertFalse(vm.isLoadingMore)
@@ -84,7 +84,7 @@ final class ProfileLikesViewModelTests: XCTestCase {
         let tracks = [makeSavedTrack()]
         mock.responses = [makeResponse(items: tracks, total: 1)]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
         await vm.loadIfNeeded() // second call should no-op
 
@@ -102,13 +102,13 @@ final class ProfileLikesViewModelTests: XCTestCase {
             makeResponse(items: page2, total: 60, offset: 50)
         ]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
-        XCTAssertEqual(vm.tracks.count, 50)
+        XCTAssertEqual(vm.items.count, 50)
         XCTAssertTrue(vm.hasMore)
 
         await vm.loadMore()
-        XCTAssertEqual(vm.tracks.count, 60)
+        XCTAssertEqual(vm.items.count, 60)
         XCTAssertFalse(vm.hasMore)
 
         XCTAssertEqual(mock.calls.count, 2)
@@ -122,7 +122,7 @@ final class ProfileLikesViewModelTests: XCTestCase {
         let tracks = (0..<5).map { makeSavedTrack(id: "t\($0)") }
         mock.responses = [makeResponse(items: tracks, total: 5)]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
 
         XCTAssertFalse(vm.hasMore)
@@ -133,7 +133,7 @@ final class ProfileLikesViewModelTests: XCTestCase {
         let tracks = (0..<50).map { makeSavedTrack(id: "t\($0)") }
         mock.responses = [makeResponse(items: tracks, total: 200)]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
 
         XCTAssertTrue(vm.hasMore)
@@ -144,7 +144,7 @@ final class ProfileLikesViewModelTests: XCTestCase {
         let tracks = [makeSavedTrack()]
         mock.responses = [makeResponse(items: tracks, total: 1)]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
         XCTAssertFalse(vm.hasMore)
 
@@ -155,18 +155,18 @@ final class ProfileLikesViewModelTests: XCTestCase {
 
     // MARK: - Error handling
 
-    func test_loadIfNeeded_errorSetsErrorMessageAndEmptyTracks() async {
+    func test_loadIfNeeded_errorSetsErrorMessageAndEmptyItems() async {
         let mock = MockSpotifyLikesProviding()
         mock.error = NSError(
             domain: "spotify", code: 401,
             userInfo: [NSLocalizedDescriptionKey: "Unauthorized"]
         )
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
 
         XCTAssertEqual(vm.errorMessage, "Unauthorized")
-        XCTAssertTrue(vm.tracks.isEmpty)
+        XCTAssertTrue(vm.items.isEmpty)
         XCTAssertNil(vm.total)
         XCTAssertFalse(vm.isLoading)
     }
@@ -182,12 +182,12 @@ final class ProfileLikesViewModelTests: XCTestCase {
             makeResponse(items: refreshLoad, total: 3)
         ]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
-        XCTAssertEqual(vm.tracks.count, 50)
+        XCTAssertEqual(vm.items.count, 50)
 
         await vm.refresh()
-        XCTAssertEqual(vm.tracks.count, 3)
+        XCTAssertEqual(vm.items.count, 3)
         XCTAssertEqual(vm.total, 3)
         XCTAssertEqual(mock.calls[1].offset, 0)
     }
@@ -196,17 +196,38 @@ final class ProfileLikesViewModelTests: XCTestCase {
 
     func test_loadMore_noopsWhenIsLoading() async {
         let mock = MockSpotifyLikesProviding()
-        // Only one response — second call should be blocked by guard
         mock.responses = [makeResponse(items: [makeSavedTrack()], total: 100)]
 
-        let vm = ProfileLikesViewModel(spotifyService: mock)
+        let vm = LikesViewModel(source: .spotifyDirect, spotifyService: mock)
         await vm.loadIfNeeded()
 
-        // Manually test: isLoadingMore should prevent concurrent loadMore
-        // Since we can't easily race in sync tests, we verify the guard by
-        // calling loadMore when the queue is exhausted — it no-ops because
-        // the first loadMore would set isLoadingMore = true synchronously on
-        // the actor before the next await. Confirming via call count instead.
         XCTAssertEqual(mock.calls.count, 1)
+    }
+
+    // MARK: - Backend source (friend likes)
+
+    func test_backendSource_populatesItemsFromBackend() async {
+        let mockSpotify = MockSpotifyLikesProviding()
+        let mockXomify = MockXomifyServiceProtocol()
+        let backendTracks = [
+            LikesByUserTrack(trackId: "t1", trackName: "Song A", artistName: "Artist X", albumArt: nil, addedAt: nil),
+            LikesByUserTrack(trackId: "t2", trackName: "Song B", artistName: "Artist Y", albumArt: nil, addedAt: nil)
+        ]
+        mockXomify.getLikesByUserResponse = LikesByUserResponse(
+            tracks: backendTracks, total: 2, hasMore: false, likesPublic: true
+        )
+
+        let vm = LikesViewModel(
+            source: .backend(callerEmail: "me@example.com", targetEmail: "friend@example.com"),
+            spotifyService: mockSpotify,
+            xomifyService: mockXomify
+        )
+        await vm.loadIfNeeded()
+
+        XCTAssertEqual(vm.items.count, 2)
+        XCTAssertEqual(vm.items[0].name, "Song A")
+        XCTAssertEqual(vm.items[1].artistNames, "Artist Y")
+        XCTAssertEqual(mockXomify.getLikesByUserCalls.count, 1)
+        XCTAssertEqual(mockXomify.getLikesByUserCalls[0].targetEmail, "friend@example.com")
     }
 }

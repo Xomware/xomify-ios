@@ -82,6 +82,8 @@ struct MainShell: View {
             FeedView()
         case .likes:
             LikesView()
+        case .friendLikes(let email):
+            LikesView(targetEmail: email)
         case .recentlyPlayed:
             RecentlyPlayedView()
         case .musicTaste:
