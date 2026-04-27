@@ -68,6 +68,22 @@ actor XomifyService {
         ])
     }
 
+    // MARK: - Top Items (live, daily-cached)
+
+    /// Live top tracks/artists/genres for the signed-in user, served from a
+    /// per-user, per-UTC-day cache on the backend (epic Q7). Caller identity
+    /// is resolved server-side from the per-user JWT in the `Authorization`
+    /// header — no `email` query param. Replaces the per-range Spotify calls
+    /// the iOS client used to make for the "Last 4 Weeks (Current)" /
+    /// "Music Taste" surface (sub-feature 2c, auth-identity epic).
+    ///
+    /// On per-range partial failure the backend returns the ranges it could
+    /// fetch and lists the failed range names in `meta.failedRanges`; the
+    /// UI can render a soft retry hint without losing the data we did get.
+    func getCurrentTopItems() async throws -> TopItemsResponse {
+        try await network.xomifyGet("/user/top-items")
+    }
+
     // MARK: - Social — Shares
     //
     // The deployed `shares_create` / `shares_feed` contract is fully

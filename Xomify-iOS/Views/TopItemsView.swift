@@ -44,7 +44,16 @@ struct TopItemsContent: View {
                         if viewModel.isLoading {
                             ProgressView()
                                 .padding(.top, 40)
+                        } else if let error = viewModel.errorMessage {
+                            errorState(error)
                         } else {
+                            // Soft retry hint when the backend reported a
+                            // partial Spotify failure for the selected term.
+                            // Data for other terms is still rendered.
+                            if viewModel.didFail(term: selectedTerm) {
+                                partialFailureHint
+                            }
+
                             switch selectedCategory {
                             case 0:
                                 tracksContent
@@ -495,6 +504,87 @@ struct TopItemsContent: View {
         .padding(12)
         .background(Color.white.opacity(0.03))
         .cornerRadius(10)
+    }
+
+    // MARK: - Error / Partial-failure States
+
+    /// Hard error — the whole `/user/top-items` request failed. Shows a
+    /// retry CTA that re-runs `loadData()`.
+    private func errorState(_ message: String) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 50))
+                .foregroundStyle(.orange.opacity(0.7))
+
+            Text("Couldn't Load Top Items")
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+
+            Button {
+                Task { await viewModel.loadData() }
+            } label: {
+                Text("Try Again")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(Color.xomifyPurple)
+                    .foregroundStyle(.white)
+                    .cornerRadius(20)
+            }
+        }
+        .padding(.horizontal, 40)
+        .padding(.top, 60)
+    }
+
+    /// Soft retry hint — backend reported a per-range partial failure for
+    /// the current term. Data for other terms is still rendered; tapping
+    /// "Refresh" reissues the request which will re-attempt failing
+    /// ranges (the partial response was not cached server-side).
+    private var partialFailureHint: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Partial data for \(selectedTerm.displayName)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                Text("Spotify hiccupped. Pull to refresh or tap retry.")
+                    .font(.caption2)
+                    .foregroundStyle(.gray)
+            }
+
+            Spacer()
+
+            Button {
+                Task { await viewModel.loadData() }
+            } label: {
+                Text("Retry")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.orange.opacity(0.2))
+                    .foregroundStyle(.orange)
+                    .cornerRadius(12)
+            }
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.08))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
+        .cornerRadius(10)
+        .padding(.bottom, 4)
     }
 
     // MARK: - Playback

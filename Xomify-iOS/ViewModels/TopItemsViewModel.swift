@@ -1,89 +1,88 @@
 import Foundation
 
-/// ViewModel for Top Items screen
+/// ViewModel for the Top Items / Music Taste screen.
+///
+/// **Sub-feature 2c (auth-identity epic)** — this VM previously fanned out
+/// six direct calls to `/me/top/{tracks,artists}` against Spotify on every
+/// load. It now reads from `XomifyService.getCurrentTopItems()` which
+/// proxies a single backend request to `GET /user/top-items`, served from
+/// a per-user, per-UTC-day cache (epic Q7). One Spotify call per user per
+/// day instead of six per app launch.
+///
+/// Per-range partial failures are surfaced via `failedRanges` so the view
+/// can render a soft retry hint for the affected term without losing the
+/// data we did get.
 @Observable
 @MainActor
 final class TopItemsViewModel {
-    
+
     // MARK: - Properties
-    
+
     var isLoading = false
     var errorMessage: String?
-    
+
     // Tracks by term
     var shortTermTracks: [SpotifyTrack] = []
     var mediumTermTracks: [SpotifyTrack] = []
     var longTermTracks: [SpotifyTrack] = []
-    
+
     // Artists by term
     var shortTermArtists: [SpotifyArtist] = []
     var mediumTermArtists: [SpotifyArtist] = []
     var longTermArtists: [SpotifyArtist] = []
-    
-    // Genres by term (computed from artists)
+
+    // Genres by term — backend ships weighted `{ genre: score }` per term;
+    // we mirror the existing `(name, count)` tuple shape the view consumes.
     var shortTermGenres: [(name: String, count: Int)] = []
     var mediumTermGenres: [(name: String, count: Int)] = []
     var longTermGenres: [(name: String, count: Int)] = []
-    
-    private let spotifyService = SpotifyService.shared
-    
+
+    /// Range names (raw values of `TimeRange`) the backend could not fetch
+    /// from Spotify on the most recent load. Empty on full success.
+    var failedRanges: Set<String> = []
+
+    private let xomifyService = XomifyService.shared
+
     // MARK: - Actions
-    
+
     func loadData() async {
         guard !isLoading else { return }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         do {
-            // Load all tracks concurrently
-            async let shortTracks = spotifyService.getTopTracks(timeRange: .shortTerm, limit: 50)
-            async let mediumTracks = spotifyService.getTopTracks(timeRange: .mediumTerm, limit: 50)
-            async let longTracks = spotifyService.getTopTracks(timeRange: .longTerm, limit: 50)
-            
-            // Load all artists concurrently
-            async let shortArtists = spotifyService.getTopArtists(timeRange: .shortTerm, limit: 50)
-            async let mediumArtists = spotifyService.getTopArtists(timeRange: .mediumTerm, limit: 50)
-            async let longArtists = spotifyService.getTopArtists(timeRange: .longTerm, limit: 50)
-            
-            // Await all
-            shortTermTracks = try await shortTracks
-            mediumTermTracks = try await mediumTracks
-            longTermTracks = try await longTracks
-            
-            shortTermArtists = try await shortArtists
-            mediumTermArtists = try await mediumArtists
-            longTermArtists = try await longArtists
-            
-            // Compute genres from artists
-            shortTermGenres = computeGenres(from: shortTermArtists)
-            mediumTermGenres = computeGenres(from: mediumTermArtists)
-            longTermGenres = computeGenres(from: longTermArtists)
-            
-            print("✅ TopItems: Loaded \(shortTermTracks.count) short-term tracks, \(mediumTermTracks.count) medium-term, \(longTermTracks.count) long-term")
-            print("✅ TopItems: Loaded \(shortTermArtists.count) short-term artists, \(mediumTermArtists.count) medium-term, \(longTermArtists.count) long-term")
-            
+            let response = try await xomifyService.getCurrentTopItems()
+
+            shortTermTracks  = response.tracks(for: .shortTerm)
+            mediumTermTracks = response.tracks(for: .mediumTerm)
+            longTermTracks   = response.tracks(for: .longTerm)
+
+            shortTermArtists  = response.artists(for: .shortTerm)
+            mediumTermArtists = response.artists(for: .mediumTerm)
+            longTermArtists   = response.artists(for: .longTerm)
+
+            shortTermGenres  = response.genres(for: .shortTerm)
+            mediumTermGenres = response.genres(for: .mediumTerm)
+            longTermGenres   = response.genres(for: .longTerm)
+
+            failedRanges = Set(response.meta?.failedRanges ?? [])
+
+            print("✅ TopItems: Loaded short=\(shortTermTracks.count) medium=\(mediumTermTracks.count) long=\(longTermTracks.count) tracks; failedRanges=\(failedRanges)")
+
         } catch {
             errorMessage = error.localizedDescription
             print("❌ TopItems: Error loading data - \(error)")
         }
-        
+
         isLoading = false
     }
-    
+
     // MARK: - Helpers
-    
-    private func computeGenres(from artists: [SpotifyArtist]) -> [(name: String, count: Int)] {
-        var genreCounts: [String: Int] = [:]
-        
-        for artist in artists {
-            for genre in artist.genres ?? [] {
-                genreCounts[genre, default: 0] += 1
-            }
-        }
-        
-        return genreCounts
-            .map { (name: $0.key, count: $0.value) }
-            .sorted { $0.count > $1.count }
+
+    /// `true` when the backend reported a partial Spotify failure for the
+    /// given term on the most recent load.
+    func didFail(term: TimeRange) -> Bool {
+        failedRanges.contains(term.rawValue)
     }
 }
