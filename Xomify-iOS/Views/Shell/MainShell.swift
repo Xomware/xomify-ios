@@ -57,6 +57,9 @@ struct MainShell: View {
             // can call `select(.feed)`.
             NotificationsService.shared.navigationStore = navStore
             await fetchAvatar()
+            // Fire-and-forget: push user's saved tracks to the backend once
+            // per cold open so friends can see a Likes count on the profile.
+            LikesPushCoordinator.shared.triggerIfNeeded()
         }
         .onChange(of: navStore.pendingDeepLink) { _, newValue in
             // Feed empty-state CTAs set `pendingDeepLink`; consume on the next

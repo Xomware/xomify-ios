@@ -209,6 +209,59 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         if let listReactionsError { throw listReactionsError }
         return listReactionsResponse
     }
+
+    // MARK: - Likes
+
+    struct PushUserLikesCall: Equatable {
+        let email: String
+        let total: Int
+        let trackCount: Int
+    }
+
+    private(set) var pushUserLikesCalls: [PushUserLikesCall] = []
+    var pushUserLikesError: Error?
+
+    func pushUserLikes(email: String, total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse {
+        pushUserLikesCalls.append(PushUserLikesCall(email: email, total: total, trackCount: tracks.count))
+        if let pushUserLikesError { throw pushUserLikesError }
+        return LikesPushResponse(success: true, deduped: false, count: tracks.count)
+    }
+
+    struct GetLikesByUserCall: Equatable {
+        let email: String
+        let targetEmail: String
+        let limit: Int
+        let offset: Int
+    }
+
+    private(set) var getLikesByUserCalls: [GetLikesByUserCall] = []
+    var getLikesByUserResponse: LikesByUserResponse = LikesByUserResponse(tracks: [], total: 0, hasMore: false, likesPublic: true)
+    var getLikesByUserError: Error?
+
+    func getLikesByUser(
+        email: String,
+        targetEmail: String,
+        limit: Int,
+        offset: Int
+    ) async throws -> LikesByUserResponse {
+        getLikesByUserCalls.append(GetLikesByUserCall(email: email, targetEmail: targetEmail, limit: limit, offset: offset))
+        if let getLikesByUserError { throw getLikesByUserError }
+        return getLikesByUserResponse
+    }
+
+    struct SetLikesPublicCall: Equatable {
+        let email: String
+        let value: Bool
+    }
+
+    private(set) var setLikesPublicCalls: [SetLikesPublicCall] = []
+    var setLikesPublicError: Error?
+
+    func setLikesPublic(email: String, value: Bool) async throws -> SuccessResponse {
+        setLikesPublicCalls.append(SetLikesPublicCall(email: email, value: value))
+        if let setLikesPublicError { throw setLikesPublicError }
+        return SuccessResponse(success: true)
+    }
 }
 
 // MARK: - SpotifyCurrentUserProviding mock
