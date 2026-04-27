@@ -606,6 +606,11 @@ struct FriendProfile: Codable, Sendable {
     /// `ios-profile-redesign-contract.md` adds this in a follow-up; until it
     /// ships, header falls back to 3 stats instead of 4.
     let shareCount: Int?
+    /// Cached liked-songs count. Present only when `likes_public == true` or
+    /// caller is the profile owner (backend PR #172). Nil → chip hides.
+    let likesCount: Int?
+    /// ISO8601 timestamp of the last successful likes push. Internal use only.
+    let likesUpdatedAt: String?
     let topSongs: [String: JSONValue]?
     let topArtists: [String: JSONValue]?
     let topGenres: [String: JSONValue]?
