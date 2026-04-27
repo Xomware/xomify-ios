@@ -20,6 +20,7 @@ struct SettingsView: View {
         List {
             notificationsSection
             featuresSection
+            privacySection
             accountSection
             aboutSection
             legalSection
@@ -116,6 +117,30 @@ struct SettingsView: View {
             }
         } header: {
             Text("Features")
+                .foregroundStyle(.gray)
+        }
+        .listRowBackground(Color.xomifyCard)
+    }
+
+    // MARK: - Privacy
+
+    private var privacySection: some View {
+        Section {
+            Toggle(isOn: $viewModel.likesPublic) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Label("Show my likes to friends", systemImage: "heart.fill")
+                        .foregroundStyle(.white)
+                    Text("Friends can see your liked songs count and list.")
+                        .font(.caption2)
+                        .foregroundStyle(.gray)
+                }
+            }
+            .tint(Color.xomifyGreen)
+            .disabled(viewModel.isUpdatingLikesPublic)
+            .accessibilityHint("When off, your liked songs are hidden from friends")
+            .frame(minHeight: 44)
+        } header: {
+            Text("Privacy")
                 .foregroundStyle(.gray)
         }
         .listRowBackground(Color.xomifyCard)

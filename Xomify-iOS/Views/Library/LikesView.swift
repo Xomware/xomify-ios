@@ -1,13 +1,38 @@
 import SwiftUI
 
-/// Top-level destination: user's full Spotify liked-songs library.
-/// Supports pull-to-refresh, infinite scroll, and client-side search over
-/// loaded pages with a hint footer when more pages are available.
+/// Top-level destination: liked-songs library.
 ///
-/// Self-only: `/me/tracks` is scoped to the authenticated user.
+/// - Self path (default, `targetEmail == nil`): loads from Spotify `/me/tracks`
+///   with full `TrackActionsMenu` support.
+/// - Friend path (`targetEmail` set): loads from backend `/likes/by-user`,
+///   read-only display (no queue/rate actions — not the viewer's library).
+///
+/// Both paths share this single view; only the data source differs.
 struct LikesView: View {
 
-    @State private var viewModel = LikesViewModel()
+    /// `nil` → self path (Spotify direct). Non-nil → friend path (backend).
+    let targetEmail: String?
+
+    @State private var viewModel: LikesViewModel
+
+    init(targetEmail: String? = nil) {
+        self.targetEmail = targetEmail
+        // VM source is resolved at init. When targetEmail is set we need the
+        // caller email too — it's resolved by LikesViewModel from Spotify on
+        // the first load. We pass a placeholder here; the VM reads the real
+        // caller email lazily in fetchBackendPage via SpotifyService.
+        // For the backend path we seed callerEmail with "" and let the VM
+        // resolve it on first fetch — the backend's JWT token provides the
+        // real identity anyway, but we still need a non-empty string for the
+        // query param. UserProfileViewModel has already resolved callerEmail
+        // at this point, but LikesView is instantiated independently from the
+        // shell. Resolution happens inside LikesViewModel via SpotifyService.
+        if let email = targetEmail {
+            _viewModel = State(initialValue: LikesViewModel(source: .backend(callerEmail: "", targetEmail: email)))
+        } else {
+            _viewModel = State(initialValue: LikesViewModel(source: .spotifyDirect))
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -18,12 +43,12 @@ struct LikesView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
 
-                if viewModel.isLoading && viewModel.tracks.isEmpty {
+                if viewModel.isLoading && viewModel.items.isEmpty {
                     loadingState
-                } else if let error = viewModel.errorMessage, viewModel.tracks.isEmpty {
+                } else if let error = viewModel.errorMessage, viewModel.items.isEmpty {
                     errorState(error)
                         .padding(.horizontal, 16)
-                } else if viewModel.tracks.isEmpty {
+                } else if viewModel.items.isEmpty {
                     emptyState
                         .padding(.horizontal, 16)
                 } else {
@@ -32,7 +57,7 @@ struct LikesView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle("Likes")
+        .navigationTitle(targetEmail == nil ? "Likes" : "Liked Songs")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $viewModel.searchQuery, prompt: "Search liked songs")
         .task {
@@ -74,12 +99,12 @@ struct LikesView: View {
     private var trackList: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                let displayed = viewModel.filteredTracks
-                ForEach(Array(displayed.enumerated()), id: \.offset) { index, track in
-                    trackRow(index: index, track: track)
+                let displayed = viewModel.filteredItems
+                ForEach(Array(displayed.enumerated()), id: \.offset) { index, item in
+                    trackRow(index: index, item: item)
                         .padding(.horizontal, 16)
                         .onAppear {
-                            if index >= viewModel.tracks.count - 5 {
+                            if index >= viewModel.items.count - 5 {
                                 Task { await viewModel.loadMore() }
                             }
                         }
@@ -99,8 +124,8 @@ struct LikesView: View {
                     }
                     .frame(minHeight: 60)
                     .accessibilityLabel("Loading more tracks")
-                } else if !viewModel.hasMore && !viewModel.tracks.isEmpty && viewModel.searchQuery.isEmpty {
-                    Text("All \(viewModel.tracks.count) songs loaded")
+                } else if !viewModel.hasMore && !viewModel.items.isEmpty && viewModel.searchQuery.isEmpty {
+                    Text("All \(viewModel.items.count) songs loaded")
                         .font(.caption2)
                         .foregroundStyle(.gray.opacity(0.6))
                         .frame(maxWidth: .infinity)
@@ -118,7 +143,7 @@ struct LikesView: View {
                 .foregroundStyle(.gray)
                 .accessibilityHidden(true)
             if let total = viewModel.total {
-                Text("Showing \(viewModel.tracks.count) of \(formattedCount(total)) — load more to search older")
+                Text("Showing \(viewModel.items.count) of \(formattedCount(total)) — load more to search older")
                     .font(.caption2)
                     .foregroundStyle(.gray)
             } else {
@@ -135,30 +160,40 @@ struct LikesView: View {
 
     // MARK: - Row
 
-    private func trackRow(index: Int, track: SpotifyTrack) -> some View {
-        HStack(spacing: 12) {
+    private func trackRow(index: Int, item: LikesTrackDisplayItem) -> some View {
+        // Look up the matching SpotifyTrack for the actions menu (self path only).
+        let spotifyTrack: SpotifyTrack? = {
+            guard targetEmail == nil else { return nil }
+            let idx = viewModel.items.firstIndex(where: { $0.id == item.id })
+            guard let idx, idx < viewModel.spotifyTracks.count else { return nil }
+            return viewModel.spotifyTracks[idx]
+        }()
+
+        return HStack(spacing: 12) {
             indexLabel(index)
-            albumArt(track)
+            albumArt(item.albumArtURL)
             VStack(alignment: .leading, spacing: 2) {
-                Text(track.name)
+                Text(item.name)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                Text(artistNames(track))
+                Text(item.artistNames)
                     .font(.caption2)
                     .foregroundStyle(.gray)
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
-            TrackActionsMenu(track: track)
+            if let track = spotifyTrack {
+                TrackActionsMenu(track: track)
+            }
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(index + 1). \(track.name) by \(artistNames(track))")
+        .accessibilityLabel("\(index + 1). \(item.name) by \(item.artistNames)")
     }
 
     private func indexLabel(_ index: Int) -> some View {
@@ -171,9 +206,9 @@ struct LikesView: View {
     }
 
     @ViewBuilder
-    private func albumArt(_ track: SpotifyTrack) -> some View {
-        if let url = track.album?.images?.first?.url, let imageUrl = URL(string: url) {
-            AsyncImage(url: imageUrl) { phase in
+    private func albumArt(_ url: URL?) -> some View {
+        if let url {
+            AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
                     image.resizable().scaledToFill()
@@ -198,10 +233,6 @@ struct LikesView: View {
             )
     }
 
-    private func artistNames(_ track: SpotifyTrack) -> String {
-        track.artists.compactMap { $0.name }.joined(separator: ", ")
-    }
-
     // MARK: - States
 
     private var loadingState: some View {
@@ -215,7 +246,7 @@ struct LikesView: View {
     }
 
     private var emptyState: some View {
-        Text("You haven't liked any songs yet.")
+        Text(targetEmail == nil ? "You haven't liked any songs yet." : "No liked songs to show.")
             .font(.caption)
             .foregroundStyle(.gray)
             .frame(maxWidth: .infinity, alignment: .leading)

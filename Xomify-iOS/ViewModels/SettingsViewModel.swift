@@ -50,6 +50,19 @@ final class SettingsViewModel {
     var isReleaseRadarEnrolled: Bool = false
     var isUpdatingEnrollment: Bool = false
 
+    // MARK: - Likes privacy
+
+    /// Whether the user's liked songs are visible to friends.
+    /// Defaults to `true` (matches backend default); persisted locally and
+    /// synced to `/users/likes-public` when toggled.
+    var likesPublic: Bool = true {
+        didSet {
+            guard oldValue != likesPublic else { return }
+            syncLikesPublic()
+        }
+    }
+    var isUpdatingLikesPublic: Bool = false
+
     // MARK: - Account state
 
     /// The signed-in Spotify user. Populated by `load()`.
@@ -232,6 +245,23 @@ final class SettingsViewModel {
                 queueNotificationsEnabled: queue,
                 digestEnabled: digest
             )
+        }
+    }
+
+    /// Push the `likes_public` flag to the backend. Swallows errors — the
+    /// in-memory toggle provides immediate UI feedback.
+    private func syncLikesPublic() {
+        let value = likesPublic
+        guard let email = user?.email, !email.isEmpty else { return }
+        isUpdatingLikesPublic = true
+        Task { @MainActor in
+            do {
+                _ = try await xomifyService.setLikesPublic(email: email, value: value)
+                print("✅ Settings: likesPublic → \(value)")
+            } catch {
+                print("⚠️ Settings: setLikesPublic failed — \(error)")
+            }
+            isUpdatingLikesPublic = false
         }
     }
 }

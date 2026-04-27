@@ -10,20 +10,42 @@ protocol SpotifyLikesProviding: Sendable {
 
 extension SpotifyService: SpotifyLikesProviding {}
 
+// MARK: - LikesSource
+
+/// Where to load likes from. `.spotifyDirect` hits `/me/tracks` (self only);
+/// `.backend` calls `GET /likes/by-user` for a friend's cached tracks.
+enum LikesSource {
+    case spotifyDirect
+    case backend(callerEmail: String, targetEmail: String)
+}
+
+// MARK: - LikesTrackDisplayItem
+
+/// Unified display model for a liked track regardless of source.
+struct LikesTrackDisplayItem: Identifiable, Hashable {
+    let id: String          // trackId
+    let name: String
+    let artistNames: String  // comma-joined
+    let albumArtURL: URL?
+}
+
 // MARK: - ViewModel
 
-/// Loads the signed-in user's full Spotify saved-tracks library in paginated
-/// 50-track pages. Powers the top-level Likes destination with infinite scroll,
-/// search, and a total count chip.
+/// Loads liked tracks for the signed-in user (Spotify direct) or a friend
+/// (backend). Parameterised by `LikesSource` — single VM, two data paths.
 ///
-/// Self-only: `/me/tracks` is scoped to the authenticated user.
+/// Self path: paginated `/me/tracks` (unchanged from v1).
+/// Friend path: paginated `GET /likes/by-user` against backend.
 @Observable
 @MainActor
 final class LikesViewModel {
 
     // MARK: - State
 
-    private(set) var tracks: [SpotifyTrack] = []
+    private(set) var items: [LikesTrackDisplayItem] = []
+    /// Parallel array of raw `SpotifyTrack` — only populated on `.spotifyDirect`
+    /// path so `TrackActionsMenu` (which needs the full object) keeps working.
+    private(set) var spotifyTracks: [SpotifyTrack] = []
     private(set) var total: Int?
     private(set) var offset: Int = 0
     private(set) var isLoading: Bool = false
@@ -33,17 +55,14 @@ final class LikesViewModel {
 
     var hasMore: Bool {
         guard let total else { return false }
-        return tracks.count < total
+        return items.count < total
     }
 
-    /// Tracks filtered by `searchQuery` (case-insensitive, name + artist names).
-    /// When the query is empty the full list is returned without copying.
-    var filteredTracks: [SpotifyTrack] {
-        guard !searchQuery.isEmpty else { return tracks }
+    var filteredItems: [LikesTrackDisplayItem] {
+        guard !searchQuery.isEmpty else { return items }
         let q = searchQuery.lowercased()
-        return tracks.filter { track in
-            track.name.lowercased().contains(q)
-                || track.artists.compactMap { $0.name }.joined(separator: " ").lowercased().contains(q)
+        return items.filter {
+            $0.name.lowercased().contains(q) || $0.artistNames.lowercased().contains(q)
         }
     }
 
@@ -52,27 +71,32 @@ final class LikesViewModel {
 
     // MARK: - Dependencies
 
+    let source: LikesSource
     private let spotifyService: SpotifyLikesProviding
+    private let xomifyService: XomifyServiceProtocol
 
-    init(spotifyService: SpotifyLikesProviding = SpotifyService.shared) {
+    init(
+        source: LikesSource = .spotifyDirect,
+        spotifyService: SpotifyLikesProviding = SpotifyService.shared,
+        xomifyService: XomifyServiceProtocol = XomifyService.shared
+    ) {
+        self.source = source
         self.spotifyService = spotifyService
+        self.xomifyService = xomifyService
     }
 
-    // MARK: - Load
+    // MARK: - Public API
 
-    /// Initial load — no-ops while in flight or already loaded.
     func loadIfNeeded() async {
         guard !hasLoaded, !isLoading else { return }
         await fetchPage(reset: true)
     }
 
-    /// Force a fresh fetch from page 0. Used by pull-to-refresh.
     func refresh() async {
         guard !isLoading else { return }
         await fetchPage(reset: true)
     }
 
-    /// Append the next page. No-ops if already loading more or no more pages.
     func loadMore() async {
         guard !isLoadingMore, !isLoading, hasMore else { return }
         await fetchPage(reset: false)
@@ -84,7 +108,8 @@ final class LikesViewModel {
         if reset {
             isLoading = true
             errorMessage = nil
-            tracks = []
+            items = []
+            spotifyTracks = []
             offset = 0
             total = nil
         } else {
@@ -97,18 +122,74 @@ final class LikesViewModel {
         }
 
         do {
-            let response = try await spotifyService.getSavedTracks(
-                limit: Self.pageSize,
-                offset: offset
-            )
-            total = response.total
-            let newTracks = response.items.map { $0.track }
-            tracks.append(contentsOf: newTracks)
-            offset += newTracks.count
-            hasLoaded = true
+            switch source {
+            case .spotifyDirect:
+                try await fetchSpotifyPage()
+            case .backend(let callerEmail, let targetEmail):
+                try await fetchBackendPage(callerEmail: callerEmail, targetEmail: targetEmail)
+            }
         } catch {
             errorMessage = error.localizedDescription
-            if reset { tracks = [] }
+            if reset { items = []; spotifyTracks = [] }
+        }
+    }
+
+    private func fetchSpotifyPage() async throws {
+        let response = try await spotifyService.getSavedTracks(
+            limit: Self.pageSize,
+            offset: offset
+        )
+        total = response.total
+        let newTracks = response.items.map { $0.track }
+        spotifyTracks.append(contentsOf: newTracks)
+        let newItems = newTracks.map { track -> LikesTrackDisplayItem in
+            let artists = track.artists.compactMap { $0.name }.joined(separator: ", ")
+            let artURL: URL? = {
+                guard let urlString = track.album?.images?.first?.url else { return nil }
+                return URL(string: urlString)
+            }()
+            return LikesTrackDisplayItem(
+                id: track.id,
+                name: track.name,
+                artistNames: artists,
+                albumArtURL: artURL
+            )
+        }
+        items.append(contentsOf: newItems)
+        offset += newTracks.count
+        hasLoaded = true
+    }
+
+    private func fetchBackendPage(callerEmail: String, targetEmail: String) async throws {
+        // Resolve caller email if not supplied at init (LikesView passes "" as placeholder).
+        var resolvedCaller = callerEmail
+        if resolvedCaller.isEmpty {
+            let user = try await SpotifyService.shared.getCurrentUser()
+            resolvedCaller = user.email ?? ""
+        }
+
+        let response = try await xomifyService.getLikesByUser(
+            email: resolvedCaller,
+            targetEmail: targetEmail,
+            limit: Self.pageSize,
+            offset: offset
+        )
+        total = response.total
+        let newItems = response.tracks.map { t -> LikesTrackDisplayItem in
+            LikesTrackDisplayItem(
+                id: t.trackId,
+                name: t.trackName ?? t.trackId,
+                artistNames: t.artistName ?? "",
+                albumArtURL: t.albumArtURL
+            )
+        }
+        items.append(contentsOf: newItems)
+        offset += response.tracks.count
+        hasLoaded = true
+
+        if response.hasMore == false {
+            // Mark exhausted — set total to current count so hasMore → false.
+            if total == nil { total = items.count }
         }
     }
 }
