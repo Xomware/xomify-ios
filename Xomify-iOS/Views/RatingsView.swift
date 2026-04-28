@@ -164,11 +164,11 @@ struct RatingsView: View {
 
     private func loadUserAndData() async {
         isLoadingUser = true
+        defer { isLoadingUser = false }
         do {
             let user = try await spotifyService.getCurrentUser()
             guard let email = user.email, !email.isEmpty else {
                 viewModel.errorMessage = "Could not get email from Spotify"
-                isLoadingUser = false
                 return
             }
             userEmail = email
@@ -176,7 +176,6 @@ struct RatingsView: View {
         } catch {
             viewModel.errorMessage = "Failed to load profile: \(error.localizedDescription)"
         }
-        isLoadingUser = false
     }
 }
 
