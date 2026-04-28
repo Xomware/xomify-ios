@@ -40,6 +40,10 @@ final class NavigationStore {
     /// Toggled by the Feed screen's FAB and by composer dismissal.
     var composerSheetPresented: Bool = false
 
+    /// When set, the next composer open will pre-populate this track.
+    /// Consumed immediately by `FeedView` when it presents the sheet.
+    var composerPrefilledTrack: SpotifyTrack? = nil
+
     /// Set by the Feed empty-state CTAs. `MainShell` observes this and calls
     /// `consumePendingDeepLink()` on the next runloop so the drawer animation
     /// and destination switch don't race.

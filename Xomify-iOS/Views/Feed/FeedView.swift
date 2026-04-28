@@ -7,6 +7,9 @@ struct FeedView: View {
     @State private var viewModel = FeedViewModel()
     @State private var showingRefinement = false
     @State private var selectedShare: Share?
+    /// The view model for the composer sheet. Replaced when a deep-link track
+    /// pre-loads the composer; otherwise a fresh instance on each open.
+    @State private var composerViewModel = ShareComposerViewModel()
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -38,6 +41,8 @@ struct FeedView: View {
         .task {
             await viewModel.bootstrap()
             await viewModel.loadGroupsForChips()
+            // Consume any pending share deep link once the feed is loaded.
+            await handlePendingShareDeepLink()
         }
         .refreshable {
             await viewModel.refresh()
@@ -46,7 +51,7 @@ struct FeedView: View {
             get: { navStore.composerSheetPresented },
             set: { navStore.composerSheetPresented = $0 }
         )) {
-            ShareComposerView(viewModel: ShareComposerViewModel()) { share in
+            ShareComposerView(viewModel: composerViewModel) { share in
                 Task { await viewModel.prependShareAndRefresh(share) }
             }
         }
@@ -194,6 +199,25 @@ struct FeedView: View {
     // MARK: - Composer
 
     private func openComposer() {
+        composerViewModel = ShareComposerViewModel()
         navStore.composerSheetPresented = true
+    }
+
+    /// If a share deep link arrived (from the Share Extension or an external
+    /// URL), resolve the track from Spotify and pre-populate the composer.
+    private func handlePendingShareDeepLink() async {
+        guard let trackId = ShareDeepLinkCoordinator.shared.consume() else { return }
+        do {
+            let track = try await SpotifyService.shared.getTrack(id: trackId)
+            let vm = ShareComposerViewModel()
+            vm.selectTrack(track)
+            composerViewModel = vm
+            // Navigate to the feed tab first so the sheet appears over the
+            // right screen.
+            navStore.select(.feed)
+            navStore.composerSheetPresented = true
+        } catch {
+            // Silently ignore — track lookup failed (e.g. not signed in yet).
+        }
     }
 }
