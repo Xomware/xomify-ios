@@ -24,7 +24,8 @@ protocol XomifyServiceProtocol: Sendable {
         moodTag: MoodTag?,
         genreTags: [String]?,
         groupIds: [String]?,
-        isPublic: Bool?
+        isPublic: Bool?,
+        rating: Int?
     ) async throws -> ShareCreateResponse
 
     func getFeed(

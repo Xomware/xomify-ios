@@ -111,7 +111,8 @@ actor XomifyService {
         moodTag: MoodTag? = nil,
         genreTags: [String]? = nil,
         groupIds: [String]? = nil,
-        isPublic: Bool? = nil
+        isPublic: Bool? = nil,
+        rating: Int? = nil
     ) async throws -> ShareCreateResponse {
         var body: [String: Any] = [
             "trackId": trackId,
@@ -126,6 +127,7 @@ actor XomifyService {
         if let genreTags = genreTags, !genreTags.isEmpty { body["genreTags"] = genreTags }
         if let groupIds = groupIds, !groupIds.isEmpty { body["groupIds"] = groupIds }
         if let isPublic = isPublic { body["public"] = isPublic }
+        if let rating = rating, (1...5).contains(rating) { body["rating"] = rating }
 
         return try await network.xomifyPost("/shares/create", body: body)
     }

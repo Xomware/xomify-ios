@@ -6,10 +6,49 @@ import Foundation
 /// methods can be primed to throw or return a specific payload.
 final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendable {
 
+    // MARK: - createShare
+
+    struct CreateShareCall: Equatable {
+        let trackId: String
+        let rating: Int?
+    }
+
+    private(set) var createShareCalls: [CreateShareCall] = []
+    var createShareResult: ShareCreateResponse?
+    var createShareError: Error?
+
+    func createShare(
+        trackId: String,
+        trackUri: String,
+        trackName: String,
+        artistName: String,
+        albumName: String?,
+        albumArtUrl: String?,
+        caption: String?,
+        moodTag: MoodTag?,
+        genreTags: [String]?,
+        groupIds: [String]?,
+        isPublic: Bool?,
+        rating: Int?
+    ) async throws -> ShareCreateResponse {
+        createShareCalls.append(CreateShareCall(trackId: trackId, rating: rating))
+        if let createShareError { throw createShareError }
+        return createShareResult ?? ShareCreateResponse(
+            success: true,
+            shareId: "mock-share-id",
+            share: nil
+        )
+    }
+
+    // MARK: - getFeed
+
+    func getFeed(groupId: String?, limit: Int, before: String?) async throws -> FeedResponse {
+        FeedResponse(shares: [], nextBefore: nil)
+    }
+
     // MARK: - getSharesByUser
 
     struct GetSharesByUserCall: Equatable {
-        let email: String
         let targetEmail: String
         let limit: Int
         let before: String?
@@ -20,13 +59,12 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     var getSharesByUserError: Error?
 
     func getSharesByUser(
-        email: String,
         targetEmail: String,
         limit: Int,
         before: String?
     ) async throws -> FeedResponse {
         getSharesByUserCalls.append(GetSharesByUserCall(
-            email: email, targetEmail: targetEmail, limit: limit, before: before
+            targetEmail: targetEmail, limit: limit, before: before
         ))
         if let getSharesByUserError { throw getSharesByUserError }
         if getSharesByUserResponses.isEmpty {
@@ -35,10 +73,40 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         return getSharesByUserResponses.removeFirst()
     }
 
+    // MARK: - deleteShare
+
+    func deleteShare(shareId: String, sharedAt: String) async throws -> SuccessResponse {
+        SuccessResponse(success: true)
+    }
+
+    // MARK: - getShareDetail
+
+    struct GetShareDetailCall: Equatable {
+        let shareId: String
+        let sharedBy: String?
+        let sharedAt: String?
+    }
+
+    private(set) var getShareDetailCalls: [GetShareDetailCall] = []
+    var getShareDetailResponses: [ShareDetailResponse] = []
+    var getShareDetailError: Error?
+
+    func getShareDetail(
+        shareId: String, sharedBy: String?, sharedAt: String?
+    ) async throws -> ShareDetailResponse {
+        getShareDetailCalls.append(GetShareDetailCall(
+            shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt
+        ))
+        if let getShareDetailError { throw getShareDetailError }
+        if getShareDetailResponses.isEmpty {
+            throw NSError(domain: "mock", code: -1, userInfo: [NSLocalizedDescriptionKey: "no response primed"])
+        }
+        return getShareDetailResponses.removeFirst()
+    }
+
     // MARK: - getFriendProfile
 
     struct GetFriendProfileCall: Equatable {
-        let email: String
         let profileEmail: String
     }
 
@@ -51,79 +119,38 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     )
     var getFriendProfileError: Error?
 
-    func getFriendProfile(email: String, profileEmail: String) async throws -> FriendProfile {
-        getFriendProfileCalls.append(GetFriendProfileCall(email: email, profileEmail: profileEmail))
+    func getFriendProfile(profileEmail: String) async throws -> FriendProfile {
+        getFriendProfileCalls.append(GetFriendProfileCall(profileEmail: profileEmail))
         if let getFriendProfileError { throw getFriendProfileError }
         return getFriendProfileResponse
     }
 
-    // MARK: - Unused surface — return empty success shapes so the protocol compiles.
+    // MARK: - listGroups
 
-    func createShare(
-        email: String, trackId: String, trackUri: String, trackName: String,
-        artistName: String, albumName: String?, albumArtUrl: String?,
-        caption: String?, moodTag: MoodTag?, genreTags: [String]?,
-        groupIds: [String]?, isPublic: Bool?
-    ) async throws -> ShareCreateResponse {
-        throw NSError(domain: "mock", code: -1)
+    func listGroups() async throws -> GroupsListResponse {
+        GroupsListResponse(email: "", groups: [], totalCount: 0)
     }
 
-    func getFeed(
-        email: String, groupId: String?, limit: Int, before: String?
-    ) async throws -> FeedResponse {
-        FeedResponse(shares: [], nextBefore: nil)
-    }
-
-    func deleteShare(
-        email: String, shareId: String, sharedAt: String
-    ) async throws -> SuccessResponse {
-        SuccessResponse(success: true)
-    }
-
-    // MARK: - getShareDetail
-
-    struct GetShareDetailCall: Equatable {
-        let email: String
-        let shareId: String
-        let sharedBy: String?
-        let sharedAt: String?
-    }
-
-    private(set) var getShareDetailCalls: [GetShareDetailCall] = []
-    var getShareDetailResponses: [ShareDetailResponse] = []
-    var getShareDetailError: Error?
-
-    func getShareDetail(
-        email: String, shareId: String, sharedBy: String?, sharedAt: String?
-    ) async throws -> ShareDetailResponse {
-        getShareDetailCalls.append(GetShareDetailCall(
-            email: email, shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt
-        ))
-        if let getShareDetailError { throw getShareDetailError }
-        if getShareDetailResponses.isEmpty {
-            throw NSError(domain: "mock", code: -1, userInfo: [NSLocalizedDescriptionKey: "no response primed"])
-        }
-        return getShareDetailResponses.removeFirst()
-    }
-
-    func listGroups(email: String) async throws -> GroupsListResponse {
-        GroupsListResponse(email: email, groups: [], totalCount: 0)
-    }
+    // MARK: - publishRating
 
     func publishRating(
-        email: String, trackId: String, trackName: String, artistName: String,
+        trackId: String, trackName: String, artistName: String,
         albumArt: String?, rating: Int, review: String?
     ) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
 
-    func getAllRatings(email: String) async throws -> RatingsAllResponse {
-        RatingsAllResponse(email: email, ratings: [], totalCount: 0)
+    // MARK: - getAllRatings
+
+    func getAllRatings() async throws -> RatingsAllResponse {
+        RatingsAllResponse(email: "", ratings: [], totalCount: 0)
     }
 
-    func getAllFriends(email: String) async throws -> FriendsAllResponse {
+    // MARK: - getAllFriends
+
+    func getAllFriends() async throws -> FriendsAllResponse {
         FriendsAllResponse(
-            email: email,
+            email: "",
             accepted: [], requested: [], pending: [], blocked: [],
             acceptedCount: 0, requestedCount: 0, pendingCount: 0, blockedCount: 0,
             totalCount: 0
@@ -131,22 +158,16 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     }
 
     // MARK: - Comments + Reactions (xomify-backend#139)
-    //
-    // Stub default returns; specific tests can prime the response/error.
 
     var createCommentResponse: ShareComment?
     var createCommentError: Error?
 
-    func createComment(
-        email: String,
-        shareId: String,
-        body: String
-    ) async throws -> ShareComment {
+    func createComment(shareId: String, body: String) async throws -> ShareComment {
         if let createCommentError { throw createCommentError }
         return createCommentResponse ?? ShareComment(
             commentId: UUID().uuidString,
             shareId: shareId,
-            email: email,
+            email: "mock@example.com",
             displayName: nil,
             avatar: nil,
             body: body,
@@ -159,23 +180,14 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     )
     var listCommentsError: Error?
 
-    func listComments(
-        email: String,
-        shareId: String,
-        limit: Int,
-        before: String?
-    ) async throws -> CommentsListResponse {
+    func listComments(shareId: String, limit: Int, before: String?) async throws -> CommentsListResponse {
         if let listCommentsError { throw listCommentsError }
         return listCommentsResponse
     }
 
     var deleteCommentError: Error?
 
-    func deleteComment(
-        email: String,
-        shareId: String,
-        commentId: String
-    ) async throws -> CommentDeleteResponse {
+    func deleteComment(shareId: String, commentId: String) async throws -> CommentDeleteResponse {
         if let deleteCommentError { throw deleteCommentError }
         return CommentDeleteResponse(deleted: true, commentId: commentId)
     }
@@ -183,11 +195,7 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     var toggleReactionResponse: ReactionToggleResponse?
     var toggleReactionError: Error?
 
-    func toggleReaction(
-        email: String,
-        shareId: String,
-        reaction: ShareReaction
-    ) async throws -> ReactionToggleResponse {
+    func toggleReaction(shareId: String, reaction: ShareReaction) async throws -> ReactionToggleResponse {
         if let toggleReactionError { throw toggleReactionError }
         return toggleReactionResponse ?? ReactionToggleResponse(
             active: true,
@@ -202,10 +210,7 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     )
     var listReactionsError: Error?
 
-    func listReactions(
-        email: String,
-        shareId: String
-    ) async throws -> ReactionsListResponse {
+    func listReactions(shareId: String) async throws -> ReactionsListResponse {
         if let listReactionsError { throw listReactionsError }
         return listReactionsResponse
     }

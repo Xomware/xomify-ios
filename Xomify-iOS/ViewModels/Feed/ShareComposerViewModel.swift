@@ -58,6 +58,9 @@ final class ShareComposerViewModel {
     var caption: String = ""
     var selectedMood: MoodTag?
     var selectedGenres: [String] = []
+    /// Optional 1-5 star rating the user attaches at composition time.
+    /// `nil` means "no rating" — will not be sent to the backend.
+    var selectedRating: Int? = nil
     /// Whether to publish to the public friends feed. Defaults to true —
     /// matches the legacy single-target behavior.
     var shareToPublic: Bool = true
@@ -255,6 +258,7 @@ final class ShareComposerViewModel {
         let capturedGenres: [String]? = selectedGenres.isEmpty ? nil : selectedGenres
         let capturedGroupIds: [String] = Array(selectedGroupIds)
         let capturedIsPublic: Bool = shareToPublic
+        let capturedRating: Int? = selectedRating
 
         do {
             let response = try await xomifyService.createShare(
@@ -268,7 +272,8 @@ final class ShareComposerViewModel {
                 moodTag: selectedMood,
                 genreTags: capturedGenres,
                 groupIds: capturedGroupIds.isEmpty ? nil : capturedGroupIds,
-                isPublic: capturedIsPublic
+                isPublic: capturedIsPublic,
+                rating: capturedRating
             )
 
             // Value-moment trigger for the APNs permission prompt — fire-and-forget.
@@ -296,10 +301,10 @@ final class ShareComposerViewModel {
                 moodTag: selectedMood,
                 genreTags: capturedGenres,
                 queuedCount: 0,
-                ratedCount: 0,
+                ratedCount: capturedRating != nil ? 1 : 0,
                 viewerHasQueued: false,
-                viewerRating: nil,
-                sharerRating: nil,
+                viewerRating: capturedRating,
+                sharerRating: capturedRating,
                 groupIds: capturedGroupIds,
                 isPublic: capturedIsPublic
             )
