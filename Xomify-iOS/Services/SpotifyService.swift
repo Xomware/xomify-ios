@@ -330,17 +330,25 @@ actor SpotifyService {
         let response = try await search(query: query, types: ["track"], limit: limit)
         return response.tracks?.items ?? []
     }
-    
+
     /// Search for artists only
     func searchArtists(query: String, limit: Int = 20) async throws -> [SpotifyArtist] {
         let response = try await search(query: query, types: ["artist"], limit: limit)
         return response.artists?.items ?? []
     }
-    
+
     /// Search for albums only
     func searchAlbums(query: String, limit: Int = 20) async throws -> [SpotifyAlbum] {
         let response = try await search(query: query, types: ["album"], limit: limit)
         return response.albums?.items ?? []
+    }
+
+    /// Single-type search for use by `SearchView`. Mirrors the existing
+    /// multi-type `search(query:types:limit:)` but lets callers ask for one
+    /// `SearchType` at a time and get the full `SearchResults` envelope back so
+    /// the UI can read whichever container matches the requested type.
+    func search(query: String, type: SearchType, limit: Int = 20) async throws -> SearchResults {
+        try await search(query: query, types: [type.rawValue], limit: limit)
     }
 
     // MARK: - Player

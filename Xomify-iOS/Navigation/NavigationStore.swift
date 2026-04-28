@@ -7,6 +7,7 @@ import SwiftUI
 enum SidebarDestination: Hashable {
     case profile
     case feed
+    case search
     case likes
     /// Friend-scoped likes page — backend `/likes/by-user` for the given email.
     case friendLikes(email: String)

@@ -240,20 +240,42 @@ struct SearchResponse: Codable, Sendable {
     let tracks: SearchTracks?
     let artists: SearchArtists?
     let albums: SearchAlbums?
-    
+
     struct SearchTracks: Codable, Sendable {
         let items: [SpotifyTrack]
         let total: Int
     }
-    
+
     struct SearchArtists: Codable, Sendable {
         let items: [SpotifyArtist]
         let total: Int
     }
-    
+
     struct SearchAlbums: Codable, Sendable {
         let items: [SpotifyAlbum]
         let total: Int
+    }
+}
+
+/// Public alias used by `SearchView`. The underlying envelope is the same as
+/// `SearchResponse` — `tracks` / `artists` / `albums` are each optional and the
+/// container matching the requested `SearchType` is populated.
+typealias SearchResults = SearchResponse
+
+/// Single-type search filter for `SpotifyService.search(query:type:limit:)`.
+/// Raw values match Spotify's `/search?type=` parameter values.
+enum SearchType: String, CaseIterable, Hashable, Sendable {
+    case track
+    case artist
+    case album
+
+    /// User-facing pluralised label for the segmented picker.
+    var pluralLabel: String {
+        switch self {
+        case .track:  return "Tracks"
+        case .artist: return "Artists"
+        case .album:  return "Albums"
+        }
     }
 }
 

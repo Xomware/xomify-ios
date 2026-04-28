@@ -7,7 +7,8 @@ struct AlbumView: View {
     @State private var tracks: [SpotifyTrack] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
-    
+    @State private var quickInfoTrack: SpotifyTrack?
+
     @Bindable private var playlistBuilder = PlaylistBuilderManager.shared
     private let spotifyService = SpotifyService.shared
     
@@ -57,8 +58,9 @@ struct AlbumView: View {
         .sheet(isPresented: $playlistBuilder.isShowing) {
             PlaylistBuilderView()
         }
+        .trackQuickInfoSheet(track: $quickInfoTrack)
     }
-    
+
     // MARK: - Album Header
     
     private func albumHeader(_ album: SpotifyAlbum) -> some View {
@@ -253,10 +255,11 @@ struct AlbumView: View {
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .onTapGesture {
-            playTrack(track)
+            quickInfoTrack = track
         }
+        .accessibilityHint("Shows track details")
     }
-    
+
     // MARK: - Error State
     
     private func errorState(_ message: String) -> some View {
@@ -314,16 +317,7 @@ struct AlbumView: View {
     }
     
     // MARK: - Playback
-    
-    private func playTrack(_ track: SpotifyTrack) {
-        // Open in Spotify app
-        if let uri = track.uri, let url = URL(string: uri) {
-            UIApplication.shared.open(url)
-        } else if let urlString = track.externalUrls?["spotify"], let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
-    }
-    
+
     private func spotifyUrl(for album: SpotifyAlbum) -> URL? {
         if let urlString = album.externalUrls?["spotify"] {
             return URL(string: urlString)
