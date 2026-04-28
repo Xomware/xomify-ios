@@ -1,5 +1,6 @@
 import SwiftUI
 
+
 @main
 struct Xomify_iOSApp: App {
     /// APNs device-token registration + push-open dispatch.
@@ -43,10 +44,15 @@ struct Xomify_iOSApp: App {
                 // scheme) are stashed on `InviteCoordinator`; the Friends
                 // screen picks them up once it loads.
                 //
+                // Share deep links (`xomify://share?trackId=`) are stashed on
+                // `ShareDeepLinkCoordinator`; `FeedView` consumes them on
+                // appearance and pre-loads the composer.
+                //
                 // Also forward to the SDK in case the URL carries a Spotify
                 // auth-handover token (xomify://callback?access_token=...).
                 coordinator.remote.handleOpenURL(url)
                 InviteCoordinator.shared.handle(url)
+                ShareDeepLinkCoordinator.shared.handle(url)
             }
             .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
                 // Universal Link handoff — the user tapped a Safari/Messages
