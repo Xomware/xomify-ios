@@ -80,6 +80,8 @@ struct MainShell: View {
             ProfileView()
         case .feed:
             FeedView()
+        case .search:
+            SearchView()
         case .likes:
             LikesView()
         case .friendLikes(let email):

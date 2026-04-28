@@ -2,19 +2,22 @@ import SwiftUI
 
 struct ArtistView: View {
     let artistId: String
-    
-    @State private var artist: SpotifyArtist?
-    @State private var topTracks: [SpotifyTrack] = []
-    @State private var albums: [SpotifyAlbum] = []
-    @State private var singles: [SpotifyAlbum] = []
-    @State private var isFollowing = false
-    @State private var isLoading = true
-    @State private var isTogglingFollow = false
-    @State private var errorMessage: String?
+
+    @State private var viewModel = ArtistViewModel()
     @State private var selectedSection = 0 // 0: Top Tracks, 1: Albums, 2: Singles
-    
+    @State private var quickInfoTrack: SpotifyTrack?
+
     @Bindable private var playlistBuilder = PlaylistBuilderManager.shared
-    private let spotifyService = SpotifyService.shared
+
+    // Mirrored access keeps the view body terse and unchanged below.
+    private var artist: SpotifyArtist? { viewModel.artist }
+    private var topTracks: [SpotifyTrack] { viewModel.topTracks }
+    private var albums: [SpotifyAlbum] { viewModel.albums }
+    private var singles: [SpotifyAlbum] { viewModel.singles }
+    private var isFollowing: Bool { viewModel.isFollowing }
+    private var isLoading: Bool { viewModel.isLoading }
+    private var isTogglingFollow: Bool { viewModel.isTogglingFollow }
+    private var errorMessage: String? { viewModel.errorMessage }
     
     var body: some View {
         ZStack {
@@ -63,11 +66,12 @@ struct ArtistView: View {
         // ReleaseRadar). Re-assert visibility so the back button renders.
         .toolbar(.visible, for: .navigationBar)
         .task {
-            await loadArtist()
+            await viewModel.load(artistId: artistId)
         }
         .sheet(isPresented: $playlistBuilder.isShowing) {
             PlaylistBuilderView()
         }
+        .trackQuickInfoSheet(track: $quickInfoTrack)
     }
     
     // MARK: - Artist Header
@@ -174,7 +178,7 @@ struct ArtistView: View {
         HStack(spacing: 16) {
             // Follow/Unfollow Button
             Button {
-                Task { await toggleFollow() }
+                Task { await viewModel.toggleFollow(artistId: artistId) }
             } label: {
                 HStack(spacing: 8) {
                     if isTogglingFollow {
@@ -346,10 +350,11 @@ struct ArtistView: View {
         .padding(.vertical, 8)
         .contentShape(Rectangle())
         .onTapGesture {
-            playTrack(track)
+            quickInfoTrack = track
         }
+        .accessibilityHint("Shows track details")
     }
-    
+
     // MARK: - Albums Grid
     
     private func albumsGrid(_ items: [SpotifyAlbum]) -> some View {
@@ -421,7 +426,7 @@ struct ArtistView: View {
                 .multilineTextAlignment(.center)
             
             Button {
-                Task { await loadArtist() }
+                Task { await viewModel.load(artistId: artistId) }
             } label: {
                 Text("Try Again")
                     .font(.subheadline)
@@ -437,71 +442,8 @@ struct ArtistView: View {
         .padding(.horizontal, 40)
     }
     
-    // MARK: - Data Loading
-    
-    private func loadArtist() async {
-        isLoading = true
-        errorMessage = nil
-        
-        do {
-            // Load artist data
-            artist = try await spotifyService.getArtist(id: artistId)
-            
-            // Load additional data concurrently
-            async let tracksData = spotifyService.getArtistTopTracks(id: artistId)
-            async let albumsData = spotifyService.getArtistAlbums(id: artistId, includeGroups: ["album"], limit: 50)
-            async let singlesData = spotifyService.getArtistAlbums(id: artistId, includeGroups: ["single"], limit: 50)
-            async let followingData = spotifyService.isFollowing(artistIds: [artistId])
-            
-            topTracks = try await tracksData
-            albums = try await albumsData
-            singles = try await singlesData
-            
-            let followingStatus = try await followingData
-            isFollowing = followingStatus.first ?? false
-            
-            print("✅ ArtistView: Loaded '\(artist?.name ?? "")' - \(topTracks.count) tracks, \(albums.count) albums, \(singles.count) singles")
-        } catch {
-            errorMessage = error.localizedDescription
-            print("❌ ArtistView: Error - \(error)")
-        }
-        
-        isLoading = false
-    }
-    
-    // MARK: - Actions
-    
-    private func toggleFollow() async {
-        guard !isTogglingFollow else { return }
-        
-        isTogglingFollow = true
-        
-        do {
-            if isFollowing {
-                try await spotifyService.unfollowArtist(id: artistId)
-                isFollowing = false
-                print("✅ ArtistView: Unfollowed artist")
-            } else {
-                try await spotifyService.followArtist(id: artistId)
-                isFollowing = true
-                print("✅ ArtistView: Followed artist")
-            }
-        } catch {
-            print("❌ ArtistView: Failed to toggle follow - \(error)")
-        }
-        
-        isTogglingFollow = false
-    }
-    
-    private func playTrack(_ track: SpotifyTrack) {
-        // Open in Spotify app
-        if let uri = track.uri, let url = URL(string: uri) {
-            UIApplication.shared.open(url)
-        } else if let urlString = track.externalUrls?["spotify"], let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
-    }
-    
+    // MARK: - Helpers
+
     private func spotifyUrl(for artist: SpotifyArtist) -> URL? {
         if let urlString = artist.externalUrls?["spotify"] {
             return URL(string: urlString)
@@ -511,9 +453,7 @@ struct ArtistView: View {
         }
         return nil
     }
-    
-    // MARK: - Helpers
-    
+
     private func formatNumber(_ number: Int) -> String {
         if number >= 1_000_000 {
             return String(format: "%.1fM", Double(number) / 1_000_000)
