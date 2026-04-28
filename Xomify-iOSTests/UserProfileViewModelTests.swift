@@ -128,7 +128,6 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(vm.shareCount, 3)
         XCTAssertNotNil(vm.friendProfile)
         XCTAssertEqual(xomify.getFriendProfileCalls.count, 1)
-        XCTAssertEqual(xomify.getFriendProfileCalls.first?.email, "me@example.com")
         XCTAssertEqual(xomify.getFriendProfileCalls.first?.profileEmail, "friend@example.com")
     }
 

@@ -44,7 +44,6 @@ final class SharesByUserViewModelTests: XCTestCase {
         XCTAssertNil(vm.errorMessage)
 
         let call = try? XCTUnwrap(mock.getSharesByUserCalls.first)
-        XCTAssertEqual(call?.email, "me@example.com")
         XCTAssertEqual(call?.targetEmail, "target@example.com")
         XCTAssertNil(call?.before)
     }

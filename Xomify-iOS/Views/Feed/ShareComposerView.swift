@@ -20,6 +20,7 @@ struct ShareComposerView: View {
                     if let track = viewModel.selectedTrack {
                         selectedTrackRow(track)
                         captionSection
+                        ratingSection
                         moodSection
                         genreSection
                         targetsSection
@@ -203,6 +204,46 @@ struct ShareComposerView: View {
             .padding(12)
             .background(Color.xomifyCard)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+    }
+
+    private var ratingSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Rate this track")
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+                Spacer()
+                if viewModel.selectedRating != nil {
+                    Button("Clear") {
+                        viewModel.selectedRating = nil
+                    }
+                    .font(.caption)
+                    .foregroundStyle(Color.xomifyGreen)
+                }
+            }
+            HStack(spacing: 12) {
+                ForEach(1...5, id: \.self) { star in
+                    Button {
+                        if viewModel.selectedRating == star {
+                            viewModel.selectedRating = nil
+                        } else {
+                            viewModel.selectedRating = star
+                        }
+                    } label: {
+                        Image(systemName: (viewModel.selectedRating ?? 0) >= star ? "star.fill" : "star")
+                            .font(.system(size: 28))
+                            .foregroundStyle(
+                                (viewModel.selectedRating ?? 0) >= star
+                                    ? Color.xomifyGreen
+                                    : Color.white.opacity(0.4)
+                            )
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(star) star\(star == 1 ? "" : "s")")
+                }
+            }
         }
     }
 
