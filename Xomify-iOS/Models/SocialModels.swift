@@ -760,6 +760,58 @@ struct TrackRating: Codable, Sendable, Identifiable, Hashable {
     let updatedAt: String?
 
     var id: String { trackId }
+
+    enum CodingKeys: String, CodingKey {
+        case email, trackId, trackName, artistName, rating, review
+        case createdAt, updatedAt
+    }
+
+    private enum DecodeKeys: String, CodingKey {
+        case email, trackId, trackName, artistName, rating, review
+        case createdAt, updatedAt, ratedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: DecodeKeys.self)
+        email = try c.decode(String.self, forKey: .email)
+        trackId = try c.decode(String.self, forKey: .trackId)
+        trackName = try c.decodeIfPresent(String.self, forKey: .trackName)
+        artistName = try c.decodeIfPresent(String.self, forKey: .artistName)
+        review = try c.decodeIfPresent(String.self, forKey: .review)
+        createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt)
+            ?? c.decodeIfPresent(String.self, forKey: .ratedAt)
+        updatedAt = try c.decodeIfPresent(String.self, forKey: .updatedAt)
+            ?? c.decodeIfPresent(String.self, forKey: .ratedAt)
+        // Backend serializes DynamoDB Decimals as Int when whole, Float otherwise.
+        // Decode permissively (Int OR Double) and round to nearest whole star —
+        // legacy half-star rows ("4.5") would otherwise fail the entire array decode.
+        if let i = try? c.decode(Int.self, forKey: .rating) {
+            rating = i
+        } else {
+            let d = try c.decode(Double.self, forKey: .rating)
+            rating = Int(d.rounded())
+        }
+    }
+
+    init(
+        email: String,
+        trackId: String,
+        trackName: String? = nil,
+        artistName: String? = nil,
+        rating: Int,
+        review: String? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.email = email
+        self.trackId = trackId
+        self.trackName = trackName
+        self.artistName = artistName
+        self.rating = rating
+        self.review = review
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 struct RatingsAllResponse: Codable, Sendable {
