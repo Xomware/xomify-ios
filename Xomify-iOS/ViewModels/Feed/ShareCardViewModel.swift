@@ -141,6 +141,17 @@ final class ShareCardViewModel {
         }
     }
 
+    // MARK: - Listened
+
+    /// Flip `viewerHasListened` on locally so the card hides its "Not heard"
+    /// badge the instant the user taps Play / Queue, without waiting for the
+    /// backend write to come back. The actual backend write is fired by
+    /// `QueueActionController` — this is purely an optimistic UI patch.
+    func markListenedOptimistically() {
+        guard !share.viewerHasListened else { return }
+        share = share.withViewerHasListened(true)
+    }
+
     // MARK: - Reactions
 
     /// Toggle a reaction on/off. Optimistic patch via `withReactionSummary`,

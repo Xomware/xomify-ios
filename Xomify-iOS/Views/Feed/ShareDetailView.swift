@@ -284,7 +284,11 @@ struct ShareDetailView: View {
 
     private var actionRow: some View {
         HStack(spacing: 12) {
-            TrackActionsMenu(track: makeTrackForActions(), style: .pill)
+            TrackActionsMenu(
+                track: makeTrackForActions(),
+                style: .pill,
+                shareId: viewModel.share.shareId
+            )
             rateButton
             Spacer()
         }

@@ -18,11 +18,22 @@ struct QueueButton: View {
     let trackName: String?
     var style: Style = .icon
 
+    /// When the button is rendered for a feed share, pass the share id so the
+    /// backend listener-write can fire after a successful queue. Nil for
+    /// non-share contexts (Library, taste stage, etc.).
+    var shareId: String? = nil
+
+    /// Fires on tap (when `shareId` is non-nil) so the host can optimistically
+    /// flip the share's `viewerHasListened` flag without waiting on the
+    /// backend.
+    var onListened: (() -> Void)? = nil
+
     @State private var queueAction = QueueActionController.shared
 
     var body: some View {
         Button {
-            Task { await queueAction.queue(uri: uri, trackName: trackName) }
+            if shareId != nil { onListened?() }
+            Task { await queueAction.queue(uri: uri, trackName: trackName, shareId: shareId) }
         } label: {
             switch style {
             case .icon:

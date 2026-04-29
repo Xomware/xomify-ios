@@ -234,6 +234,50 @@ actor XomifyService {
         ])
     }
 
+    /// Mark one or more shares as listened by the caller.
+    ///
+    /// Server cap is 25 ids per call; this client mirrors that and chunks
+    /// larger batches sequentially so a future caller that hands in a longer
+    /// list still gets the full write-through. The aggregate response merges
+    /// the per-chunk `listened` / `skipped` arrays.
+    ///
+    /// Empty `shareIds` short-circuits — no network call, returns an empty
+    /// success response. The viewer-level write path is fire-and-forget from
+    /// callers (queue/play already succeeded), so this method intentionally
+    /// surfaces errors via `throws` rather than swallowing them — let the
+    /// caller decide whether to log or ignore.
+    @discardableResult
+    func markListened(
+        shareIds: [String],
+        source: ListenSource = .queue
+    ) async throws -> MarkListenedResponse {
+        guard !shareIds.isEmpty else {
+            return MarkListenedResponse(ok: true, listened: [], skipped: [])
+        }
+
+        let chunkSize = 25
+        var listened: [String] = []
+        var skipped: [String] = []
+        var ok = true
+
+        for chunkStart in stride(from: 0, to: shareIds.count, by: chunkSize) {
+            let chunk = Array(shareIds[chunkStart..<min(chunkStart + chunkSize, shareIds.count)])
+            let body: [String: Any] = [
+                "shareIds": chunk,
+                "source": source.rawValue
+            ]
+            let response: MarkListenedResponse = try await network.xomifyPost(
+                "/shares/listened",
+                body: body
+            )
+            ok = ok && response.ok
+            listened.append(contentsOf: response.listened)
+            skipped.append(contentsOf: response.skipped)
+        }
+
+        return MarkListenedResponse(ok: ok, listened: listened, skipped: skipped)
+    }
+
     /// Create a friend invite code
     func createInvite() async throws -> InviteCreateResponse {
         try await network.xomifyPost("/invites/create", body: [:])

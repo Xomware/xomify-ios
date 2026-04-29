@@ -329,7 +329,9 @@ struct ShareCardView: View {
             TrackActionsMenu(
                 track: makeTrackForActions(),
                 style: .icon,
-                onDelete: (isOwnPost && onDelete != nil) ? { showDeleteConfirm = true } : nil
+                onDelete: (isOwnPost && onDelete != nil) ? { showDeleteConfirm = true } : nil,
+                shareId: viewModel.share.shareId,
+                onListened: { viewModel.markListenedOptimistically() }
             )
             rateButton
             commentButton
@@ -342,10 +344,34 @@ struct ShareCardView: View {
                 }
             )
             Spacer(minLength: 0)
+            if !viewModel.share.viewerHasListened && !isOwnPost {
+                notHeardBadge
+            }
             if viewModel.displayedQueueCount > 0 {
                 queueCountChip
             }
         }
+    }
+
+    /// Visual hint that the viewer has never queued or played this share.
+    /// Backed by `share.viewerHasListened` (server-enriched, optimistically
+    /// flipped on Play / Queue tap). Suppressed on the viewer's own posts —
+    /// the backend backfill marks the author as listened, but local
+    /// optimistic copies (composer prepend) won't have it set yet.
+    private var notHeardBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "headphones")
+                .font(.caption2)
+            Text("Not heard")
+                .font(.caption2)
+                .fontWeight(.semibold)
+        }
+        .foregroundStyle(Color.xomifyPurple)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.xomifyPurple.opacity(0.15))
+        .clipShape(Capsule())
+        .accessibilityLabel("You haven't listened to this yet")
     }
 
     /// Compact comment-thread shortcut. Mirrors how Instagram/Twitter surface
