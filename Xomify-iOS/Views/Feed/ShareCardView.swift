@@ -144,7 +144,9 @@ struct ShareCardView: View {
             }
             Spacer()
 
-            if let rating = viewModel.share.sharerRating {
+            // Suppress on own posts -- the actions row already shows the
+            // viewer's myRating chip, which is the same value here.
+            if !isOwnPost, let rating = viewModel.share.sharerRating {
                 HStack(spacing: 3) {
                     Image(systemName: "star.fill")
                         .font(.caption2)
