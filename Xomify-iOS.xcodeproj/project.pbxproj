@@ -10,12 +10,48 @@
 		5291E4D62F08231D00A10C3E /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = 5291E4D52F08231D00A10C3E /* SpotifyiOS */; };
 		5291E4E42F08498E00A10C3E /* secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 5291E4E32F08498E00A10C3E /* secrets.xcconfig */; };
 		5291E4E62F084B2400A10C3E /* secrets.template.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 5291E4E52F084B2400A10C3E /* secrets.template.xcconfig */; };
+		F29641A12FA19EF400A9830C /* ShareFromSpotify.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F29641972FA19EF400A9830C /* ShareFromSpotify.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F29641B52FA19F5200A9830C /* XomifyShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F29641AB2FA19F5200A9830C /* XomifyShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F296419F2FA19EF400A9830C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5291E4BE2F0822CF00A10C3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F29641962FA19EF400A9830C;
+			remoteInfo = ShareFromSpotify;
+		};
+		F29641B32FA19F5200A9830C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5291E4BE2F0822CF00A10C3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F29641AA2FA19F5200A9830C;
+			remoteInfo = XomifyShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F29641A22FA19EF400A9830C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F29641B52FA19F5200A9830C /* XomifyShareExtension.appex in Embed Foundation Extensions */,
+				F29641A12FA19EF400A9830C /* ShareFromSpotify.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		5291E4C62F0822CF00A10C3E /* Xomify-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Xomify-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5291E4E32F08498E00A10C3E /* secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secrets.xcconfig; sourceTree = "<group>"; };
 		5291E4E52F084B2400A10C3E /* secrets.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secrets.template.xcconfig; sourceTree = "<group>"; };
+		F29641972FA19EF400A9830C /* ShareFromSpotify.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareFromSpotify.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F29641AB2FA19F5200A9830C /* XomifyShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = XomifyShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -23,9 +59,15 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				"Xomify-iOS.entitlements",
 			);
 			target = 5291E4C52F0822CF00A10C3E /* Xomify-iOS */;
+		};
+		F29641B62FA19F5200A9830C /* Exceptions for "XomifyShareExtension" folder in "XomifyShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F29641AA2FA19F5200A9830C /* XomifyShareExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -36,6 +78,14 @@
 				5291E4E02F0847A300A10C3E /* Exceptions for "Xomify-iOS" folder in "Xomify-iOS" target */,
 			);
 			path = "Xomify-iOS";
+			sourceTree = "<group>";
+		};
+		F29641AC2FA19F5200A9830C /* XomifyShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F29641B62FA19F5200A9830C /* Exceptions for "XomifyShareExtension" folder in "XomifyShareExtension" target */,
+			);
+			path = XomifyShareExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +99,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F29641942FA19EF400A9830C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F29641A82FA19F5200A9830C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -57,6 +121,7 @@
 			children = (
 				5291E4E52F084B2400A10C3E /* secrets.template.xcconfig */,
 				5291E4E32F08498E00A10C3E /* secrets.xcconfig */,
+				F29641AC2FA19F5200A9830C /* XomifyShareExtension */,
 				5291E4C72F0822CF00A10C3E /* Products */,
 				5291E4C82F0822D000A10C3E /* Xomify-iOS */,
 			);
@@ -66,6 +131,8 @@
 			isa = PBXGroup;
 			children = (
 				5291E4C62F0822CF00A10C3E /* Xomify-iOS.app */,
+				F29641972FA19EF400A9830C /* ShareFromSpotify.appex */,
+				F29641AB2FA19F5200A9830C /* XomifyShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,10 +147,13 @@
 				5291E4C22F0822CF00A10C3E /* Sources */,
 				5291E4C32F0822CF00A10C3E /* Frameworks */,
 				5291E4C42F0822CF00A10C3E /* Resources */,
+				F29641A22FA19EF400A9830C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F29641A02FA19EF400A9830C /* PBXTargetDependency */,
+				F29641B42FA19F5200A9830C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				5291E4C82F0822D000A10C3E /* Xomify-iOS */,
@@ -96,6 +166,47 @@
 			productReference = 5291E4C62F0822CF00A10C3E /* Xomify-iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F29641962FA19EF400A9830C /* ShareFromSpotify */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F29641A62FA19EF400A9830C /* Build configuration list for PBXNativeTarget "ShareFromSpotify" */;
+			buildPhases = (
+				F29641932FA19EF400A9830C /* Sources */,
+				F29641942FA19EF400A9830C /* Frameworks */,
+				F29641952FA19EF400A9830C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareFromSpotify;
+			packageProductDependencies = (
+			);
+			productName = ShareFromSpotify;
+			productReference = F29641972FA19EF400A9830C /* ShareFromSpotify.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F29641AA2FA19F5200A9830C /* XomifyShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F29641B72FA19F5200A9830C /* Build configuration list for PBXNativeTarget "XomifyShareExtension" */;
+			buildPhases = (
+				F29641A72FA19F5200A9830C /* Sources */,
+				F29641A82FA19F5200A9830C /* Frameworks */,
+				F29641A92FA19F5200A9830C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F29641AC2FA19F5200A9830C /* XomifyShareExtension */,
+			);
+			name = XomifyShareExtension;
+			packageProductDependencies = (
+			);
+			productName = XomifyShareExtension;
+			productReference = F29641AB2FA19F5200A9830C /* XomifyShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -103,11 +214,17 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					5291E4C52F0822CF00A10C3E = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					F29641962FA19EF400A9830C = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					F29641AA2FA19F5200A9830C = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -129,6 +246,8 @@
 			projectRoot = "";
 			targets = (
 				5291E4C52F0822CF00A10C3E /* Xomify-iOS */,
+				F29641962FA19EF400A9830C /* ShareFromSpotify */,
+				F29641AA2FA19F5200A9830C /* XomifyShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -143,6 +262,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F29641952FA19EF400A9830C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F29641A92FA19F5200A9830C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -153,7 +286,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F29641932FA19EF400A9830C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F29641A72FA19F5200A9830C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F29641A02FA19EF400A9830C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F29641962FA19EF400A9830C /* ShareFromSpotify */;
+			targetProxy = F296419F2FA19EF400A9830C /* PBXContainerItemProxy */;
+		};
+		F29641B42FA19F5200A9830C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F29641AA2FA19F5200A9830C /* XomifyShareExtension */;
+			targetProxy = F29641B32FA19F5200A9830C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		5291E4CF2F0822D400A10C3E /* Debug */ = {
@@ -303,8 +463,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.17.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.Xomware.Xomify";
+				MARKETING_VERSION = 1.17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Xomware.Xomify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -340,12 +500,128 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.17.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.Xomware.Xomify";
+				MARKETING_VERSION = 1.17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Xomware.Xomify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F29641A32FA19EF400A9830C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A3HMLDS2AL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareFromSpotify/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareFromSpotify;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Xomware.Xomify.ShareFromSpotify;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F29641A42FA19EF400A9830C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A3HMLDS2AL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareFromSpotify/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareFromSpotify;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Xomware.Xomify.ShareFromSpotify;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F29641B82FA19F5200A9830C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A3HMLDS2AL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = XomifyShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = XomifyShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Xomware.Xomify.XomifyShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F29641B92FA19F5200A9830C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A3HMLDS2AL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = XomifyShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = XomifyShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Xomware.Xomify.XomifyShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -370,6 +646,24 @@
 			buildConfigurations = (
 				5291E4D22F0822D400A10C3E /* Debug */,
 				5291E4D32F0822D400A10C3E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F29641A62FA19EF400A9830C /* Build configuration list for PBXNativeTarget "ShareFromSpotify" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F29641A32FA19EF400A9830C /* Debug */,
+				F29641A42FA19EF400A9830C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F29641B72FA19F5200A9830C /* Build configuration list for PBXNativeTarget "XomifyShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F29641B82FA19F5200A9830C /* Debug */,
+				F29641B92FA19F5200A9830C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
