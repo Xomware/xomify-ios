@@ -51,6 +51,14 @@ protocol XomifyServiceProtocol: Sendable {
         sharedAt: String?
     ) async throws -> ShareDetailResponse
 
+    /// Mark shares as listened by the caller. Empty `shareIds` returns a
+    /// no-op success without hitting the network.
+    @discardableResult
+    func markListened(
+        shareIds: [String],
+        source: ListenSource
+    ) async throws -> MarkListenedResponse
+
     // MARK: - Friend profile (used by UserProfileViewModel)
 
     func getFriendProfile(

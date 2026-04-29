@@ -164,10 +164,10 @@ struct FeedRefinementSheet: View {
             sectionHeader("Listening status", icon: "headphones")
             Toggle(isOn: $viewModel.refinement.onlyUnlistened) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Only show posts I haven't queued")
+                    Text("Only show posts I haven't heard")
                         .font(.subheadline)
                         .foregroundStyle(.white)
-                    Text("Hides anything you've already added to your Spotify queue.")
+                    Text("Hides shares you've already played or queued on Spotify.")
                         .font(.caption)
                         .foregroundStyle(.gray)
                 }

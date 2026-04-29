@@ -88,7 +88,9 @@ struct FeedRefinement: Equatable, Sendable {
     /// Selected authors (emails). Empty set = no author filter.
     var authors: Set<String> = []
     var dateWindow: DateWindow = .anytime
-    /// When true, hide shares the viewer has already queued on Spotify.
+    /// When true, hide shares the viewer has already listened to (queued or
+    /// played). Backed by `Share.viewerHasListened` rather than the older
+    /// queued-only signal so a play-via-Spotify also counts as listened.
     var onlyUnlistened: Bool = false
     var sortOrder: SortOrder = .newest
 
@@ -408,7 +410,7 @@ final class FeedViewModel {
             if !authors.isEmpty, !authors.contains(share.sharedBy) {
                 return false
             }
-            if onlyUnlistened, share.viewerHasQueued {
+            if onlyUnlistened, share.viewerHasListened {
                 return false
             }
             if let minDate = window, let shareDate = share.sharedAtDate, shareDate < minDate {

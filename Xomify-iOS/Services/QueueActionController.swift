@@ -13,6 +13,12 @@ import UIKit
 /// Errors are routed to a single `toast` string that `QueueToastHost` renders
 /// at `MainShell`. Per-URI `isQueuing(uri:)` lets buttons show a spinner +
 /// disable themselves while a queue attempt is in flight.
+///
+/// When the queue/play action originated from a feed share, callers pass a
+/// non-nil `shareId` and the controller fires a best-effort
+/// `markListened` write so the share's "viewer has listened" state flips
+/// for the next feed refresh. Failure is silent — a failed listener-write
+/// is invisible to the user, who already saw the queue/play succeed.
 @Observable
 @MainActor
 final class QueueActionController {
@@ -28,9 +34,14 @@ final class QueueActionController {
     private var inFlight: Set<String> = []
 
     private let spotifyService: SpotifyQueueing
+    private let xomifyService: XomifyServiceProtocol
 
-    init(spotifyService: SpotifyQueueing = SpotifyPlaybackCoordinator.shared) {
+    init(
+        spotifyService: SpotifyQueueing = SpotifyPlaybackCoordinator.shared,
+        xomifyService: XomifyServiceProtocol = XomifyService.shared
+    ) {
         self.spotifyService = spotifyService
+        self.xomifyService = xomifyService
     }
 
     func isQueuing(uri: String) -> Bool {
@@ -40,7 +51,12 @@ final class QueueActionController {
     /// Queue a track. Shows a success toast on 2xx, an actionable error
     /// message on failure. Safe to call while another queue is in flight for
     /// a different URI.
-    func queue(uri: String, trackName: String? = nil) async {
+    ///
+    /// When `shareId` is non-nil the controller also fires a best-effort
+    /// `markListened` write tagged `source: queue`. Pass `nil` from contexts
+    /// that aren't a share (track rows in Library, taste stage, etc.) to skip
+    /// the listener-write — the backend has nothing to associate it with.
+    func queue(uri: String, trackName: String? = nil, shareId: String? = nil) async {
         guard !uri.isEmpty else {
             toast = "Couldn't queue — missing track URI."
             return
@@ -57,6 +73,7 @@ final class QueueActionController {
             } else {
                 toast = "Queued on Spotify"
             }
+            markListenedFireAndForget(shareId: shareId, source: .queue)
         } catch SpotifyServiceError.noActiveDevice {
             handleNoDevice(uri: uri, action: "queue")
         } catch let error as SpotifyServiceError {
@@ -69,7 +86,10 @@ final class QueueActionController {
     /// Start playback on the user's active Spotify device. Falls back to
     /// deep-linking into the Spotify app when no device is active so the user
     /// can trivially resume a session.
-    func play(uri: String, trackName: String? = nil) async {
+    ///
+    /// When `shareId` is non-nil the controller also fires a best-effort
+    /// `markListened` write tagged `source: play`.
+    func play(uri: String, trackName: String? = nil, shareId: String? = nil) async {
         guard !uri.isEmpty else {
             toast = "Couldn't play — missing track URI."
             return
@@ -86,12 +106,28 @@ final class QueueActionController {
             } else {
                 toast = "Playing on Spotify"
             }
+            markListenedFireAndForget(shareId: shareId, source: .play)
         } catch SpotifyServiceError.noActiveDevice {
             handleNoDevice(uri: uri, action: "play")
         } catch let error as SpotifyServiceError {
             toast = error.errorDescription
         } catch {
             toast = error.localizedDescription
+        }
+    }
+
+    /// Best-effort `POST /shares/listened`. Errors are logged and swallowed —
+    /// the user already saw the queue/play succeed and a failed listener
+    /// write should not surface as a user-facing toast.
+    private func markListenedFireAndForget(shareId: String?, source: ListenSource) {
+        guard let shareId, !shareId.isEmpty else { return }
+        let service = xomifyService
+        Task {
+            do {
+                _ = try await service.markListened(shareIds: [shareId], source: source)
+            } catch {
+                print("⚠️ markListened failed for \(shareId) (source: \(source.rawValue)): \(error.localizedDescription)")
+            }
         }
     }
 

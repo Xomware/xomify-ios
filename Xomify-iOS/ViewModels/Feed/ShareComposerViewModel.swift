@@ -306,7 +306,15 @@ final class ShareComposerViewModel {
                 viewerRating: capturedRating,
                 sharerRating: capturedRating,
                 groupIds: capturedGroupIds,
-                isPublic: capturedIsPublic
+                isPublic: capturedIsPublic,
+                commentCount: 0,
+                reactionCounts: [:],
+                viewerReactions: [],
+                // Author has obviously heard their own track — server backfill
+                // sets this on insert; mirror it locally so the optimistic
+                // copy doesn't briefly show a "Not heard" badge to the author.
+                viewerHasListened: true,
+                listenerCount: 1
             )
         } catch {
             submitError = error.localizedDescription

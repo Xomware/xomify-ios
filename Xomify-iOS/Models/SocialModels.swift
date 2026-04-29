@@ -188,6 +188,17 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
     let viewerRating: Int?
     let sharerRating: Int?
 
+    /// Whether the viewer has played or queued this share at least once.
+    /// Backed by the `shares_listened` table; populated by the same enrichment
+    /// pass that surfaces `viewerHasQueued`. Defaults to `false` when the row
+    /// is absent so legacy / cold-cache decodes don't fail.
+    let viewerHasListened: Bool
+
+    /// Total distinct viewers who have marked this share as listened. Mirrors
+    /// the per-viewer `viewerHasListened` flag on the aggregate side. Defaults
+    /// to `0` when the field is absent.
+    let listenerCount: Int
+
     // Target audience (xomify-backend#138). Legacy rows omit both fields and
     // are treated as public shares with no group targets.
     let groupIds: [String]
@@ -262,6 +273,8 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         viewerHasQueued = try c.decodeIfPresent(Bool.self, forKey: .viewerHasQueued) ?? false
         viewerRating    = try c.decodeIfPresent(Int.self, forKey: .viewerRating)
         sharerRating    = try c.decodeIfPresent(Int.self, forKey: .sharerRating)
+        viewerHasListened = try c.decodeIfPresent(Bool.self, forKey: .viewerHasListened) ?? false
+        listenerCount   = try c.decodeIfPresent(Int.self, forKey: .listenerCount) ?? 0
         groupIds        = try c.decodeIfPresent([String].self, forKey: .groupIds) ?? []
         isPublic        = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? true
         commentCount    = try c.decodeIfPresent(Int.self, forKey: .commentCount) ?? 0
@@ -296,7 +309,9 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         isPublic: Bool = true,
         commentCount: Int = 0,
         reactionCounts: [String: Int] = [:],
-        viewerReactions: [String] = []
+        viewerReactions: [String] = [],
+        viewerHasListened: Bool = false,
+        listenerCount: Int = 0
     ) {
         self.shareId = shareId
         self.sharedBy = sharedBy
@@ -320,6 +335,8 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         self.commentCount = commentCount
         self.reactionCounts = reactionCounts
         self.viewerReactions = viewerReactions
+        self.viewerHasListened = viewerHasListened
+        self.listenerCount = listenerCount
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -330,6 +347,7 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
         case groupIds
         case isPublic = "public"
         case commentCount, reactionCounts, viewerReactions
+        case viewerHasListened, listenerCount
     }
 
     /// Convenience for optimistic UI patches — produce a new Share with the
@@ -346,7 +364,9 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
             groupIds: groupIds, isPublic: isPublic,
             commentCount: commentCount,
             reactionCounts: counts,
-            viewerReactions: viewerReactions
+            viewerReactions: viewerReactions,
+            viewerHasListened: viewerHasListened,
+            listenerCount: listenerCount
         )
     }
 
@@ -369,7 +389,9 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
             groupIds: groupIds, isPublic: isPublic,
             commentCount: commentCount,
             reactionCounts: reactionCounts,
-            viewerReactions: viewerReactions
+            viewerReactions: viewerReactions,
+            viewerHasListened: viewerHasListened,
+            listenerCount: listenerCount
         )
     }
 
@@ -386,7 +408,37 @@ struct Share: Codable, Identifiable, Sendable, Hashable {
             groupIds: groupIds, isPublic: isPublic,
             commentCount: newCount,
             reactionCounts: reactionCounts,
-            viewerReactions: viewerReactions
+            viewerReactions: viewerReactions,
+            viewerHasListened: viewerHasListened,
+            listenerCount: listenerCount
+        )
+    }
+
+    /// Optimistic patch for "viewer just queued / played this share". Flips
+    /// `viewerHasListened` on and bumps `listenerCount` by one when the flag
+    /// was previously false so the UI count stays in sync without a refetch.
+    /// Idempotent — repeat calls when already listened are no-ops.
+    func withViewerHasListened(_ listened: Bool) -> Share {
+        let wasListened = viewerHasListened
+        let nextCount: Int = {
+            if listened && !wasListened { return listenerCount + 1 }
+            if !listened && wasListened { return max(0, listenerCount - 1) }
+            return listenerCount
+        }()
+        return Share(
+            shareId: shareId, sharedBy: sharedBy, sharedAt: sharedAt,
+            trackId: trackId, trackUri: trackUri, trackName: trackName,
+            artistName: artistName, albumName: albumName, albumArtUrl: albumArtUrl,
+            caption: caption, moodTag: moodTag, genreTags: genreTags,
+            queuedCount: queuedCount, ratedCount: ratedCount,
+            viewerHasQueued: viewerHasQueued, viewerRating: viewerRating,
+            sharerRating: sharerRating,
+            groupIds: groupIds, isPublic: isPublic,
+            commentCount: commentCount,
+            reactionCounts: reactionCounts,
+            viewerReactions: viewerReactions,
+            viewerHasListened: listened,
+            listenerCount: nextCount
         )
     }
 }
@@ -474,6 +526,33 @@ struct ReactionResponse: Codable, Sendable {
 
 struct ShareInteractionResponse: Codable, Sendable {
     let success: Bool?
+}
+
+// MARK: - Mark Listened
+//
+// Backend contract: `POST /shares/listened`. Body
+// `{ shareIds: [...], source: "queue" | "play" }`. Response lists the ids the
+// backend actually wrote (`listened`) versus the ones it dropped (`skipped` —
+// e.g. unknown share, already-listened, malformed id).
+
+/// Source tag for `XomifyService.markListened`. Encodes to lowercase string —
+/// matches the backend `source` enum exactly.
+enum ListenSource: String, Codable, Sendable {
+    case queue
+    case play
+}
+
+/// Response body for `POST /shares/listened`.
+struct MarkListenedResponse: Codable, Sendable {
+    let ok: Bool
+    let listened: [String]
+    let skipped: [String]
+
+    init(ok: Bool, listened: [String] = [], skipped: [String] = []) {
+        self.ok = ok
+        self.listened = listened
+        self.skipped = skipped
+    }
 }
 
 // MARK: - Invite Create Response

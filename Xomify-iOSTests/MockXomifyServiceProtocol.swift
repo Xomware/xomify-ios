@@ -104,6 +104,28 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         return getShareDetailResponses.removeFirst()
     }
 
+    // MARK: - markListened
+
+    struct MarkListenedCall: Equatable {
+        let shareIds: [String]
+        let source: ListenSource
+    }
+
+    private(set) var markListenedCalls: [MarkListenedCall] = []
+    var markListenedResult: MarkListenedResponse?
+    var markListenedError: Error?
+
+    func markListened(
+        shareIds: [String],
+        source: ListenSource
+    ) async throws -> MarkListenedResponse {
+        markListenedCalls.append(MarkListenedCall(shareIds: shareIds, source: source))
+        if let markListenedError { throw markListenedError }
+        if let markListenedResult { return markListenedResult }
+        // Default: pretend the backend wrote every requested id.
+        return MarkListenedResponse(ok: true, listened: shareIds, skipped: [])
+    }
+
     // MARK: - getFriendProfile
 
     struct GetFriendProfileCall: Equatable {

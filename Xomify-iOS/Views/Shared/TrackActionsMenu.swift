@@ -31,6 +31,18 @@ struct TrackActionsMenu: View {
     /// affordance as the standard track actions instead of a second button.
     var onDelete: (() -> Void)? = nil
 
+    /// Set by share-context callers (feed card, share detail) so the play /
+    /// queue actions can plumb a `shareId` into `QueueActionController` for
+    /// the listener write. Nil for non-share contexts (track rows in Library,
+    /// taste stage, etc.) which intentionally skip the listener write.
+    var shareId: String? = nil
+
+    /// Optional callback fired the moment the viewer taps Play or Add to
+    /// Queue. Used by `ShareCardView` to optimistically flip
+    /// `viewerHasListened` so the "Not heard" badge disappears immediately,
+    /// before the backend write returns. Fires on `shareId != nil` only.
+    var onListened: (() -> Void)? = nil
+
     @State private var queueAction = QueueActionController.shared
     @State private var playlistBuilder = PlaylistBuilderManager.shared
     @State private var isComposerShown = false
@@ -38,14 +50,16 @@ struct TrackActionsMenu: View {
     var body: some View {
         Menu {
             Button {
-                Task { await queueAction.play(uri: resolvedUri, trackName: track.name) }
+                if shareId != nil { onListened?() }
+                Task { await queueAction.play(uri: resolvedUri, trackName: track.name, shareId: shareId) }
             } label: {
                 Label("Play now", systemImage: "play.circle.fill")
             }
             .disabled(resolvedUri.isEmpty || queueAction.isQueuing(uri: resolvedUri))
 
             Button {
-                Task { await queueAction.queue(uri: resolvedUri, trackName: track.name) }
+                if shareId != nil { onListened?() }
+                Task { await queueAction.queue(uri: resolvedUri, trackName: track.name, shareId: shareId) }
             } label: {
                 Label(
                     queueAction.isQueuing(uri: resolvedUri) ? "Queueing…" : "Add to queue",
