@@ -211,6 +211,12 @@ final class FeedViewModel {
             shares = cached
         }
 
+        // Show the loading state while we resolve the user and kick off the
+        // first refresh. Without this the feed reads as "empty" rather than
+        // "loading" during email resolution. `refresh()` clears it on
+        // completion; the early-return path below clears it too.
+        isLoading = true
+
         // 2. Resolve the current user. Prefer the network, fall back to the
         //    last-known email from UserDefaults on failure.
         if userEmail.isEmpty {
@@ -223,6 +229,7 @@ final class FeedViewModel {
                 if shares.isEmpty {
                     errorMessage = "Could not load feed — please try again."
                 }
+                isLoading = false
                 return
             }
         }
@@ -267,16 +274,22 @@ final class FeedViewModel {
         isRefreshing = true
         errorMessage = nil
 
+        // Capture the filter this request is for. If the user switches filters
+        // while the request is in flight, the response is stale — discard it
+        // rather than writing another filter's shares into the live list.
+        let requestedFilter = selectedFilter
+
         do {
             let response = try await xomifyService.getFeed(
-                groupId: selectedFilter.groupId,
+                groupId: requestedFilter.groupId,
                 limit: FeedCacheService.maxSharesPerFilter,
                 before: nil
             )
+            guard requestedFilter == selectedFilter else { return }
             shares = response.shares
             nextBefore = response.nextBefore
             hasMorePages = response.nextBefore != nil
-            await cacheService.save(response.shares, forKey: selectedFilter.cacheKey)
+            await cacheService.save(response.shares, forKey: requestedFilter.cacheKey)
         } catch {
             // Don't blow the UI away over a refresh hiccup if we already
             // have content painted from cache.
@@ -303,12 +316,19 @@ final class FeedViewModel {
         isLoading = true
         defer { isLoading = false }
 
+        // Pin the request to the active filter. Switching filters resets
+        // `shares`/`nextBefore`, so a late page from the previous filter must
+        // not be appended into the new filter's list — that's what made
+        // pagination "break" after a filter change.
+        let requestedFilter = selectedFilter
+
         do {
             let response = try await xomifyService.getFeed(
-                groupId: selectedFilter.groupId,
+                groupId: requestedFilter.groupId,
                 limit: FeedCacheService.maxSharesPerFilter,
                 before: before
             )
+            guard requestedFilter == selectedFilter else { return }
             shares.append(contentsOf: response.shares)
             nextBefore = response.nextBefore
             hasMorePages = response.nextBefore != nil

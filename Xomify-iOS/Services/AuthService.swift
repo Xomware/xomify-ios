@@ -560,17 +560,19 @@ final class AuthService: NSObject, Sendable {
     
     // MARK: - Logout
 
-    /// Synchronous logout — kept for existing call sites. For new call sites
-    /// prefer `logout()` (async) so the APNs token can be unregistered from the
-    /// backend before the Spotify access token is cleared.
-    func logout() {
-        // Fire-and-forget: unregister the APNs device token with the backend.
-        // `NotificationsService.unregister()` internally resolves the current
-        // user email via Spotify, so we dispatch it *before* clearing tokens.
-        // It swallows errors — stale backend tokens get pruned on next 410.
-        Task { @MainActor in
-            await NotificationsService.shared.unregister()
-        }
+    /// Logout. Unregisters the APNs device token from the backend *before*
+    /// clearing credentials, then wipes local tokens.
+    ///
+    /// Ordering matters: `NotificationsService.unregister()` makes an
+    /// authenticated call that relies on the Xomify JWT (and the cached
+    /// email). The previous fire-and-forget `Task` raced token teardown —
+    /// `xomifyJwt` was usually nil'd before the request authenticated, so the
+    /// unregister 401'd and the device kept receiving pushes after sign-out.
+    /// Awaiting it here guarantees it completes against valid credentials.
+    /// It swallows its own errors — stale backend tokens get pruned on next 410.
+    @MainActor
+    func logout() async {
+        await NotificationsService.shared.unregister()
 
         accessToken = nil
         refreshToken = nil

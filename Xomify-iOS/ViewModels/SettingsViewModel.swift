@@ -212,8 +212,8 @@ final class SettingsViewModel {
 
     // MARK: - Auth
 
-    func logout() {
-        authService.logout()
+    func logout() async {
+        await authService.logout()
     }
 
     // MARK: - Private
@@ -222,8 +222,8 @@ final class SettingsViewModel {
         do {
             _ = email
             let userData = try await xomifyService.getUserData()
-            isWrappedEnrolled = userData.activeWrapped
-            isReleaseRadarEnrolled = userData.activeReleaseRadar
+            isWrappedEnrolled = userData.activeWrapped ?? false
+            isReleaseRadarEnrolled = userData.activeReleaseRadar ?? false
             print("✅ Settings: enrollment loaded — Wrapped: \(isWrappedEnrolled), RR: \(isReleaseRadarEnrolled)")
         } catch {
             // User may not exist yet in Xomify — that's fine.

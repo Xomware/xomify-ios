@@ -163,6 +163,10 @@ final class ShareCardViewModel {
         reactingSlugs.insert(slug)
         defer { reactingSlugs.remove(slug) }
 
+        // Clear any stale error from a previous failed toggle so a successful
+        // retry doesn't leave the error banner stuck on screen.
+        reactError = nil
+
         let previousCounts = share.reactionCounts
         let previousViewer = share.viewerReactions
 

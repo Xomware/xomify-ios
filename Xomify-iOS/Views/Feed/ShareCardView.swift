@@ -470,7 +470,11 @@ private struct RateSheet: View {
                     Button {
                         Task {
                             await viewModel.rate(stars)
-                            isPresented = false
+                            // Keep the sheet open on failure so the inline
+                            // error below stays visible; only dismiss on success.
+                            if viewModel.rateError == nil {
+                                isPresented = false
+                            }
                         }
                     } label: {
                         Image(systemName: (viewModel.myRating ?? 0) >= stars ? "star.fill" : "star")
