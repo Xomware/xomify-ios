@@ -222,7 +222,9 @@ final class ShareDetailViewModel {
                 commentId: comment.commentId
             )
         } catch {
-            comments.insert(removed, at: removeIndex)
+            // Clamp: another in-flight delete may have shortened the list,
+            // so `removeIndex` can now be past the end. Inserting there traps.
+            comments.insert(removed, at: min(removeIndex, comments.count))
             share = share.withCommentCount(share.commentCount + 1)
             commentsError = error.localizedDescription
         }
@@ -247,6 +249,10 @@ final class ShareDetailViewModel {
         guard !reactingSlugs.contains(slug) else { return }
         reactingSlugs.insert(slug)
         defer { reactingSlugs.remove(slug) }
+
+        // Clear any stale error from a previous failed toggle so a successful
+        // retry doesn't leave the error banner stuck on screen.
+        reactError = nil
 
         let previousCounts = share.reactionCounts
         let previousViewer = share.viewerReactions

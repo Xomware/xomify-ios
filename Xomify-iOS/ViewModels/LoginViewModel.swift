@@ -2,6 +2,7 @@ import Foundation
 
 /// ViewModel for the Login screen
 @Observable
+@MainActor
 final class LoginViewModel {
     
     // MARK: - Properties

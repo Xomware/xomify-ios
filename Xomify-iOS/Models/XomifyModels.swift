@@ -197,9 +197,17 @@ struct Release: Codable, Sendable {
         artistName ?? "Unknown Artist"
     }
     
-    /// Stable ID for ForEach - use albumId or fall back to id
+    /// Stable ID for ForEach - use albumId, then id, then a deterministic
+    /// composite of the remaining identifying fields. Never generate a fresh
+    /// UUID here: `stableId` is read on every render, so a random fallback
+    /// gives the row a new identity each pass and makes the list flicker.
     var stableId: String {
-        albumId ?? id ?? UUID().uuidString
+        if let albumId, !albumId.isEmpty { return albumId }
+        if let id, !id.isEmpty { return id }
+        // Deterministic fallback — same inputs always yield the same key.
+        return [uri, spotifyUrl, albumName ?? name, artistName, releaseDate]
+            .compactMap { $0 }
+            .joined(separator: "|")
     }
 }
 
@@ -254,9 +262,12 @@ struct MonthlyWrap: Codable, Identifiable, Sendable {
 // MARK: - Wrapped Data Response
 
 struct WrappedDataResponse: Codable, Sendable {
-    let active: Bool
-    let activeWrapped: Bool
-    let activeReleaseRadar: Bool
+    // Optional — the backend omits these flags for users who have never
+    // enrolled, and a non-optional Bool makes the whole decode throw on a
+    // missing key, blanking the Wrapped screen instead of degrading.
+    let active: Bool?
+    let activeWrapped: Bool?
+    let activeReleaseRadar: Bool?
     let wraps: [MonthlyWrap]?
 }
 

@@ -30,14 +30,8 @@ final class RatingsHistoryViewModel {
         errorMessage = nil
 
         do {
-            let user = try await spotifyService.getCurrentUser()
-            guard let email = user.email, !email.isEmpty else {
-                errorMessage = "Could not load ratings — missing email."
-                isLoading = false
-                return
-            }
-
-            _ = email
+            // Ratings are scoped server-side by the Xomify JWT — no Spotify
+            // user lookup needed here.
             let response = try await xomifyService.getAllRatings()
             let loaded = response.ratings ?? []
             ratings = loaded.sorted(by: Self.isMoreRecent)
@@ -77,17 +71,15 @@ final class RatingsHistoryViewModel {
         let removed = ratings.remove(at: index)
 
         do {
-            let user = try await spotifyService.getCurrentUser()
-            guard let email = user.email, !email.isEmpty else {
-                ratings.insert(removed, at: index)
-                errorMessage = "Could not delete rating — missing email."
-                return
-            }
-            _ = email
+            // Deletion is authorized server-side by the Xomify JWT — no Spotify
+            // user lookup needed here.
             _ = try await xomifyService.removeRating(trackId: rating.trackId)
             print("🗑️ RatingsHistory: removed rating for \(rating.trackId)")
         } catch {
-            ratings.insert(removed, at: index)
+            // Clamp: the list may have shrunk further (another delete) while
+            // the network call was in flight, so the original index can now be
+            // past the end. Inserting there would trap.
+            ratings.insert(removed, at: min(index, ratings.count))
             errorMessage = "Could not delete rating: \(error.localizedDescription)"
             print("❌ RatingsHistory: delete failed - \(error)")
         }

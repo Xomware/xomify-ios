@@ -110,8 +110,9 @@ final class GroupDetailViewModel {
     func refresh() async {
         guard !groupId.isEmpty else { return }
         isRefreshing = true
+        // `load` already calls `loadShares()` as its last step — don't fetch
+        // the group-scoped feed a second time here.
         await load(email: userEmail, groupId: groupId)
-        await loadShares()
         isRefreshing = false
     }
 

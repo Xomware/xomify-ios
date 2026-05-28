@@ -132,7 +132,11 @@ struct FeedView: View {
                     )
                     .padding(.horizontal, 16)
                     .onAppear {
-                        if share.id == viewModel.shares.last?.id {
+                        // Compare against the filtered list the ForEach actually
+                        // renders — using `shares.last` means the trigger row is
+                        // never visible when a refinement hides the tail, so
+                        // pagination silently stops working under active filters.
+                        if share.id == viewModel.filteredShares.last?.id {
                             Task { await viewModel.loadMore() }
                         }
                     }

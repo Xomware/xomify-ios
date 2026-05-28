@@ -42,7 +42,7 @@ struct SettingsView: View {
             titleVisibility: .visible
         ) {
             Button("Sign out", role: .destructive) {
-                viewModel.logout()
+                Task { await viewModel.logout() }
             }
             Button("Cancel", role: .cancel) {}
         }

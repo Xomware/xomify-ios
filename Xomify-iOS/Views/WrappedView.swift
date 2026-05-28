@@ -544,6 +544,9 @@ struct WrappedContent: View {
     private func loadContent() async {
         guard let wrap = currentWrap else { return }
 
+        // Clear any prior error so a successful reload (tab/term switch or
+        // retry) doesn't leave a stale error message rendered.
+        errorMessage = nil
         isLoadingContent = true
 
         switch selectedTab {
