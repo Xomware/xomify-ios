@@ -5,7 +5,7 @@ import SwiftUI
 struct FeedEmptyStateView: View {
 
     let onInviteFriend: () -> Void
-    let onCreateGroup: () -> Void
+    let onBrowseFriends: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -44,8 +44,8 @@ struct FeedEmptyStateView: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Opens the Friends screen to share an invite.")
 
-                Button(action: onCreateGroup) {
-                    Text("Create a group")
+                Button(action: onBrowseFriends) {
+                    Text("See your friends")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.xomifyGreen)
@@ -56,7 +56,7 @@ struct FeedEmptyStateView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("Opens the Groups screen to create a new group.")
+                .accessibilityHint("Opens the Friends screen.")
             }
             .padding(.horizontal, 40)
             .padding(.top, 12)

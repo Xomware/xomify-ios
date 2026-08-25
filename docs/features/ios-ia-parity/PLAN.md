@@ -3,7 +3,7 @@
 **Epic**: [xomify-relaunch](https://github.com/Xomware/xomify-frontend/blob/master/docs/features/xomify-relaunch/PLAN.md)
 **Sub-feature ID**: C1 (`ios-ia-parity`)
 **Track**: C — iOS Parity + Visual Overhaul
-**Status**: BLOCKED — premise is wrong, do not execute as written
+**Status**: Done (narrowed — Groups only; Feed deliberately kept)
 **Created**: 2026-08-24
 **Last updated**: 2026-08-24
 **Scope size**: TBD — run `/plan ios-ia-parity` to size
@@ -93,3 +93,44 @@ feature — the opposite of "take iOS to the next level".
    against a second backend — its own epic, not a parity edit.
 3. **Delete Feed, replace with a profile-scoped shares surface** mirroring what web's
    `my-profile` actually shows. Smaller than 2, and closes the gap without a second API.
+
+---
+
+## Resolution — option 1 taken
+
+Groups removed, Feed kept. Executed on `feature/ios-ia-parity`; **BUILD SUCCEEDED**.
+
+### Removed
+
+`Views/Groups/` (4 sheets), `GroupsView`, `GroupDetailView`, `GroupsViewModel`,
+`Destination.groups`, the drawer entry, and the `MainShell` case.
+
+### The part the original plan missed: Groups was wired INTO Feed
+
+Deleting the Groups screens alone would have left the app in a state where you could
+filter a feed by groups you had no way to create or join. So the coupling went too:
+
+| Site | Change |
+|------|--------|
+| `FeedFilter` | `.group(XomifyGroup)` case dropped; enum is friends-only |
+| `FeedViewModel` | `groups` property and `loadGroupsForChips()` removed |
+| `FilterChipsView` | per-group chips removed |
+| `FeedView` | group load dropped; empty-state CTA re-pointed at Friends |
+| `FeedEmptyStateView` | "Create a group" → "See your friends" |
+| `ShareComposerViewModel` | `availableGroups` and its fetch removed |
+| `ShareComposerView` | group picker removed, plus 43 lines of orphaned helpers |
+
+### Deliberately KEPT
+
+- **`Views/Feed/` in full.** It is iOS's only native-shares browsing surface and the
+  target of every new share notification deep link.
+- **The `groupId` / `groupIds` wire fields** on `XomifyService`, and `selectedGroupIds` on
+  the composer VM. Web does exactly this — `share-feed.service.ts` still carries `groupId`
+  with no groups UI anywhere. The backend still supports group scoping; it is simply not
+  exposed. `groupId` now always resolves to `nil`.
+- **`groups_*` lambdas.** Untouched, unused, no data migration.
+
+Pre-existing Swift 6 concurrency warnings on `GroupCreateResponse` / `GroupsListResponse`
+/ `GroupInfo` remain, since those service methods were kept.
+
+**C3, C4 and C5 are unblocked.**

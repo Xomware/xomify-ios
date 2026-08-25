@@ -66,7 +66,6 @@ final class ShareComposerViewModel {
     var shareToPublic: Bool = true
     /// Group ids the user has picked as additional (or exclusive) targets.
     var selectedGroupIds: Set<String> = []
-    var availableGroups: [XomifyGroup] = []
 
     // MARK: - Submit state
 
@@ -102,17 +101,12 @@ final class ShareComposerViewModel {
 
     // MARK: - Bootstrap
 
-    /// Resolve the viewer email + load groups once on sheet appear.
+    /// Resolve the viewer email once on sheet appear.
     func bootstrap() async {
         if userEmail.isEmpty {
             if let user = try? await currentUserProvider.getCurrentUser(),
                let email = user.email, !email.isEmpty {
                 userEmail = email
-            }
-        }
-        if !userEmail.isEmpty, availableGroups.isEmpty {
-            if let response = try? await xomifyService.listGroups() {
-                availableGroups = response.groups ?? []
             }
         }
     }

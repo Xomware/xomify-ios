@@ -2,33 +2,34 @@ import Foundation
 
 // MARK: - FeedFilter
 
-/// User-visible filter selection driving the filter chip row. `.all` was
-/// dropped in 2026-04: the feed is always friends-graph-scoped (plus the
-/// caller themselves), so `.all` and `.friends` resolved to the same
+/// User-visible filter selection driving the filter chip row.
+///
+/// `.all` was dropped in 2026-04: the feed is always friends-graph-scoped
+/// (plus the caller themselves), so `.all` and `.friends` resolved to the same
 /// backend query and having both was just UI noise.
+///
+/// `.group` was dropped in the relaunch IA pass, matching web — Groups has no
+/// management UI on either client now, and a filter for groups you cannot
+/// create or join is a dead control. The `groupId` wire field is deliberately
+/// KEPT on the service (web does the same): the backend still supports group
+/// scoping, it is simply not exposed.
 enum FeedFilter: Hashable, Sendable {
     case friends
-    case group(XomifyGroup)
 
     /// Stable cache key for the filter, used by `FeedCacheService`.
     var cacheKey: String {
         switch self {
-        case .friends:             return "friends"
-        case .group(let group):    return "group:\(group.groupId)"
+        case .friends: return "friends"
         }
     }
 
-    /// The `groupId` to send to `shares_feed` when this filter is active.
-    /// `nil` for `.friends` — backend infers scope from the caller.
-    var groupId: String? {
-        if case .group(let g) = self { return g.groupId }
-        return nil
-    }
+    /// The `groupId` to send to `shares_feed`. Always `nil` now that group
+    /// scoping has no UI — the backend infers scope from the caller.
+    var groupId: String? { nil }
 
     var label: String {
         switch self {
-        case .friends:          return "Friends"
-        case .group(let group): return group.displayName
+        case .friends: return "Friends"
         }
     }
 }
@@ -145,7 +146,6 @@ final class FeedViewModel {
     var errorMessage: String?
 
     var selectedFilter: FeedFilter = .friends
-    var groups: [XomifyGroup] = []
 
     /// Client-side refinement (date window, authors, unlistened, sort).
     /// Bound by the refinement sheet; consumed by `filteredShares`.
@@ -353,20 +353,6 @@ final class FeedViewModel {
         }
 
         await refresh()
-    }
-
-    // MARK: - Groups (filter chips)
-
-    /// Load the user's groups for the filter chip row. Safe to call on appear.
-    func loadGroupsForChips() async {
-        guard !userEmail.isEmpty else { return }
-
-        do {
-            let response = try await xomifyService.listGroups()
-            groups = response.groups ?? []
-        } catch {
-            // Non-fatal — chips just show `Friends` without group rows.
-        }
     }
 
     // MARK: - Identities
