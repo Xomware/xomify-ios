@@ -131,6 +131,9 @@ final class ShareDetailViewModel {
         rateError = nil
         let previous = myRating
         myRating = stars
+        // Fires on the optimistic set, not the response: the star fills
+        // instantly, and feedback that lags the pixels feels like a bug.
+        Haptics.selection()
         defer { isRating = false }
 
         do {
@@ -146,6 +149,8 @@ final class ShareDetailViewModel {
             // viewer rating with a stale server value.
             share = share.withViewerRating(stars)
         } catch {
+            // The star springs back — say so, or it looks like a stray tap.
+            Haptics.failure()
             myRating = previous
             rateError = error.localizedDescription
         }

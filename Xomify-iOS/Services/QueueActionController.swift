@@ -68,6 +68,10 @@ final class QueueActionController {
 
         do {
             try await spotifyService.queueTrack(uri: uri)
+            // Confirm the state change the user caused. Placed here rather
+            // than on each button so every call site gets it — and only on
+            // the success path, so a failure never feels like it worked.
+            Haptics.success()
             if let name = trackName, !name.isEmpty {
                 toast = "Queued \(name)"
             } else {
@@ -77,8 +81,10 @@ final class QueueActionController {
         } catch SpotifyServiceError.noActiveDevice {
             handleNoDevice(uri: uri, action: "queue")
         } catch let error as SpotifyServiceError {
+            Haptics.failure()
             toast = error.errorDescription
         } catch {
+            Haptics.failure()
             toast = error.localizedDescription
         }
     }
@@ -101,6 +107,10 @@ final class QueueActionController {
 
         do {
             try await spotifyService.playTrack(uri: uri)
+            // Confirm the state change the user caused. Placed here rather
+            // than on each button so every call site gets it — and only on
+            // the success path, so a failure never feels like it worked.
+            Haptics.success()
             if let name = trackName, !name.isEmpty {
                 toast = "Playing \(name)"
             } else {
@@ -110,8 +120,10 @@ final class QueueActionController {
         } catch SpotifyServiceError.noActiveDevice {
             handleNoDevice(uri: uri, action: "play")
         } catch let error as SpotifyServiceError {
+            Haptics.failure()
             toast = error.errorDescription
         } catch {
+            Haptics.failure()
             toast = error.localizedDescription
         }
     }

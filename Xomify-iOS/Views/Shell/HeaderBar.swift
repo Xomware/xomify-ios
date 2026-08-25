@@ -55,7 +55,11 @@ struct HeaderBar: View {
         }
         .padding(.horizontal, 8)
         .frame(height: 44)
-        .background(Color.xomifyDark)
+        // Material rather than a flat fill: the starfield and any content
+        // scrolling beneath show through faintly, which is what makes a bar
+        // read as chrome sitting above the page instead of a painted stripe.
+        .background(.ultraThinMaterial)
+        .background(Color.xomifyDark.opacity(0.65))
         .sheet(isPresented: $isInboxPresented, onDismiss: { Task { await refreshUnread() } }) {
             NotificationsInboxView()
         }

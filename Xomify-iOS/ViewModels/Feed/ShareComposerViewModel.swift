@@ -270,6 +270,10 @@ final class ShareComposerViewModel {
                 rating: capturedRating
             )
 
+            // Sending a song is the single most deliberate action in the app —
+            // it earns the full success notification, not a selection tick.
+            Haptics.success()
+
             // Value-moment trigger for the APNs permission prompt — fire-and-forget.
             // `NotificationsService` gates on `hasPromptedForPush` so this only
             // ever surfaces the iOS dialog on the first successful share.
@@ -311,6 +315,7 @@ final class ShareComposerViewModel {
                 listenerCount: 1
             )
         } catch {
+            Haptics.failure()
             submitError = error.localizedDescription
             return nil
         }
