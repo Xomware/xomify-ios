@@ -32,9 +32,9 @@ struct TrackQuickInfoSheet: View {
                     // in the app yet, so leaving as a follow-up rather than
                     // bolting one on inline.
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
+                .padding(.horizontal, XomSpacing.lg)
+                .padding(.top, XomSpacing.sm)
+                .padding(.bottom, XomSpacing.xl)
             }
             .background(Color.xomifyDark.ignoresSafeArea())
             .navigationTitle("Track Info")
@@ -62,7 +62,7 @@ struct TrackQuickInfoSheet: View {
                 .fill(Color.gray.opacity(0.2))
         }
         .frame(width: 200, height: 200)
-        .clipShape(.rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: XomRadius.xl))
         .shadow(color: .black.opacity(0.5), radius: 16, x: 0, y: 8)
         .accessibilityHidden(true)
     }
@@ -125,10 +125,10 @@ struct TrackQuickInfoSheet: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
+        .padding(XomSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white.opacity(0.05))
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private var popularityBar: some View {
@@ -162,9 +162,9 @@ struct TrackQuickInfoSheet: View {
             }
             .frame(height: 8)
         }
-        .padding(12)
+        .padding(XomSpacing.md)
         .background(Color.white.opacity(0.05))
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Popularity \(popularity) out of 100")
     }
@@ -184,7 +184,7 @@ struct TrackQuickInfoSheet: View {
                 .padding(.vertical, 14)
                 .background(Color.xomifyGreen)
                 .foregroundStyle(.black)
-                .clipShape(.rect(cornerRadius: 25))
+                .clipShape(.rect(cornerRadius: XomRadius.pill))
             }
             .frame(minHeight: 44)
 
@@ -199,10 +199,10 @@ struct TrackQuickInfoSheet: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, XomSpacing.md)
                     .background(Color.white.opacity(0.08))
                     .foregroundStyle(.white)
-                    .clipShape(.rect(cornerRadius: 22))
+                    .clipShape(.rect(cornerRadius: XomRadius.pill))
                 }
                 .frame(minHeight: 44)
                 .disabled(queueAction.isQueuing(uri: resolvedUri))
@@ -217,16 +217,16 @@ struct TrackQuickInfoSheet: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, XomSpacing.md)
                     .background(Color.xomifyPurple.opacity(0.25))
                     .foregroundStyle(Color.xomifyPurple)
-                    .clipShape(.rect(cornerRadius: 22))
+                    .clipShape(.rect(cornerRadius: XomRadius.pill))
                 }
                 .frame(minHeight: 44)
                 .disabled(playlistBuilder.contains(track))
             }
         }
-        .padding(.top, 4)
+        .padding(.top, XomSpacing.xs)
     }
 
     // MARK: - Helpers

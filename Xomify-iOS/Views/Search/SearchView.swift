@@ -110,9 +110,9 @@ struct SearchView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
@@ -213,7 +213,7 @@ struct SearchView: View {
             HStack(spacing: 12) {
                 artwork(track.imageUrl, systemFallback: "music.note")
                     .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.name)
@@ -275,7 +275,7 @@ struct SearchView: View {
         HStack(spacing: 12) {
             artwork(album.imageUrl, systemFallback: "square.stack")
                 .frame(width: 52, height: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(album.name)

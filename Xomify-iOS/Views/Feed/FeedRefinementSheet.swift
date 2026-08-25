@@ -135,7 +135,7 @@ struct FeedRefinementSheet: View {
             .padding(12)
             .frame(minHeight: 44)
             .background(Color.xomifyCard)
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("From \(authorButtonTitle(selectedCount: selectedCount, total: totalAuthors))")
@@ -175,7 +175,7 @@ struct FeedRefinementSheet: View {
             .tint(Color.xomifyGreen)
             .padding(12)
             .background(Color.xomifyCard)
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
         }
     }
 

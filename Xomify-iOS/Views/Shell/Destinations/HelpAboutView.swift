@@ -39,7 +39,7 @@ struct HelpAboutView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.xxl, style: .continuous))
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -144,7 +144,7 @@ struct HelpAboutView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
     }
 
     private var acknowledgementsPlaceholder: some View {

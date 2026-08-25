@@ -580,7 +580,7 @@ struct TopItemsContent: View {
         .padding(12)
         .background(Color.orange.opacity(0.08))
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: XomRadius.lg)
                 .stroke(Color.orange.opacity(0.3), lineWidth: 1)
         )
         .cornerRadius(10)

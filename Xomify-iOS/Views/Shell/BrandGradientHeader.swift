@@ -32,10 +32,10 @@ struct BrandGradientHeader<Trailing: View>: View {
                     .frame(width: 48, height: 48)
                     .background(
                         .white.opacity(0.18),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                             .stroke(Color.white.opacity(0.25), lineWidth: 1)
                     )
                     .accessibilityHidden(true)

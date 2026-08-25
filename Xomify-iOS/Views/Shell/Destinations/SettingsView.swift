@@ -168,7 +168,7 @@ struct SettingsView: View {
     ) -> some View {
         HStack(spacing: 16) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: XomRadius.xl)
                     .fill(LinearGradient(
                         colors: iconGradient,
                         startPoint: .topLeading,

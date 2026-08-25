@@ -186,9 +186,9 @@ struct DrawerView: View {
                     endPoint: .trailing
                 )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.xxl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: XomRadius.xxl, style: .continuous)
                     .stroke(Color.white.opacity(0.12), lineWidth: 1)
             )
         }
@@ -259,7 +259,7 @@ struct DrawerView: View {
             .padding(.vertical, 12)
             .frame(minHeight: 44)
             .background(rowBackground(isSelected: isSelected))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entry.label)

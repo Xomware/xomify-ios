@@ -165,10 +165,10 @@ struct QueueBuilderView: View {
         }
         .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: XomRadius.lg)
                 .fill(isInQueue ? Color.xomifyGreen.opacity(0.1) : Color.white.opacity(0.03))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: XomRadius.lg)
                         .stroke(isInQueue ? Color.xomifyGreen.opacity(0.3) : Color.clear, lineWidth: 1)
                 )
         )

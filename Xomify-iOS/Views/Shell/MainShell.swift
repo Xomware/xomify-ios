@@ -21,7 +21,7 @@ struct MainShell: View {
         ZStack(alignment: .leading) {
             // Ambient brand background — wandering blurred blobs + occasional
             // lightning. Purely decorative; hit-testing disabled.
-            AmbientBackground()
+            SpaceBackground()
                 .opacity(0.35)
 
             // Primary content: header bar + full-screen destination.

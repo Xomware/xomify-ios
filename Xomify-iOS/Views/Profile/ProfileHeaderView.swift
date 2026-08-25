@@ -145,7 +145,7 @@ struct ProfileHeaderView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 8)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         .frame(maxWidth: .infinity)
     }
 
@@ -158,10 +158,10 @@ struct ProfileHeaderView: View {
 
     private var skeletonStat: some View {
         VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.sm, style: .continuous)
                 .fill(Color.gray.opacity(0.25))
                 .frame(width: 28, height: 16)
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.sm, style: .continuous)
                 .fill(Color.gray.opacity(0.18))
                 .frame(width: 44, height: 8)
         }
@@ -227,7 +227,7 @@ struct ProfileHeaderView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(Color.xomifyCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
             }
             .accessibilityHint("Opens Settings")
 
@@ -242,7 +242,7 @@ struct ProfileHeaderView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
             }
             .disabled(true)
             .accessibilityHint("Messaging is not available in this version")

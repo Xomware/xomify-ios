@@ -164,7 +164,7 @@ struct FriendsView: View {
         }
         .padding()
         .background(Color.white.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
         .padding(.horizontal)
     }
 
@@ -429,7 +429,7 @@ struct FriendsView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     // MARK: - Find tab
@@ -500,7 +500,7 @@ struct FriendsView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     // MARK: - Row builders
@@ -527,7 +527,7 @@ struct FriendsView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     private func avatarCircle(label: String) -> some View {
@@ -641,7 +641,7 @@ private struct InviteShareSheet: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.xomifyCard)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
                 .textSelection(.enabled)
                 .padding(.horizontal, 24)
 

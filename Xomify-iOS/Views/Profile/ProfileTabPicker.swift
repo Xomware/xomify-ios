@@ -29,10 +29,10 @@ struct ProfileTabPicker: View {
         .padding(4)
         .background(Color.xomifyCard.opacity(0.7))
         .overlay(
-            RoundedRectangle(cornerRadius: 999, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.pill, style: .continuous)
                 .stroke(Color.xomifyPurple.opacity(0.25), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 999, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.pill, style: .continuous))
         .padding(.horizontal)
         .padding(.bottom, 12)
         .accessibilityElement(children: .contain)
@@ -53,7 +53,7 @@ struct ProfileTabPicker: View {
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 999, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: XomRadius.pill, style: .continuous))
                     .matchedGeometryEffect(id: "profileTabActive", in: namespace)
                     .shadow(color: Color.xomifyPurple.opacity(0.35), radius: 8, y: 3)
                 }

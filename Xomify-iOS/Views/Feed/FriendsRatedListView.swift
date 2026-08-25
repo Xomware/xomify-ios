@@ -70,7 +70,7 @@ struct FriendsRatedListView: View {
             }
             .padding(12)
             .background(Color.xomifyCard)
-            .clipShape(.rect(cornerRadius: 12))
+            .clipShape(.rect(cornerRadius: XomRadius.xl))
         }
     }
 
@@ -81,7 +81,7 @@ struct FriendsRatedListView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private func row(_ rating: ShareFriendRating) -> some View {
@@ -105,7 +105,7 @@ struct FriendsRatedListView: View {
         }
         .padding(10)
         .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private func stars(_ value: Int) -> some View {

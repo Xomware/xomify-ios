@@ -77,12 +77,12 @@ struct ShareDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .aspectRatio(1, contentMode: .fit)
-            .clipShape(.rect(cornerRadius: 16))
+            .clipShape(.rect(cornerRadius: XomRadius.xxl))
         } else {
             placeholderArt
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
-                .clipShape(.rect(cornerRadius: 16))
+                .clipShape(.rect(cornerRadius: XomRadius.xxl))
         }
     }
 
@@ -194,7 +194,7 @@ struct ShareDetailView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: XomRadius.xl))
     }
 
     // MARK: - Stats
@@ -277,7 +277,7 @@ struct ShareDetailView: View {
         .frame(maxWidth: .infinity, minHeight: 84)
         .padding(10)
         .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: XomRadius.xl))
     }
 
     // MARK: - Actions
@@ -310,7 +310,7 @@ struct ShareDetailView: View {
             .padding(.vertical, 8)
             .background(Color.white.opacity(0.08))
             .foregroundStyle(viewModel.myRating != nil ? Color.xomifyGreen : .white)
-            .clipShape(.rect(cornerRadius: 16))
+            .clipShape(.rect(cornerRadius: XomRadius.xxl))
             .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
@@ -405,7 +405,7 @@ struct ShareDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(Color.xomifyCard.opacity(0.5))
-                    .clipShape(.rect(cornerRadius: 10))
+                    .clipShape(.rect(cornerRadius: XomRadius.lg))
             } else {
                 VStack(spacing: 8) {
                     ForEach(viewModel.comments) { comment in
@@ -442,7 +442,7 @@ struct ShareDetailView: View {
                 .foregroundStyle(.white)
                 .padding(10)
                 .background(Color.white.opacity(0.06))
-                .clipShape(.rect(cornerRadius: 10))
+                .clipShape(.rect(cornerRadius: XomRadius.lg))
 
                 Button {
                     Task { await viewModel.postComment() }
@@ -460,7 +460,7 @@ struct ShareDetailView: View {
                 .background(canPostComment ? LinearGradient.xomifyGradient : LinearGradient(
                     colors: [Color.gray.opacity(0.4)], startPoint: .leading, endPoint: .trailing
                 ))
-                .clipShape(.rect(cornerRadius: 10))
+                .clipShape(.rect(cornerRadius: XomRadius.lg))
                 .disabled(!canPostComment)
                 .accessibilityLabel("Post comment")
             }
@@ -514,7 +514,7 @@ struct ShareDetailView: View {
         }
         .padding(10)
         .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     // MARK: - Shared helpers
@@ -551,7 +551,7 @@ struct ShareDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(Color.xomifyCard.opacity(0.5))
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private func inlineErrorBanner(_ message: String) -> some View {
@@ -566,7 +566,7 @@ struct ShareDetailView: View {
         }
         .padding(10)
         .background(Color.orange.opacity(0.1))
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     @ViewBuilder

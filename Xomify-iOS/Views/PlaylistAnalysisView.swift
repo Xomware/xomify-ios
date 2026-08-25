@@ -177,7 +177,7 @@ struct PlaylistAnalysisView: View {
             }
             .padding(16)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xxl, style: .continuous))
     }
 
     // MARK: Overview tiles
@@ -213,10 +213,10 @@ struct PlaylistAnalysisView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                 .fill(Color.xomifyCard)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
         )
@@ -240,7 +240,7 @@ struct PlaylistAnalysisView: View {
                                     }
                                 }
                                 .frame(width: 120, height: 120)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
 
                                 TrackActionsMenu(track: track)
                                     .padding(6)
@@ -295,7 +295,7 @@ struct PlaylistAnalysisView: View {
                 }
                 .padding(10)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                         .fill(Color.xomifyCard)
                 )
             }
@@ -373,7 +373,7 @@ struct PlaylistAnalysisView: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
                         .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous)
                                 .fill(Color.xomifyCard)
                         )
                     }

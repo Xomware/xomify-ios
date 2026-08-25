@@ -166,7 +166,7 @@ private struct SelfTasteSummary: View {
                     endPoint: .trailing
                 )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         }
         .accessibilityHint("Opens the full Music Taste screen")
     }
@@ -264,7 +264,7 @@ private struct SelfTasteSummary: View {
                     .padding(.vertical, 10)
                     .padding(.horizontal, 12)
                     .background(Color.xomifyCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
                 }
             }
         }
@@ -329,7 +329,7 @@ private struct SelfTasteSummary: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     private func artistRow(artist: SpotifyArtist, index: Int) -> some View {
@@ -357,7 +357,7 @@ private struct SelfTasteSummary: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     private func trackActions(trackId: String, uri: String) -> some View {
@@ -394,7 +394,7 @@ private struct SelfTasteSummary: View {
     private func artworkThumb(url: URL?, circular: Bool = false) -> some View {
         let shape: AnyShape = circular
             ? AnyShape(Circle())
-            : AnyShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            : AnyShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
         Group {
             if let url {
                 AsyncImage(url: url) { phase in
@@ -586,7 +586,7 @@ private struct OtherTasteView: View {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
                 .background(Color.xomifyCard)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
             }
         }
     }
@@ -610,7 +610,7 @@ private struct OtherTasteView: View {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
                 .background(Color.xomifyCard)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
             }
         }
     }
@@ -630,7 +630,7 @@ private struct OtherTasteView: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 12)
                 .background(Color.xomifyCard)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
             }
         }
     }
@@ -648,7 +648,7 @@ private struct OtherTasteView: View {
     private func artworkThumb(url: URL?, circular: Bool = false) -> some View {
         let shape: AnyShape = circular
             ? AnyShape(Circle())
-            : AnyShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            : AnyShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
         Group {
             if let url {
                 AsyncImage(url: url) { phase in

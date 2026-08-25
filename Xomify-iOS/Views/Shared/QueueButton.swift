@@ -75,10 +75,10 @@ struct QueueButton: View {
         .font(.caption)
         .fontWeight(.medium)
         .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.vertical, XomSpacing.sm)
         .background(Color.white.opacity(0.08))
         .foregroundStyle(.white)
-        .clipShape(.rect(cornerRadius: 16))
+        .clipShape(.rect(cornerRadius: XomRadius.xxl))
         .frame(minHeight: 44)
     }
 }

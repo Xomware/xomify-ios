@@ -82,7 +82,7 @@ struct RatingsView: View {
     private func ratingRow(_ rating: TrackRating) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: XomRadius.md)
                     .fill(Color.gray.opacity(0.3))
                     .frame(width: 44, height: 44)
                 Image(systemName: "music.note")
