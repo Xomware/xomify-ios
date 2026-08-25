@@ -97,40 +97,40 @@ final class NotificationsServiceTests: XCTestCase {
         let defaults = makeIsolatedDefaults()
         let service = NotificationsService(xomify: MockXomifyServicing(), defaults: defaults)
         let nav = NavigationStore()
-        nav.selectedTab = .home
+        nav.currentDestination = .profile
         service.navigationStore = nav
 
         service.handlePushOpen(
             payload: PushPayload(kind: .queueThreshold, shareId: "s1")
         )
 
-        XCTAssertEqual(nav.selectedTab, .feed)
+        XCTAssertEqual(nav.currentDestination, .feed)
     }
 
     func test_handlePushOpen_digest_routesToFeed() async {
         let defaults = makeIsolatedDefaults()
         let service = NotificationsService(xomify: MockXomifyServicing(), defaults: defaults)
         let nav = NavigationStore()
-        nav.selectedTab = .home
+        nav.currentDestination = .profile
         service.navigationStore = nav
 
         service.handlePushOpen(
             payload: PushPayload(kind: .digest, count: 3, windowDays: 7)
         )
 
-        XCTAssertEqual(nav.selectedTab, .feed)
+        XCTAssertEqual(nav.currentDestination, .feed)
     }
 
-    func test_handlePushOpen_unknown_doesNotChangeTab() async {
+    func test_handlePushOpen_unknown_doesNotChangeDestination() async {
         let defaults = makeIsolatedDefaults()
         let service = NotificationsService(xomify: MockXomifyServicing(), defaults: defaults)
         let nav = NavigationStore()
-        nav.selectedTab = .home
+        nav.currentDestination = .profile
         service.navigationStore = nav
 
         service.handlePushOpen(payload: PushPayload(kind: .unknown))
 
-        XCTAssertEqual(nav.selectedTab, .home)
+        XCTAssertEqual(nav.currentDestination, .profile)
     }
 
     // MARK: - Register body shape
@@ -138,14 +138,14 @@ final class NotificationsServiceTests: XCTestCase {
     func test_registerPushToken_usesCorrectBodyShape() async throws {
         let mock = MockXomifyServicing()
         _ = try await mock.registerPushToken(
-            email: "user@example.com",
             deviceToken: "abcdef",
             queueNotificationsEnabled: true,
             digestEnabled: false
         )
         XCTAssertEqual(mock.registerCalls.count, 1)
         let call = try XCTUnwrap(mock.registerCalls.first)
-        XCTAssertEqual(call.email, "user@example.com")
+        // No `email` on the wire any more — caller identity comes from the JWT
+        // context server-side (#95).
         XCTAssertEqual(call.deviceToken, "abcdef")
         XCTAssertTrue(call.queueNotificationsEnabled)
         XCTAssertFalse(call.digestEnabled)
@@ -153,13 +153,9 @@ final class NotificationsServiceTests: XCTestCase {
 
     func test_unregisterPushToken_usesCorrectBodyShape() async throws {
         let mock = MockXomifyServicing()
-        _ = try await mock.unregisterPushToken(
-            email: "user@example.com",
-            deviceToken: "abcdef"
-        )
+        _ = try await mock.unregisterPushToken(deviceToken: "abcdef")
         XCTAssertEqual(mock.unregisterCalls.count, 1)
         let call = try XCTUnwrap(mock.unregisterCalls.first)
-        XCTAssertEqual(call.email, "user@example.com")
         XCTAssertEqual(call.deviceToken, "abcdef")
     }
 

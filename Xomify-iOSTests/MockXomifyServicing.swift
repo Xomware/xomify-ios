@@ -10,14 +10,12 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
     // MARK: - Register / unregister
 
     struct RegisterCall: Equatable {
-        let email: String
         let deviceToken: String
         let queueNotificationsEnabled: Bool
         let digestEnabled: Bool
     }
 
     struct UnregisterCall: Equatable {
-        let email: String
         let deviceToken: String
     }
 
@@ -28,13 +26,11 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
     var unregisterError: Error?
 
     func registerPushToken(
-        email: String,
         deviceToken: String,
         queueNotificationsEnabled: Bool,
         digestEnabled: Bool
     ) async throws -> SuccessResponse {
         registerCalls.append(RegisterCall(
-            email: email,
             deviceToken: deviceToken,
             queueNotificationsEnabled: queueNotificationsEnabled,
             digestEnabled: digestEnabled
@@ -44,10 +40,9 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
     }
 
     func unregisterPushToken(
-        email: String,
         deviceToken: String
     ) async throws -> SuccessResponse {
-        unregisterCalls.append(UnregisterCall(email: email, deviceToken: deviceToken))
+        unregisterCalls.append(UnregisterCall(deviceToken: deviceToken))
         if let unregisterError { throw unregisterError }
         return SuccessResponse(success: true)
     }
@@ -110,38 +105,38 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
 
     // MARK: - Friends (unused — returned as empty / success stubs)
 
-    func getAllFriends(email: String) async throws -> FriendsAllResponse {
+    func getAllFriends() async throws -> FriendsAllResponse {
         FriendsAllResponse(
-            email: email,
+            email: "mock@example.com",
             accepted: [], requested: [], pending: [], blocked: [],
             acceptedCount: 0, requestedCount: 0, pendingCount: 0, blockedCount: 0,
             totalCount: 0
         )
     }
 
-    func listUsers(email: String) async throws -> UserListResponse {
+    func listUsers() async throws -> UserListResponse {
         UserListResponse(users: [], totalCount: 0)
     }
 
-    func requestFriend(email: String, requestEmail: String) async throws -> SuccessResponse {
+    func requestFriend(requestEmail: String) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
 
-    func acceptFriend(email: String, requestEmail: String) async throws -> SuccessResponse {
+    func acceptFriend(requestEmail: String) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
 
-    func rejectFriend(email: String, requestEmail: String) async throws -> SuccessResponse {
+    func rejectFriend(requestEmail: String) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
 
-    func removeFriend(email: String, friendEmail: String) async throws -> SuccessResponse {
+    func removeFriend(friendEmail: String) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
 
     // MARK: - Invites
 
-    func createInvite(email: String) async throws -> InviteCreateResponse {
+    func createInvite() async throws -> InviteCreateResponse {
         InviteCreateResponse(
             success: true,
             inviteCode: "mock-code",
@@ -151,15 +146,15 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
         )
     }
 
-    func acceptInvite(email: String, inviteCode: String) async throws -> InviteAcceptResponse {
+    func acceptInvite(inviteCode: String) async throws -> InviteAcceptResponse {
         InviteAcceptResponse(success: true, inviteCode: inviteCode, friendEmail: nil)
     }
 
-    func listPendingInvites(email: String) async throws -> PendingInvitesResponse {
-        PendingInvitesResponse(email: email, invites: [], totalCount: 0)
+    func listPendingInvites() async throws -> PendingInvitesResponse {
+        PendingInvitesResponse(email: "mock@example.com", invites: [], totalCount: 0)
     }
 
-    func declineInvite(email: String, inviteCode: String) async throws -> SuccessResponse {
+    func declineInvite(inviteCode: String) async throws -> SuccessResponse {
         SuccessResponse(success: true)
     }
 }

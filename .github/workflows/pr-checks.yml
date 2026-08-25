@@ -68,7 +68,10 @@ jobs:
             -derivedDataPath DerivedData \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            | xcpretty || true
+            | xcpretty
+        # NO `|| true`. Test compilation failing is a real failure — this step
+        # silently passing is what let 12 stale mock methods and 4 rotted test
+        # files accumulate unnoticed, because nothing ever compiled them.
 
       - name: Run Unit Tests
         run: |
@@ -78,11 +81,36 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             -configuration Debug \
             -derivedDataPath DerivedData \
-            -testPlan UnitTests \
             -resultBundlePath TestResults \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            | xcpretty || true
+            2>&1 | tee test-output.log | xcpretty || true
+
+      # The run above is tolerant ON PURPOSE, and this step is why.
+      #
+      # There is a PRE-EXISTING crash in ShareCardViewModel's isolated deinit
+      # (swift_task_deinitOnExecutorMainActorBackDeploy) that aborts the host
+      # app during teardown, so xcodebuild exits non-zero even when every test
+      # passes. Failing the job on that exit code would block every PR on a bug
+      # unrelated to the change under review.
+      #
+      # So: assert on actual TEST FAILURES instead. Real regressions break the
+      # build; the known teardown crash does not. Delete this step and restore
+      # a plain non-zero check once the deinit crash is fixed.
+      - name: Assert no test failures
+        run: |
+          FAILED=$(grep -cE "^Test Case .* failed" test-output.log || true)
+          PASSED=$(grep -cE "^Test Case .* passed" test-output.log || true)
+          echo "passed=$PASSED failed=$FAILED"
+          if [ "$PASSED" -eq 0 ]; then
+            echo "::error::No tests executed — the suite did not run."
+            exit 1
+          fi
+          if [ "$FAILED" -ne 0 ]; then
+            echo "::error::$FAILED test(s) failed."
+            grep -E "^Test Case .* failed" test-output.log || true
+            exit 1
+          fi
 
       - name: Upload test results
         if: always()

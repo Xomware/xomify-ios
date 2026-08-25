@@ -36,12 +36,12 @@ private func makeSavedTrack(id: String = UUID().uuidString) -> SpotifySavedTrack
             name: "Track \(id)",
             uri: "spotify:track:\(id)",
             durationMs: 180_000,
-            artists: [],
-            album: nil,
-            externalUrls: nil,
-            previewUrl: nil,
+            explicit: nil,
             popularity: nil,
-            explicit: nil
+            previewUrl: nil,
+            album: nil,
+            artists: [],
+            externalUrls: nil
         )
     )
 }

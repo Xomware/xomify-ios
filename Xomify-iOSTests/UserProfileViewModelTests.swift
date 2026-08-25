@@ -43,6 +43,8 @@ final class UserProfileViewModelTests: XCTestCase {
             playlistCount: nil,
             friendsCount: friends,
             shareCount: shares,
+            likesCount: nil,
+            likesUpdatedAt: nil,
             topSongs: nil,
             topArtists: nil,
             topGenres: nil,
