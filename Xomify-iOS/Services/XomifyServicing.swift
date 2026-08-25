@@ -59,6 +59,25 @@ protocol XomifyServicing: Sendable {
     func unregisterPushToken(
         deviceToken: String
     ) async throws -> SuccessResponse
+
+    /// Upsert with the full per-kind preference map.
+    ///
+    /// `preferences` is SPARSE: only flags the user has actually touched. The
+    /// backend leaves anything absent untouched, which is what allows new
+    /// notification kinds to ship without backfilling every device row.
+    /// Returns the effective map — every kind, defaults resolved — so Settings
+    /// can render all sixteen rows from one response.
+    func registerPushToken(
+        deviceToken: String,
+        preferences: [String: Bool]
+    ) async throws -> [String: Bool]
+
+    // MARK: - Notification inbox
+
+    func fetchNotifications(limit: Int, cursor: String?) async throws -> InboxPage
+    func markNotificationRead(tsId: String) async throws
+    func markAllNotificationsRead() async throws
+    func fetchUnreadNotificationCount() async throws -> Int
 }
 
 // Conformance on the real service — ensures production callers can keep using

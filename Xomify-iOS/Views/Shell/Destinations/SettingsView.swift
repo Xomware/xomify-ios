@@ -70,6 +70,17 @@ struct SettingsView: View {
             .accessibilityHint("Weekly digest push notifications")
             .frame(minHeight: 44)
 
+            // Every kind gets its own toggle behind here. The two above stay
+            // inline because they are the ones people actually hunt for.
+            NavigationLink {
+                NotificationPreferencesView()
+            } label: {
+                Label("All notifications", systemImage: "slider.horizontal.3")
+                    .foregroundStyle(.white)
+            }
+            .frame(minHeight: 44)
+            .accessibilityHint("Per-type notification settings")
+
             if viewModel.authorizationStatus == .denied,
                let url = viewModel.systemSettingsURL {
                 Link(destination: url) {

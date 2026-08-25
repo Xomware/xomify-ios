@@ -667,6 +667,54 @@ actor XomifyService {
         ])
     }
 
+    /// Upsert with the full per-kind preference map (relaunch epic, B2).
+    ///
+    /// Sends ONLY the flags supplied. The backend treats an absent flag as
+    /// "leave it alone" and falls back to its registry default when reading —
+    /// sending all sixteen every time would freeze today's defaults onto the
+    /// row and break that.
+    func registerPushToken(
+        deviceToken: String,
+        preferences: [String: Bool]
+    ) async throws -> [String: Bool] {
+        var body: [String: Any] = ["deviceToken": deviceToken]
+        if !preferences.isEmpty { body["preferences"] = preferences }
+
+        let response: NotificationRegisterResponse =
+            try await network.xomifyPost("/notifications/register", body: body)
+        return response.preferences ?? [:]
+    }
+
+    // MARK: - Notification inbox
+
+    func fetchNotifications(limit: Int, cursor: String?) async throws -> InboxPage {
+        // queryParams, NOT string interpolation: a tsId contains '#'. Spliced
+        // into the path raw it terminates the query string and the cursor
+        // silently vanishes — the client would then re-request page one
+        // forever. URLComponents encodes it.
+        var params = ["limit": String(limit)]
+        if let cursor { params["cursor"] = cursor }
+        return try await network.xomifyGet("/notifications/feed", queryParams: params)
+    }
+
+    func markNotificationRead(tsId: String) async throws {
+        let _: SuccessResponse = try await network.xomifyPost(
+            "/notifications/read", body: ["tsId": tsId]
+        )
+    }
+
+    func markAllNotificationsRead() async throws {
+        let _: SuccessResponse = try await network.xomifyPost(
+            "/notifications/read", body: ["all": true]
+        )
+    }
+
+    func fetchUnreadNotificationCount() async throws -> Int {
+        let response: UnreadCountResponse =
+            try await network.xomifyGet("/notifications/unread-count")
+        return response.unread ?? 0
+    }
+
     // MARK: - Likes
 
     /// Push the caller's top-200 saved tracks to the backend.

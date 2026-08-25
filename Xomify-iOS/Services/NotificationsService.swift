@@ -14,6 +14,7 @@ import UserNotifications
 /// `ShareComposerViewModel`, `FriendsViewModel`, `SettingsViewModel`, and the
 /// `AppDelegate`. `SettingsViewModel` mediates preference flips.
 @MainActor
+@Observable
 final class NotificationsService: NSObject {
 
     // MARK: - Singleton
@@ -30,7 +31,23 @@ final class NotificationsService: NSObject {
     /// detached shell alive during unit tests.
     weak var navigationStore: NavigationStore?
 
+    // MARK: - Observable state
+
+    /// Drives the bell badge in the shell header. Bumped locally on a
+    /// foreground push and on mark-read so the badge never lags the UI, and
+    /// reconciled against the server whenever the inbox is opened.
+    var unreadCount: Int = 0
+
+    /// Per-kind opt-ins, sparse — only what the user has actually touched.
+    /// Hydrated from the server's effective map on every successful register.
+    var preferences = NotificationPreferences()
+
     // MARK: - UserDefaults keys
+
+    /// JSON blob of the sparse preference map. Survives relaunch so Settings
+    /// renders the user's real choices before the first network round-trip
+    /// instead of flashing defaults at them.
+    static let preferencesKey = "notifications.preferences.v2"
 
     /// Flipped to `true` the first time we call `requestAuthorization`, whether
     /// the user grants or denies. Prevents re-prompting (iOS silently drops
@@ -63,6 +80,31 @@ final class NotificationsService: NSObject {
         self.xomify = xomify
         self.defaults = defaults
         super.init()
+        self.preferences = Self.loadPreferences(from: defaults)
+    }
+
+    private static func loadPreferences(from defaults: UserDefaults) -> NotificationPreferences {
+        guard let data = defaults.data(forKey: preferencesKey),
+              let flags = try? JSONDecoder().decode([String: Bool].self, from: data) else {
+            // Migration from the two-flag era: carry the old keys forward so a
+            // user who had already turned the digest off does not silently get
+            // it back on upgrade.
+            var flags: [String: Bool] = [:]
+            if let queue = defaults.object(forKey: queueEnabledKey) as? Bool {
+                flags["queueNotificationsEnabled"] = queue
+            }
+            if let digest = defaults.object(forKey: digestEnabledKey) as? Bool {
+                flags["digestEnabled"] = digest
+            }
+            return NotificationPreferences(flags: flags)
+        }
+        return NotificationPreferences(flags: flags)
+    }
+
+    private func persistPreferences() {
+        if let data = try? JSONEncoder().encode(preferences.flags) {
+            defaults.set(data, forKey: Self.preferencesKey)
+        }
     }
 
     // MARK: - Public API
@@ -122,18 +164,18 @@ final class NotificationsService: NSObject {
             return
         }
 
-        let queueEnabled = defaults.object(forKey: Self.queueEnabledKey) as? Bool ?? true
-        let digestEnabled = defaults.object(forKey: Self.digestEnabledKey) as? Bool ?? true
-
         // One retry on failure — token registration is non-critical, so we
         // don't surface errors to the user. Backend upsert is idempotent.
         for attempt in 1...2 {
             do {
-                _ = try await xomify.registerPushToken(
+                let effective = try await xomify.registerPushToken(
                     deviceToken: hex,
-                    queueNotificationsEnabled: queueEnabled,
-                    digestEnabled: digestEnabled
+                    preferences: preferences.flags
                 )
+                // The server's map is authoritative: it knows about kinds this
+                // build may not have shipped with.
+                preferences.merge(server: effective)
+                persistPreferences()
                 defaults.set(email, forKey: Self.cachedEmailKey)
                 print("✅ Notifications: device token registered (attempt \(attempt))")
                 return
@@ -149,17 +191,23 @@ final class NotificationsService: NSObject {
         print("ℹ️ Notifications: APNs registration failed — \(error.localizedDescription)")
     }
 
-    /// Flipped by `SettingsViewModel` when the user toggles either switch.
-    /// Re-POSTs to `/notifications/register` as an upsert using the cached token.
+    /// Flip one setting and upsert it.
     ///
-    /// Caller identity is taken from the JWT context server-side
-    /// (sub-feature 1f); this method only sends the token + preference flags.
-    /// We still gate on having a session anchor (cached email or current
-    /// Spotify user) to avoid issuing register requests for signed-out users.
-    func updatePreferences(queueNotificationsEnabled: Bool, digestEnabled: Bool) async {
+    /// Sends ONLY the flags the user has touched. Sending all sixteen would
+    /// freeze today's defaults onto the device row and break the backend's
+    /// absent-means-registry-default fallback — the thing that lets new kinds
+    /// ship without a backfill.
+    ///
+    /// Local state is updated FIRST so the toggle responds instantly; a failed
+    /// round-trip leaves the local value in place and the next successful
+    /// register reconciles it. A switch that springs back under your finger is
+    /// worse than one that is briefly optimistic.
+    func setPreference(_ flag: String, enabled: Bool) async {
+        preferences.set(flag, enabled)
+        persistPreferences()
+
         guard let hex = defaults.string(forKey: Self.cachedTokenKey) else {
-            // No token yet — next `handleDeviceToken` call will pick up the
-            // latest flags from UserDefaults and POST them.
+            // No token yet — the next handleDeviceToken sends the whole map.
             return
         }
         let hasCachedEmail = defaults.string(forKey: Self.cachedEmailKey)?.isEmpty == false
@@ -167,13 +215,49 @@ final class NotificationsService: NSObject {
         guard hasCachedEmail || hasCurrentSpotifyEmail else { return }
 
         do {
-            _ = try await xomify.registerPushToken(
+            let effective = try await xomify.registerPushToken(
                 deviceToken: hex,
-                queueNotificationsEnabled: queueNotificationsEnabled,
-                digestEnabled: digestEnabled
+                preferences: preferences.flags
             )
+            preferences.merge(server: effective)
+            persistPreferences()
         } catch {
-            print("❌ Notifications: updatePreferences failed — \(error.localizedDescription)")
+            print("❌ Notifications: setPreference failed — \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Inbox
+
+    /// One page of the inbox, newest first.
+    func fetchInbox(cursor: String? = nil) async throws -> InboxPage {
+        try await xomify.fetchNotifications(limit: 25, cursor: cursor)
+    }
+
+    /// Refresh the badge from the server. Failures hold the previous value —
+    /// a transient error should not blank a badge the user was relying on.
+    func refreshUnreadCount() async {
+        do {
+            unreadCount = try await xomify.fetchUnreadNotificationCount()
+        } catch {
+            print("ℹ️ Notifications: unread count refresh failed — \(error.localizedDescription)")
+        }
+    }
+
+    func markRead(_ tsId: String) async {
+        unreadCount = max(0, unreadCount - 1)
+        do {
+            try await xomify.markNotificationRead(tsId: tsId)
+        } catch {
+            print("ℹ️ Notifications: markRead failed — \(error.localizedDescription)")
+        }
+    }
+
+    func markAllRead() async {
+        unreadCount = 0
+        do {
+            try await xomify.markAllNotificationsRead()
+        } catch {
+            print("ℹ️ Notifications: markAllRead failed — \(error.localizedDescription)")
         }
     }
 
@@ -228,29 +312,26 @@ final class NotificationsService: NSObject {
 
 extension NotificationsService: UNUserNotificationCenterDelegate {
 
-    /// Foreground presentation. Queue-threshold pushes still show a banner +
-    /// play a sound (the user likely wants immediate feedback). Digest pushes
-    /// are suppressed in-app — if the user is already in the app, they don't
-    /// need a banner telling them to come check it out.
+    /// Foreground presentation, decided per kind by
+    /// `PushKind.interruptsInForeground`.
+    ///
+    /// The rule: if the user is already in the app, anything they can see for
+    /// themselves is noise. Social events and playlist drops still earn a
+    /// banner; the weekly digest, broadcasts and the yearly favorites nudge do
+    /// not — they are catch-up content, and the inbox is where catch-up lives.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         let payload = PushPayload(userInfo: notification.request.content.userInfo)
-        switch payload.kind {
-        case .digest:
-            completionHandler([])
-        case .queueThreshold, .unknown:
-            completionHandler([.banner, .sound])
-        }
+        // A newly-arrived push is unread by definition — keep the badge honest
+        // without waiting for the next inbox open.
+        unreadCount += 1
+        completionHandler(payload.kind.interruptsInForeground ? [.banner, .sound] : [])
     }
 
-    /// Push-open routing. `shareId` → route to the Feed tab so the user lands
-    /// on the list that contains the share. `digest` → route to Feed tab too.
-    ///
-    /// The `Share`-detail destination does not yet exist as a drawer
-    /// destination; the Feed tab is the correct landing spot until it does.
+    /// Push-open routing, driven by the backend's `route` token.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -265,12 +346,47 @@ extension NotificationsService: UNUserNotificationCenterDelegate {
     /// Dispatch a parsed push-open payload into the navigation layer. Split
     /// from the delegate callback so tests can drive it directly.
     func handlePushOpen(payload: PushPayload) {
-        switch payload.kind {
-        case .queueThreshold, .digest:
-            navigationStore?.select(.feed)
-        case .unknown:
-            // Nothing to route — leave the user wherever they were.
+        guard let destination = Self.destination(for: payload) else {
+            // Nothing sensible to route to — leave the user where they were
+            // rather than yanking them somewhere arbitrary.
             return
+        }
+        navigationStore?.select(destination)
+    }
+
+    /// Translate a backend route token into a drawer destination.
+    ///
+    /// The tokens are SHARED WITH WEB, where the same strings resolve to
+    /// Angular routes. Anything unrecognised returns nil — a client that only
+    /// half-understands a newer backend should do nothing, not guess.
+    ///
+    /// `share:<id>` lands on Feed rather than a detail screen: there is still
+    /// no share-detail drawer destination, and Feed is the list containing it.
+    static func destination(for payload: PushPayload) -> SidebarDestination? {
+        let token = payload.route ?? ""
+        let head = token.split(separator: ":").first.map(String.init) ?? token
+
+        switch head {
+        case "share", "shares":     return .feed
+        case "friend", "friends":   return .friends
+        case "invite":              return .friends
+        case "wrapped":             return .wrapped
+        case "release_radar":       return .releaseRadar
+        case "favorites":           return .profile
+        case "home":                return .feed
+        default:
+            // No usable route. Fall back on the kind for the pre-registry
+            // payloads that predate `route` entirely.
+            switch payload.kind {
+            case .queueThreshold, .digest, .shareReceived, .shareComment,
+                 .shareReaction, .shareListened, .shareRated, .rateReminder:
+                return .feed
+            case .friendRequest, .friendAccepted, .inviteReceived, .inviteAccepted:
+                return .friends
+            case .wrappedDrop:      return .wrapped
+            case .releaseRadarDrop: return .releaseRadar
+            default:                return nil
+            }
         }
     }
 }

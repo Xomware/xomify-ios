@@ -12,7 +12,12 @@ struct HeaderBar: View {
     var avatarURL: URL? = nil
 
     @State private var isInboxPresented = false
-    @State private var unreadCount: Int = 0
+    /// Observed rather than @State: the service bumps this on a foreground
+    /// push and on mark-read, so the badge stays honest without the header
+    /// having to re-poll.
+    private let notifications = NotificationsService.shared
+
+    private var unreadCount: Int { notifications.unreadCount }
 
     var body: some View {
         ZStack {
@@ -86,9 +91,15 @@ struct HeaderBar: View {
         .accessibilityValue(unreadCount > 0 ? "\(unreadCount) unread" : "No unread")
     }
 
+    /// Server-backed, not the OS tray.
+    ///
+    /// This used to count `deliveredNotifications()` — the iOS tray — which
+    /// meant the badge dropped to zero the moment the user swiped their tray
+    /// clear, showed nothing for a user who had denied permission, and never
+    /// reflected anything that arrived while push was muted. The inbox is
+    /// per-user server state; the badge should read the same source.
     private func refreshUnread() async {
-        let delivered = await UNUserNotificationCenter.current().deliveredNotifications()
-        unreadCount = delivered.count
+        await notifications.refreshUnreadCount()
     }
 
     // MARK: - Avatar

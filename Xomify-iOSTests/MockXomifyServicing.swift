@@ -52,6 +52,62 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
         return SuccessResponse(success: true)
     }
 
+    // MARK: - Per-kind preferences (relaunch epic, B2/B8)
+
+    struct PreferenceRegisterCall: Equatable {
+        let deviceToken: String
+        let preferences: [String: Bool]
+    }
+
+    private(set) var preferenceRegisterCalls: [PreferenceRegisterCall] = []
+
+    /// What the server "already knows". Merged over whatever the client sends,
+    /// so tests can model the effective-map behaviour.
+    var storedPreferences: [String: Bool] = [:]
+
+    func registerPushToken(
+        deviceToken: String,
+        preferences: [String: Bool]
+    ) async throws -> [String: Bool] {
+        preferenceRegisterCalls.append(
+            PreferenceRegisterCall(deviceToken: deviceToken, preferences: preferences)
+        )
+        if let registerError { throw registerError }
+        for (key, value) in preferences { storedPreferences[key] = value }
+        return storedPreferences
+    }
+
+    // MARK: - Inbox
+
+    var inboxPages: [InboxPage] = []
+    var unreadCount: Int = 0
+    var inboxError: Error?
+    private(set) var markReadCalls: [String] = []
+    private(set) var markAllReadCallCount = 0
+    private(set) var fetchCursors: [String?] = []
+
+    func fetchNotifications(limit: Int, cursor: String?) async throws -> InboxPage {
+        fetchCursors.append(cursor)
+        if let inboxError { throw inboxError }
+        guard !inboxPages.isEmpty else { return InboxPage(items: [], nextCursor: nil) }
+        return inboxPages.removeFirst()
+    }
+
+    func markNotificationRead(tsId: String) async throws {
+        markReadCalls.append(tsId)
+        if let inboxError { throw inboxError }
+    }
+
+    func markAllNotificationsRead() async throws {
+        markAllReadCallCount += 1
+        if let inboxError { throw inboxError }
+    }
+
+    func fetchUnreadNotificationCount() async throws -> Int {
+        if let inboxError { throw inboxError }
+        return unreadCount
+    }
+
     // MARK: - Friends (unused — returned as empty / success stubs)
 
     func getAllFriends(email: String) async throws -> FriendsAllResponse {
