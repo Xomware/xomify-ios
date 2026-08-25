@@ -3,7 +3,7 @@
 **Epic**: [xomify-relaunch](https://github.com/Xomware/xomify-frontend/blob/master/docs/features/xomify-relaunch/PLAN.md)
 **Sub-feature ID**: C4 (`ios-native-polish`)
 **Track**: C — iOS Parity + Visual Overhaul
-**Status**: Draft
+**Status**: Done (partial — scope narrowed, see below)
 **Created**: 2026-08-24
 **Last updated**: 2026-08-24
 **Scope size**: TBD — run `/plan ios-native-polish` to size
@@ -43,3 +43,86 @@ _Stub — define with `/plan ios-native-polish`._
 
 Locked decisions live in the epic plan and must not be re-litigated here. See
 `https://github.com/Xomware/xomify-frontend/blob/master/docs/features/xomify-relaunch/PLAN.md` — decisions table, rows 1-11.
+
+---
+
+## Outcome
+
+Debug and Release both **BUILD SUCCEEDED**.
+
+| Change | Where |
+|--------|-------|
+| `Haptics` utility | `Utilities/Haptics.swift` (new) |
+| Queue / play feedback | `QueueActionController` — one place, every call site |
+| Rating feedback | `ShareCardViewModel`, `ShareDetailViewModel` |
+| Share-sent feedback | `ShareComposerViewModel` |
+| Drawer + selection feedback | `NavigationStore` |
+| Header material | `HeaderBar` — `.ultraThinMaterial` |
+| Drawer motion | `easeInOut(0.25)` → `XomMotion.spring` |
+| **Bug fix** | `MainShell` background damper (see below) |
+
+### Haptics live at the controller, not the button
+
+Every queue and play in the app funnels through `QueueActionController`, so one pair of
+calls there covers every call site — and only on the success path, so a failure never feels
+like it worked.
+
+**The rule applied throughout: haptics confirm a state change the user caused.** Navigation
+does not qualify — the screen moving is its own feedback, and buzzing on every push makes a
+phone feel broken rather than responsive. Hence `selection()` for picking a destination or
+setting a star, `success()` for queueing and for sending a share, `failure()` on the paths
+that visibly revert.
+
+Ratings fire on the **optimistic** set rather than the response: the star fills instantly,
+and feedback that lags the pixels reads as a bug.
+
+### Spring, not a timed curve
+
+`easeInOut` and a spring look similar until the user interrupts. A spring retargets from
+wherever the drawer actually is; a timed curve snaps. That is the whole difference between a
+drawer that feels physical and one that feels scripted.
+
+---
+
+## 🐛 Bug fixed here, introduced in C3
+
+`MainShell` rendered `SpaceBackground().opacity(0.35)`. That damper existed for the old
+blob background, which was loud enough to need it. `SpaceBackground` is already tuned for
+this slot — star alpha capped at 0.30, nebula at 0.20 — so multiplying again crushed it to
+roughly 10% and the starfield was very nearly invisible.
+
+C3 replaced the component and left the caller's damper in place. Removed. **The starfield
+will now be substantially more visible than in the build C3 shipped**, which is the intent,
+but it is a visible change nobody has looked at yet.
+
+---
+
+## Scope deliberately narrowed
+
+### Large titles: NOT done, and should not be
+
+The plan called for large-title navigation. **That is architecturally wrong for this app.**
+`MainShell` renders a custom `HeaderBar` — the banner logo wordmark — *above* the
+`NavigationStack`. All 33 screens use `.inline` for that reason. Switching to `.large` would
+stack a big system title directly beneath the logo: two competing headers on every screen.
+
+The plan assumed a stock navigation architecture this app does not have.
+
+### Context menus and `matchedGeometryEffect`: NOT done
+
+Both were in scope and both are deferred. Context menus mean restructuring every track row's
+action affordance; `matchedGeometryEffect` on art→detail is a cross-screen transition. They
+are the two highest-risk items in C4, and there is currently **no way to verify either** —
+no test target, and no device in this loop. Shipping them blind on top of C3's 114
+unreviewed visual changes is how the landing page broke.
+
+They remain open. C4 is honestly partial.
+
+---
+
+## ⚠️ Verification
+
+Builds only. **No device pass, no automated tests** — the iOS test target still does not
+exist (see the B8 plan). Haptics in particular cannot be verified by a compiler at all:
+their correctness is entirely about whether they fire at the right moment and at the right
+weight, which is a thing you feel.

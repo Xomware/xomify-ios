@@ -19,10 +19,13 @@ struct MainShell: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            // Ambient brand background — wandering blurred blobs + occasional
-            // lightning. Purely decorative; hit-testing disabled.
+            // Ambient starfield. Purely decorative; hit-testing disabled.
+            //
+            // NO extra opacity here. The old blob background was loud enough
+            // to need damping to 0.35 at this call site; SpaceBackground is
+            // already tuned for this slot (star alpha capped at 0.30, nebula
+            // at 0.20), so multiplying again crushed it to invisible.
             SpaceBackground()
-                .opacity(0.35)
 
             // Primary content: header bar + full-screen destination.
             VStack(spacing: 0) {

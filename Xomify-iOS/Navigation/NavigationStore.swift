@@ -51,13 +51,18 @@ final class NavigationStore {
     // MARK: - Drawer control
 
     func openDrawer() {
-        withAnimation(.easeInOut(duration: 0.25)) {
+        // Spring, not a timed curve. A drawer is a physical object being
+        // pulled — and unlike easeInOut, a spring survives interruption: if
+        // the user grabs it mid-open it retargets from wherever it actually
+        // is, instead of snapping.
+        withAnimation(XomMotion.spring) {
+            Haptics.light()
             isDrawerOpen = true
         }
     }
 
     func closeDrawer() {
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(XomMotion.spring) {
             isDrawerOpen = false
         }
     }
@@ -66,7 +71,10 @@ final class NavigationStore {
     /// drawer in a single animation block so the dismiss + content swap happen
     /// together without an intermediate flash.
     func select(_ destination: SidebarDestination) {
-        withAnimation(.easeInOut(duration: 0.25)) {
+        // Selection tick, not success: picking a destination is navigation,
+        // and the screen changing is its own confirmation.
+        Haptics.selection()
+        withAnimation(XomMotion.spring) {
             currentDestination = destination
             isDrawerOpen = false
         }
