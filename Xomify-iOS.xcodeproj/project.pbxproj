@@ -151,7 +151,6 @@
 				DDE575BAF70D30E456BD526A /* SharesByUserViewModelTests.swift */,
 				A149D18F0C9C45FE02DF2FFE /* UserProfileViewModelTests.swift */,
 			);
-			name = "Xomify-iOSTests";
 			path = "Xomify-iOSTests";
 			sourceTree = SOURCE_ROOT;
 		};

@@ -67,7 +67,7 @@ struct InvitesView: View {
                                 .padding(.horizontal, 14).padding(.vertical, 8)
                                 .background(Color.xomifyGreen)
                                 .foregroundColor(.black)
-                                .cornerRadius(16)
+                                .cornerRadius(XomRadius.xxl)
                             }
                         }
 
@@ -83,7 +83,7 @@ struct InvitesView: View {
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             .background(Color.white.opacity(0.1))
                             .foregroundColor(.white)
-                            .cornerRadius(16)
+                            .cornerRadius(XomRadius.xxl)
                         }
 
                         if let urlString = viewModel.shareUrl {
@@ -99,7 +99,7 @@ struct InvitesView: View {
                                 .padding(.horizontal, 14).padding(.vertical, 8)
                                 .background(Color.white.opacity(0.1))
                                 .foregroundColor(.white)
-                                .cornerRadius(16)
+                                .cornerRadius(XomRadius.xxl)
                             }
                         }
                     }
@@ -129,7 +129,7 @@ struct InvitesView: View {
                 .padding()
                 .background(LinearGradient.xomifyGradient)
                 .foregroundColor(.white)
-                .cornerRadius(25)
+                .cornerRadius(XomRadius.pill)
             }
             .disabled(viewModel.isGenerating || userEmail == nil)
         }
@@ -147,7 +147,7 @@ struct InvitesView: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.xomifyCard)
-        .cornerRadius(12)
+        .cornerRadius(XomRadius.xl)
     }
 
     // MARK: - Accept section
@@ -166,7 +166,7 @@ struct InvitesView: View {
                 .textInputAutocapitalization(.never)
                 .padding()
                 .background(Color.white.opacity(0.05))
-                .cornerRadius(10)
+                .cornerRadius(XomRadius.lg)
                 .foregroundColor(.white)
 
             Button {
@@ -187,7 +187,7 @@ struct InvitesView: View {
                 .padding()
                 .background(Color.xomifyPurple)
                 .foregroundColor(.white)
-                .cornerRadius(25)
+                .cornerRadius(XomRadius.pill)
             }
             .disabled(viewModel.isAccepting || viewModel.codeInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || userEmail == nil)
 

@@ -3,7 +3,7 @@
 **Epic**: [xomify-relaunch](https://github.com/Xomware/xomify-frontend/blob/master/docs/features/xomify-relaunch/PLAN.md)
 **Sub-feature ID**: C4 (`ios-native-polish`)
 **Track**: C — iOS Parity + Visual Overhaul
-**Status**: Done (partial — scope narrowed, see below)
+**Status**: Done (context menus landed; matchedGeometryEffect blocked — see below)
 **Created**: 2026-08-24
 **Last updated**: 2026-08-24
 **Scope size**: TBD — run `/plan ios-native-polish` to size
@@ -126,3 +126,51 @@ Builds only. **No device pass, no automated tests** — the iOS test target stil
 exist (see the B8 plan). Haptics in particular cannot be verified by a compiler at all:
 their correctness is entirely about whether they fire at the right moment and at the right
 weight, which is a thing you feel.
+
+
+---
+
+## Follow-up: context menus landed, and a C3 correction
+
+### Context menus
+
+`TrackActionsMenu`'s button list is extracted into a shared `actionButtons`
+`@ViewBuilder`, and `.trackContextMenu(track:)` renders the same list on long-press.
+**One definition, two affordances** — which is the usual failure mode when a context menu
+gets bolted on beside an existing menu and the two slowly diverge.
+
+Attached to 8 row types (Album, Wrapped, Top Items, Artist, Mood Picks, Recently Played,
+Likes, Profile Recent).
+
+**Additive, deliberately.** The ellipsis button stays exactly where it is. A context menu is
+a shortcut for people who expect one, not a replacement for a visible affordance — an action
+that exists ONLY behind a long press is one most users never find, and it is invisible to a
+VoiceOver user navigating by element.
+
+An optional-aware overload exists because several rows resolve their `SpotifyTrack` lazily
+inside an `if let`, so the row's own modifier chain has no `track` in scope.
+
+### ⚠️ C3 correction: 92 radii were missed
+
+C3 claimed "zero hardcoded corner radii remain". **That was wrong.** Its sweep matched only
+the labelled form `cornerRadius: N` (used by `RoundedRectangle` and `.rect`). The positional
+modifier form — `.cornerRadius(N)` — was never touched, leaving **92 sites across 14 files**.
+
+Now converted with the same mapping. Both forms verified clean.
+
+### ⚠️ `matchedGeometryEffect`: not achievable on this deployment target
+
+Still not done, and it is worth recording *why* rather than leaving it as an open task.
+
+`matchedGeometryEffect` needs source and destination in the same view hierarchy sharing a
+namespace. Art→detail here is a `NavigationStack` push, where the source is torn down as the
+destination appears — the effect does not apply across that boundary. The modern answer is
+`.navigationTransition(.zoom(sourceID:in:))`, which is **iOS 18+**, and this app targets
+**iOS 17.0**.
+
+So the options are:
+1. Raise the deployment target to iOS 18 and use `.navigationTransition(.zoom)` — drops iOS 17 users.
+2. Build a custom overlay-based transition — real work, and fragile.
+3. Leave it.
+
+This is a product decision, not an implementation detail, and it is why the item stays open.

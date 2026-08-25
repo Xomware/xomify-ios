@@ -49,6 +49,29 @@ struct TrackActionsMenu: View {
 
     var body: some View {
         Menu {
+            actionButtons
+        } label: {
+            switch style {
+            case .icon: iconLabel
+            case .pill: pillLabel
+            }
+        }
+        .accessibilityLabel("More actions for \(track.name)")
+        .sheet(isPresented: $isComposerShown) {
+            ShareComposerView(viewModel: makeComposerViewModel()) { _ in
+                // Fire-and-forget: the feed refreshes on its own next appearance.
+                // Surfacing a global toast would require plumbing we don't have
+                // at this call-site, and the post is visible in Spotify anyway.
+            }
+        }
+    }
+
+    /// The action list itself, shared by the ellipsis menu and the long-press
+    /// context menu. One definition — two affordances that could otherwise
+    /// drift apart, which is the usual failure mode when a context menu is
+    /// bolted on beside an existing menu.
+    @ViewBuilder
+    var actionButtons: some View {
             Button {
                 if shareId != nil { onListened?() }
                 Task { await queueAction.play(uri: resolvedUri, trackName: track.name, shareId: shareId) }
@@ -96,20 +119,6 @@ struct TrackActionsMenu: View {
                     Label("Delete post", systemImage: "trash")
                 }
             }
-        } label: {
-            switch style {
-            case .icon: iconLabel
-            case .pill: pillLabel
-            }
-        }
-        .accessibilityLabel("More actions for \(track.name)")
-        .sheet(isPresented: $isComposerShown) {
-            ShareComposerView(viewModel: makeComposerViewModel()) { _ in
-                // Fire-and-forget: the feed refreshes on its own next appearance.
-                // Surfacing a global toast would require plumbing we don't have
-                // at this call-site, and the post is visible in Spotify anyway.
-            }
-        }
     }
 
     // MARK: - Labels

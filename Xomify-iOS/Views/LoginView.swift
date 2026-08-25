@@ -52,7 +52,7 @@ struct LoginView: View {
                         .padding()
                         .background(Color(red: 29/255, green: 185/255, blue: 84/255))
                         .foregroundColor(.white)
-                        .cornerRadius(30)
+                        .cornerRadius(XomRadius.pill)
                     }
                     .disabled(isLoading)
                     

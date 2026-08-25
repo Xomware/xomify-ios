@@ -75,7 +75,7 @@ struct AlbumView: View {
                     .fill(Color.gray.opacity(0.3))
             }
             .frame(width: 220, height: 220)
-            .cornerRadius(12)
+            .cornerRadius(XomRadius.xl)
             .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
             
             // Album Info
@@ -99,7 +99,7 @@ struct AlbumView: View {
                             .padding(.vertical, 4)
                             .background(Color.xomifyPurple.opacity(0.3))
                             .foregroundColor(.xomifyPurple)
-                            .cornerRadius(12)
+                            .cornerRadius(XomRadius.xl)
                     }
                     
                     if let year = album.year {
@@ -139,7 +139,7 @@ struct AlbumView: View {
                         .padding(.vertical, 14)
                         .background(Color(red: 29/255, green: 185/255, blue: 84/255))
                         .foregroundColor(.white)
-                        .cornerRadius(30)
+                        .cornerRadius(XomRadius.pill)
                     }
                 }
                 
@@ -155,7 +155,7 @@ struct AlbumView: View {
                         .padding(.vertical, 14)
                         .background(Color.white.opacity(0.1))
                         .foregroundColor(.white)
-                        .cornerRadius(30)
+                        .cornerRadius(XomRadius.pill)
                     }
                 }
             }
@@ -175,7 +175,7 @@ struct AlbumView: View {
                     .padding(.vertical, 12)
                     .background(Color.xomifyPurple.opacity(0.2))
                     .foregroundColor(.xomifyPurple)
-                    .cornerRadius(25)
+                    .cornerRadius(XomRadius.pill)
                 }
             }
         }
@@ -241,7 +241,7 @@ struct AlbumView: View {
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
                     .background(Color.gray.opacity(0.3))
-                    .cornerRadius(2)
+                    .cornerRadius(XomRadius.sm)
             }
             
             // Duration
@@ -251,6 +251,7 @@ struct AlbumView: View {
             
             TrackActionsMenu(track: track)
         }
+        .trackContextMenu(track: track)
         .padding(.horizontal)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
@@ -287,7 +288,7 @@ struct AlbumView: View {
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.top, 60)

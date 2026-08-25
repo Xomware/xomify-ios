@@ -45,7 +45,7 @@ struct QueueBuilderView: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                 .background(selectedPanel == 0 ? Color.xomifyPurple.opacity(0.3) : Color.clear)
                 .foregroundColor(selectedPanel == 0 ? .xomifyPurple : .gray)
-                .cornerRadius(10)
+                .cornerRadius(XomRadius.lg)
             }
             
             Button { withAnimation { selectedPanel = 1 } } label: {
@@ -60,7 +60,7 @@ struct QueueBuilderView: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                 .background(selectedPanel == 1 ? Color.xomifyGreen.opacity(0.3) : Color.clear)
                 .foregroundColor(selectedPanel == 1 ? .xomifyGreen : .gray)
-                .cornerRadius(10)
+                .cornerRadius(XomRadius.lg)
             }
         }
         .padding(.horizontal).padding(.vertical, 8)
@@ -86,7 +86,7 @@ struct QueueBuilderView: View {
             }
             .padding()
             .background(Color.white.opacity(0.05))
-            .cornerRadius(12)
+            .cornerRadius(XomRadius.xl)
             .padding()
             
             // Results
@@ -126,7 +126,7 @@ struct QueueBuilderView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 48, height: 48)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
             
             // Track info
             VStack(alignment: .leading, spacing: 2) {
@@ -201,7 +201,7 @@ struct QueueBuilderView: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(Color.red.opacity(0.15))
-                            .cornerRadius(8)
+                            .cornerRadius(XomRadius.md)
                     }
                 }
                 .padding()
@@ -256,7 +256,7 @@ struct QueueBuilderView: View {
                             )
                         )
                         .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .cornerRadius(XomRadius.xl)
                     }
                 }
                 .padding()
@@ -281,7 +281,7 @@ struct QueueBuilderView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 40, height: 40)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
             
             // Track info
             VStack(alignment: .leading, spacing: 2) {
@@ -308,12 +308,12 @@ struct QueueBuilderView: View {
                     .foregroundColor(.gray)
                     .frame(width: 28, height: 28)
                     .background(Color.white.opacity(0.1))
-                    .cornerRadius(6)
+                    .cornerRadius(XomRadius.md)
             }
         }
         .padding(8)
         .background(Color.white.opacity(0.03))
-        .cornerRadius(8)
+        .cornerRadius(XomRadius.md)
     }
     
     // MARK: - Save Playlist Sheet
@@ -355,7 +355,7 @@ struct QueueBuilderView: View {
                 .foregroundColor(.gray)
                 .padding()
                 .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
+                .cornerRadius(XomRadius.md)
                 
                 Spacer()
                 
@@ -377,7 +377,7 @@ struct QueueBuilderView: View {
                     .padding()
                     .background(Color.xomifyGreen)
                     .foregroundColor(.black)
-                    .cornerRadius(12)
+                    .cornerRadius(XomRadius.xl)
                 }
                 .disabled(viewModel.playlistName.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isSaving)
             }

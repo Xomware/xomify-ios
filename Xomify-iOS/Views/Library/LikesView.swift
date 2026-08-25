@@ -188,6 +188,7 @@ struct LikesView: View {
                 TrackActionsMenu(track: track)
             }
         }
+        .trackContextMenu(track: spotifyTrack)
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)

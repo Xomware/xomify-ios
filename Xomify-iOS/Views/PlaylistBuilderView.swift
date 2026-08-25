@@ -102,7 +102,7 @@ struct PlaylistBuilderView: View {
                     .padding()
                     .background(Color(red: 29/255, green: 185/255, blue: 84/255))
                     .foregroundColor(.white)
-                    .cornerRadius(30)
+                    .cornerRadius(XomRadius.pill)
                 }
                 .padding(.horizontal, 40)
             }
@@ -187,7 +187,7 @@ struct PlaylistBuilderView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 44, height: 44)
-            .cornerRadius(4)
+            .cornerRadius(XomRadius.sm)
             
             // Track info
             VStack(alignment: .leading, spacing: 2) {
@@ -254,7 +254,7 @@ struct PlaylistBuilderView: View {
                         LinearGradient(colors: [.xomifyPurple, .xomifyGreen], startPoint: .leading, endPoint: .trailing)
                     )
                     .foregroundColor(.white)
-                    .cornerRadius(25)
+                    .cornerRadius(XomRadius.pill)
                 }
             }
             .padding()
@@ -291,7 +291,7 @@ struct PlaylistBuilderView: View {
                             .textFieldStyle(.plain)
                             .padding()
                             .background(Color.white.opacity(0.05))
-                            .cornerRadius(12)
+                            .cornerRadius(XomRadius.xl)
                             .foregroundColor(.white)
                     }
                     
@@ -306,7 +306,7 @@ struct PlaylistBuilderView: View {
                             .textFieldStyle(.plain)
                             .padding()
                             .background(Color.white.opacity(0.05))
-                            .cornerRadius(12)
+                            .cornerRadius(XomRadius.xl)
                             .foregroundColor(.white)
                     }
                     
@@ -324,7 +324,7 @@ struct PlaylistBuilderView: View {
                     .tint(.xomifyGreen)
                     .padding()
                     .background(Color.white.opacity(0.05))
-                    .cornerRadius(12)
+                    .cornerRadius(XomRadius.xl)
                 }
                 .padding(.horizontal)
                 
@@ -363,7 +363,7 @@ struct PlaylistBuilderView: View {
                         LinearGradient(colors: [.xomifyPurple, .xomifyGreen], startPoint: .leading, endPoint: .trailing)
                     )
                     .foregroundColor(.white)
-                    .cornerRadius(30)
+                    .cornerRadius(XomRadius.pill)
                 }
                 .disabled(viewModel.isCreating || viewModel.playlistName.isEmpty)
                 .padding(.horizontal)
@@ -403,7 +403,7 @@ struct PlaylistBuilderView: View {
                     }
                 }
                 .frame(width: 160, height: 160)
-                .cornerRadius(12)
+                .cornerRadius(XomRadius.xl)
             } else if let firstImage = images.first {
                 // Single image
                 AsyncImage(url: firstImage) { image in
@@ -412,7 +412,7 @@ struct PlaylistBuilderView: View {
                     Rectangle().fill(Color.gray.opacity(0.3))
                 }
                 .frame(width: 160, height: 160)
-                .cornerRadius(12)
+                .cornerRadius(XomRadius.xl)
             } else {
                 // Placeholder
                 RoundedRectangle(cornerRadius: XomRadius.xl)

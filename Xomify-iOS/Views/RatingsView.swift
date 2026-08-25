@@ -121,7 +121,7 @@ struct RatingsView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
     }
 
     private var emptyState: some View {
@@ -155,7 +155,7 @@ struct RatingsView: View {
                     .padding(.horizontal, 24).padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.horizontal, 40)

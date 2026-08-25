@@ -166,7 +166,7 @@ struct PlaylistBuilderTabView: View {
         }
         .padding()
         .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
+        .cornerRadius(XomRadius.xl)
         .padding()
     }
 
@@ -212,7 +212,7 @@ struct PlaylistBuilderTabView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 50, height: 50)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
 
             // Track info
             VStack(alignment: .leading, spacing: 4) {
@@ -250,7 +250,7 @@ struct PlaylistBuilderTabView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
     }
 
     // MARK: - Empty State
@@ -282,7 +282,7 @@ struct PlaylistBuilderTabView: View {
             }
             .padding()
             .background(Color.white.opacity(0.05))
-            .cornerRadius(16)
+            .cornerRadius(XomRadius.xxl)
             .padding(.horizontal, 40)
             .padding(.top, 20)
 
@@ -335,7 +335,7 @@ struct PlaylistBuilderTabView: View {
                     .padding()
                     .background(Color.spotifyGreen)
                     .foregroundColor(.white)
-                    .cornerRadius(30)
+                    .cornerRadius(XomRadius.pill)
                 }
                 .padding(.horizontal, 40)
             }
@@ -418,7 +418,7 @@ struct PlaylistBuilderTabView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 44, height: 44)
-            .cornerRadius(4)
+            .cornerRadius(XomRadius.sm)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.name)
@@ -480,7 +480,7 @@ struct PlaylistBuilderTabView: View {
                         )
                     )
                     .foregroundColor(.white)
-                    .cornerRadius(25)
+                    .cornerRadius(XomRadius.pill)
                 }
             }
             .padding()
@@ -513,7 +513,7 @@ struct PlaylistBuilderTabView: View {
                             .textFieldStyle(.plain)
                             .padding()
                             .background(Color.white.opacity(0.05))
-                            .cornerRadius(12)
+                            .cornerRadius(XomRadius.xl)
                             .foregroundColor(.white)
                     }
 
@@ -527,7 +527,7 @@ struct PlaylistBuilderTabView: View {
                             .textFieldStyle(.plain)
                             .padding()
                             .background(Color.white.opacity(0.05))
-                            .cornerRadius(12)
+                            .cornerRadius(XomRadius.xl)
                             .foregroundColor(.white)
                     }
 
@@ -544,7 +544,7 @@ struct PlaylistBuilderTabView: View {
                     .tint(Color.xomifyGreen)
                     .padding()
                     .background(Color.white.opacity(0.05))
-                    .cornerRadius(12)
+                    .cornerRadius(XomRadius.xl)
                 }
                 .padding(.horizontal)
 
@@ -585,7 +585,7 @@ struct PlaylistBuilderTabView: View {
                         )
                     )
                     .foregroundColor(.white)
-                    .cornerRadius(30)
+                    .cornerRadius(XomRadius.pill)
                 }
                 .disabled(viewModel.isCreating || viewModel.playlistName.isEmpty)
                 .padding(.horizontal)
@@ -624,7 +624,7 @@ struct PlaylistBuilderTabView: View {
                     }
                 }
                 .frame(width: 160, height: 160)
-                .cornerRadius(12)
+                .cornerRadius(XomRadius.xl)
             } else if let firstImage = images.first {
                 AsyncImage(url: firstImage) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
@@ -632,7 +632,7 @@ struct PlaylistBuilderTabView: View {
                     Rectangle().fill(Color.gray.opacity(0.3))
                 }
                 .frame(width: 160, height: 160)
-                .cornerRadius(12)
+                .cornerRadius(XomRadius.xl)
             } else {
                 RoundedRectangle(cornerRadius: XomRadius.xl)
                     .fill(Color.xomifyPurple.opacity(0.3))
