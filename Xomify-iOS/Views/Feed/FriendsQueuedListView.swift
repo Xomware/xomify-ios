@@ -54,7 +54,7 @@ struct FriendsQueuedListView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private func row(_ entry: ShareInteractionEntry) -> some View {
@@ -71,7 +71,7 @@ struct FriendsQueuedListView: View {
         }
         .padding(10)
         .background(Color.xomifyCard)
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     @ViewBuilder

@@ -459,10 +459,10 @@ struct WrappedContent: View {
             // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: XomRadius.sm)
                         .fill(Color.gray.opacity(0.2))
 
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: XomRadius.sm)
                         .fill(
                             LinearGradient(
                                 colors: [.xomifyGreen, .xomifyPurple],

@@ -54,9 +54,9 @@ struct ProfileRecentTab: View {
                     endPoint: .trailing
                 )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                     .stroke(Color.white.opacity(0.10), lineWidth: 1)
             )
         }
@@ -130,7 +130,7 @@ struct ProfileRecentTab: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     private func indexLabel(_ index: Int) -> some View {
@@ -153,11 +153,11 @@ struct ProfileRecentTab: View {
                 }
             }
             .frame(width: 44, height: 44)
-            .clipShape(.rect(cornerRadius: 6))
+            .clipShape(.rect(cornerRadius: XomRadius.md))
         } else {
             placeholder
                 .frame(width: 44, height: 44)
-                .clipShape(.rect(cornerRadius: 6))
+                .clipShape(.rect(cornerRadius: XomRadius.md))
         }
     }
 
@@ -189,7 +189,7 @@ struct ProfileRecentTab: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private func errorRow(_ message: String) -> some View {
@@ -205,6 +205,6 @@ struct ProfileRecentTab: View {
         }
         .padding(12)
         .background(Color.xomifyCard.opacity(0.6))
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 }

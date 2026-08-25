@@ -114,7 +114,7 @@ struct RecentlyPlayedView: View {
         }
         .padding(10)
         .background(Color.xomifyCard.opacity(0.5))
-        .clipShape(.rect(cornerRadius: 8))
+        .clipShape(.rect(cornerRadius: XomRadius.md))
     }
 
     // MARK: - Row
@@ -140,7 +140,7 @@ struct RecentlyPlayedView: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(index + 1). \(track.name) by \(artistNames(track))")
     }
@@ -166,11 +166,11 @@ struct RecentlyPlayedView: View {
                 }
             }
             .frame(width: 44, height: 44)
-            .clipShape(.rect(cornerRadius: 6))
+            .clipShape(.rect(cornerRadius: XomRadius.md))
         } else {
             albumArtPlaceholder
                 .frame(width: 44, height: 44)
-                .clipShape(.rect(cornerRadius: 6))
+                .clipShape(.rect(cornerRadius: XomRadius.md))
         }
     }
 
@@ -205,7 +205,7 @@ struct RecentlyPlayedView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 
     private func errorState(_ message: String) -> some View {
@@ -222,6 +222,6 @@ struct RecentlyPlayedView: View {
         }
         .padding(12)
         .background(Color.xomifyCard.opacity(0.6))
-        .clipShape(.rect(cornerRadius: 10))
+        .clipShape(.rect(cornerRadius: XomRadius.lg))
     }
 }

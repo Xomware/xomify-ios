@@ -112,7 +112,7 @@ struct ProfileRatingsTab: View {
                     endPoint: .trailing
                 )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens the full ratings history")
@@ -182,7 +182,7 @@ struct ProfileRatingsTab: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     @ViewBuilder
@@ -197,11 +197,11 @@ struct ProfileRatingsTab: View {
                 }
             }
             .frame(width: 44, height: 44)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
         } else {
             artworkPlaceholder
                 .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
         }
     }
 

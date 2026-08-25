@@ -106,7 +106,7 @@ struct AuthorPickerSheet: View {
             .padding(.vertical, 10)
             .frame(minHeight: 44)
             .background(Color.xomifyCard)
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: XomRadius.lg))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(identity.displayName)

@@ -197,7 +197,7 @@ struct RatingsHistoryView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         .padding(.horizontal, 16)
         .padding(.top, 8)
     }
@@ -514,10 +514,10 @@ private struct RatingCard: View {
             )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Double-tap to open in Spotify")
@@ -539,7 +539,7 @@ private struct RatingCard: View {
             }
         }
         .frame(width: 52, height: 52)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
         .overlay(alignment: .bottomTrailing) {
             Image(systemName: "star.fill")
                 .font(.caption2.weight(.black))

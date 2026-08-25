@@ -56,7 +56,7 @@ struct ProfilePlaylistsTab: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
     }
 
     private var list: some View {
@@ -80,7 +80,7 @@ struct ProfilePlaylistsTab: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 52, height: 52)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(playlist.name)
@@ -99,7 +99,7 @@ struct ProfilePlaylistsTab: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(playlist.name), \(playlist.tracks?.total ?? 0) tracks")

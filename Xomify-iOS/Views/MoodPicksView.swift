@@ -50,7 +50,7 @@ struct MoodPicksView: View {
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 44)
                     .background(LinearGradient.xomifyGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
                 }
                 .disabled(viewModel.isCreatingPlaylist)
                 .buttonStyle(.plain)

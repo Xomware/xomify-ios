@@ -88,7 +88,7 @@ struct ShareComposerView: View {
             }
             .padding(12)
             .background(Color.xomifyCard)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
 
             if !viewModel.searchResults.isEmpty, viewModel.selectedTrack == nil {
                 VStack(spacing: 6) {
@@ -115,9 +115,9 @@ struct ShareComposerView: View {
                     }
                 }
                 .frame(width: 40, height: 40)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
             } else {
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: XomRadius.md)
                     .fill(Color.xomifyPurple.opacity(0.3))
                     .frame(width: 40, height: 40)
             }
@@ -136,7 +136,7 @@ struct ShareComposerView: View {
         }
         .padding(8)
         .background(Color.xomifyCard.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
     }
 
     private func selectedTrackRow(_ track: SpotifyTrack) -> some View {
@@ -149,9 +149,9 @@ struct ShareComposerView: View {
                     }
                 }
                 .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: XomRadius.md)
                     .fill(Color.xomifyPurple.opacity(0.3))
                     .frame(width: 56, height: 56)
             }
@@ -179,7 +179,7 @@ struct ShareComposerView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
     }
 
     private var captionSection: some View {
@@ -203,7 +203,7 @@ struct ShareComposerView: View {
             .foregroundStyle(.white)
             .padding(12)
             .background(Color.xomifyCard)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
         }
     }
 
@@ -368,7 +368,7 @@ struct ShareComposerView: View {
             .padding(12)
             .frame(minHeight: 44)
             .background(Color.xomifyCard)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(viewModel.shareToPublic ? .isSelected : [])
@@ -377,11 +377,11 @@ struct ShareComposerView: View {
 
     private func checkbox(isOn: Bool) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous)
                 .fill(isOn ? Color.xomifyGreen : Color.clear)
                 .frame(width: 22, height: 22)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous)
                         .stroke(isOn ? Color.xomifyGreen : Color.white.opacity(0.3), lineWidth: 1.5)
                 )
             if isOn {

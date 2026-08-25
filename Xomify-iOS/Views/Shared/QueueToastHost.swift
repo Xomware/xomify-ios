@@ -31,8 +31,8 @@ struct QueueToastHost: View {
                         )
                 )
                 .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .padding(.horizontal, XomSpacing.lg)
+                .padding(.top, XomSpacing.md)
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .accessibilityAddTraits(.isStaticText)
             }

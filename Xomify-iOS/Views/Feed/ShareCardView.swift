@@ -66,7 +66,7 @@ struct ShareCardView: View {
         }
         .padding(14)
         .background(Color.xomifyCard)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: XomRadius.xl, style: .continuous))
         .task(id: viewerEmail) {
             // Parent feed resolves `userEmail` asynchronously; once it lands,
             // re-sync the VM so write paths and own-post detection use the
@@ -277,11 +277,11 @@ struct ShareCardView: View {
                 }
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
         } else {
             placeholderArt
                 .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
         }
     }
 

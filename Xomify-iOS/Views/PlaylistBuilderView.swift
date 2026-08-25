@@ -415,7 +415,7 @@ struct PlaylistBuilderView: View {
                 .cornerRadius(12)
             } else {
                 // Placeholder
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: XomRadius.xl)
                     .fill(Color.xomifyPurple.opacity(0.3))
                     .frame(width: 160, height: 160)
                     .overlay(

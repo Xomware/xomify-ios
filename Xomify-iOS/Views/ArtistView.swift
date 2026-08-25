@@ -197,7 +197,7 @@ struct ArtistView: View {
                 .foregroundColor(isFollowing ? .xomifyGreen : .black)
                 .cornerRadius(25)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 25)
+                    RoundedRectangle(cornerRadius: XomRadius.pill)
                         .stroke(isFollowing ? Color.xomifyGreen : Color.clear, lineWidth: 1)
                 )
             }
