@@ -66,18 +66,23 @@ private enum Starfield {
     /// texture, it is competing with the content.
     private static let alphaCeiling: Double = 0.30
 
-    private static var cache: [String: [Star]] = [:]
-
-    /// Deterministic per size, and memoised.
+    /// Deterministic per size. Recomputed on every draw, ON PURPOSE.
     ///
-    /// A seeded generator matters for more than tidiness: `Canvas` redraws on
-    /// every layout pass, and `Double.random` inside the draw closure would
+    /// The first version memoised into a `static var` dictionary. That is
+    /// shared mutable state written from inside a `Canvas` draw closure, which
+    /// does not run exclusively on the main thread — the result was heap
+    /// corruption (`malloc: pointer being freed was not allocated`) that
+    /// crashed the host app repeatedly under the test runner.
+    ///
+    /// There is nothing worth caching here: this is a seeded loop over ~160
+    /// stars. Recomputing is cheap, and being deterministic means the sky is
+    /// byte-identical every time anyway.
+    ///
+    /// The seeded generator itself is still load-bearing: `Canvas` redraws on
+    /// every layout pass, and `Double.random` in the draw closure would
     /// reshuffle the entire sky each time — the background would visibly
     /// twitch whenever anything above it resized.
     static func stars(for size: CGSize) -> [Star] {
-        let key = "\(Int(size.width))x\(Int(size.height))"
-        if let cached = cache[key] { return cached }
-
         var generator = SeededGenerator(seed: 0x5F0A_C1D0)
         // Scaled by area so a phone is not as dense as an iPad, clamped so a
         // small window still reads as a sky.
@@ -96,7 +101,6 @@ private enum Starfield {
                 )
             )
         }
-        cache[key] = stars
         return stars
     }
 }

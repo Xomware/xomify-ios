@@ -22,7 +22,7 @@ private func makeTrack(id: String = "track-1", name: String = "Test Track") -> S
         popularity: nil,
         previewUrl: nil,
         album: nil,
-        artists: [SpotifyArtist(id: "a1", name: "Artist", externalUrls: nil, images: nil)],
+        artists: [SpotifyArtist(id: "a1", name: "Artist", uri: nil, genres: nil, popularity: nil, followers: nil, images: nil, externalUrls: nil)],
         externalUrls: nil
     )
 }
