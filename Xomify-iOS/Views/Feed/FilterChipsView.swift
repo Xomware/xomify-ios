@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// Horizontal scroll of filter chips: `Friends` / per-group / per-refinement.
+/// Horizontal scroll of filter chips: `Friends` plus the refinement control.
 /// Backend-scope selection is driven by `FeedViewModel.selectedFilter`;
 /// the "Filters" chip opens a sheet that tunes client-side refinement.
+///
+/// Per-group chips were removed with the Groups feature — see FeedFilter.
 struct FilterChipsView: View {
 
     @Bindable var viewModel: FeedViewModel
@@ -12,10 +14,6 @@ struct FilterChipsView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 chip(for: .friends)
-
-                ForEach(viewModel.groups) { group in
-                    chip(for: .group(group))
-                }
 
                 Divider()
                     .frame(height: 18)

@@ -337,16 +337,6 @@ struct ShareComposerView: View {
 
             publicToggleRow
 
-            if viewModel.availableGroups.isEmpty {
-                emptyGroupsRow
-            } else {
-                VStack(spacing: 6) {
-                    ForEach(viewModel.availableGroups) { group in
-                        groupToggleRow(group)
-                    }
-                }
-            }
-
             if let hint = viewModel.targetState.hint {
                 Text(hint)
                     .font(.caption2)
@@ -383,49 +373,6 @@ struct ShareComposerView: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(viewModel.shareToPublic ? .isSelected : [])
         .accessibilityLabel(viewModel.shareToPublic ? "Friends feed selected" : "Friends feed")
-    }
-
-    private func groupToggleRow(_ group: XomifyGroup) -> some View {
-        let isSelected = viewModel.selectedGroupIds.contains(group.groupId)
-        return Button {
-            viewModel.toggleGroup(group.groupId)
-        } label: {
-            HStack(spacing: 12) {
-                checkbox(isOn: isSelected)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(group.displayName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    if let memberCount = group.memberCount {
-                        Text("\(memberCount) member\(memberCount == 1 ? "" : "s")")
-                            .font(.caption2)
-                            .foregroundStyle(.gray)
-                    }
-                }
-                Spacer()
-                Image(systemName: "person.3.fill")
-                    .font(.caption)
-                    .foregroundStyle(.gray)
-            }
-            .padding(12)
-            .frame(minHeight: 44)
-            .background(Color.xomifyCard)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private var emptyGroupsRow: some View {
-        Text("Join a group to post to it here.")
-            .font(.caption)
-            .foregroundStyle(.gray)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.xomifyCard.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func checkbox(isOn: Bool) -> some View {

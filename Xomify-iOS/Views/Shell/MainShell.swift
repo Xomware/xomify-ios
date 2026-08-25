@@ -98,8 +98,6 @@ struct MainShell: View {
             RatingsHistoryView()
         case .friends:
             FriendsView()
-        case .groups:
-            GroupsView()
         case .builder:
             PlaylistBuilderTabView()
         case .moodPicks:

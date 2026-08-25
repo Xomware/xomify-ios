@@ -40,7 +40,6 @@ struct FeedView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task {
             await viewModel.bootstrap()
-            await viewModel.loadGroupsForChips()
             // Consume any pending share deep link once the feed is loaded.
             await handlePendingShareDeepLink()
         }
@@ -72,7 +71,7 @@ struct FeedView: View {
         } else if viewModel.shares.isEmpty {
             FeedEmptyStateView(
                 onInviteFriend: { navStore.requestDeepLink(.friends) },
-                onCreateGroup:  { navStore.requestDeepLink(.groups) }
+                onBrowseFriends: { navStore.requestDeepLink(.friends) }
             )
             .overlay(alignment: .bottomTrailing) {
                 ComposerFAB { openComposer() }
