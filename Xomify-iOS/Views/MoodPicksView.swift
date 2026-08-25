@@ -105,7 +105,7 @@ struct MoodPicksView: View {
                                 : AnyShapeStyle(Color.white.opacity(0.08))
                         )
                         .foregroundColor(.white)
-                        .cornerRadius(18)
+                        .cornerRadius(XomRadius.xxl)
                     }
                     .disabled(viewModel.isLoading)
                     .buttonStyle(.plain)
@@ -183,7 +183,7 @@ struct MoodPicksView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 50, height: 50)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.name)
@@ -201,9 +201,10 @@ struct MoodPicksView: View {
 
             TrackActionsMenu(track: track)
         }
+        .trackContextMenu(track: track)
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
     }
 
     private func errorState(_ message: String) -> some View {

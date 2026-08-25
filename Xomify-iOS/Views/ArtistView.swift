@@ -115,7 +115,7 @@ struct ArtistView: View {
                                 .padding(.vertical, 6)
                                 .background(Color.white.opacity(0.1))
                                 .foregroundColor(.gray)
-                                .cornerRadius(16)
+                                .cornerRadius(XomRadius.xxl)
                         }
                     }
                     .padding(.horizontal)
@@ -154,7 +154,7 @@ struct ArtistView: View {
         }
         .padding(.vertical, 16)
         .background(Color.white.opacity(0.03))
-        .cornerRadius(12)
+        .cornerRadius(XomRadius.xl)
         .padding(.horizontal)
         .padding(.top, 16)
     }
@@ -195,7 +195,7 @@ struct ArtistView: View {
                 .padding(.vertical, 12)
                 .background(isFollowing ? Color.xomifyGreen.opacity(0.2) : Color.xomifyGreen)
                 .foregroundColor(isFollowing ? .xomifyGreen : .black)
-                .cornerRadius(25)
+                .cornerRadius(XomRadius.pill)
                 .overlay(
                     RoundedRectangle(cornerRadius: XomRadius.pill)
                         .stroke(isFollowing ? Color.xomifyGreen : Color.clear, lineWidth: 1)
@@ -216,7 +216,7 @@ struct ArtistView: View {
                     .padding(.vertical, 12)
                     .background(Color.white.opacity(0.1))
                     .foregroundColor(.white)
-                    .cornerRadius(25)
+                    .cornerRadius(XomRadius.pill)
                 }
             }
         }
@@ -251,7 +251,7 @@ struct ArtistView: View {
             .padding(.vertical, 10)
             .background(selectedSection == index ? Color.xomifyPurple.opacity(0.3) : Color.white.opacity(0.05))
             .foregroundColor(selectedSection == index ? .xomifyPurple : .gray)
-            .cornerRadius(10)
+            .cornerRadius(XomRadius.lg)
         }
     }
     
@@ -290,7 +290,7 @@ struct ArtistView: View {
                     .padding(.vertical, 12)
                     .background(Color.xomifyPurple.opacity(0.2))
                     .foregroundColor(.xomifyPurple)
-                    .cornerRadius(25)
+                    .cornerRadius(XomRadius.pill)
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 12)
@@ -326,7 +326,7 @@ struct ArtistView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 48, height: 48)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
             
             // Track info
             VStack(alignment: .leading, spacing: 4) {
@@ -346,6 +346,7 @@ struct ArtistView: View {
 
             TrackActionsMenu(track: track)
         }
+        .trackContextMenu(track: track)
         .padding(.horizontal)
         .padding(.vertical, 8)
         .contentShape(Rectangle())
@@ -383,7 +384,7 @@ struct ArtistView: View {
                     .fill(Color.gray.opacity(0.3))
             }
             .frame(height: 160)
-            .cornerRadius(8)
+            .cornerRadius(XomRadius.md)
             
             // Album Info
             VStack(alignment: .leading, spacing: 4) {
@@ -435,7 +436,7 @@ struct ArtistView: View {
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.top, 60)

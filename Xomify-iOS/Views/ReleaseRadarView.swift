@@ -246,7 +246,7 @@ struct ReleaseRadarView: View {
                         Rectangle().fill(Color.gray.opacity(0.3))
                     }
                     .frame(width: 70, height: 70)
-                    .cornerRadius(8)
+                    .cornerRadius(XomRadius.md)
                 }
             } else {
                 AsyncImage(url: release.image) { image in
@@ -255,7 +255,7 @@ struct ReleaseRadarView: View {
                     Rectangle().fill(Color.gray.opacity(0.3))
                 }
                 .frame(width: 70, height: 70)
-                .cornerRadius(8)
+                .cornerRadius(XomRadius.md)
             }
             
             // Release info
@@ -303,7 +303,7 @@ struct ReleaseRadarView: View {
                             .padding(.vertical, 3)
                             .background(badgeColor(for: type).opacity(0.2))
                             .foregroundColor(badgeColor(for: type))
-                            .cornerRadius(4)
+                            .cornerRadius(XomRadius.sm)
                     }
                     
                     // Track count
@@ -346,7 +346,7 @@ struct ReleaseRadarView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(12)
+        .cornerRadius(XomRadius.xl)
     }
     
     private func addReleaseToPlaylist(_ release: Release) async {
@@ -415,7 +415,7 @@ struct ReleaseRadarView: View {
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.top, 60)

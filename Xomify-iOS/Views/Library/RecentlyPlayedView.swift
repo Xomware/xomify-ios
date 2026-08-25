@@ -137,6 +137,7 @@ struct RecentlyPlayedView: View {
             Spacer(minLength: 8)
             TrackActionsMenu(track: track)
         }
+        .trackContextMenu(track: track)
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color.xomifyCard)

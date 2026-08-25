@@ -101,7 +101,7 @@ struct FollowingContent: View {
         }
         .padding()
         .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
+        .cornerRadius(XomRadius.xl)
         .padding()
     }
 
@@ -165,7 +165,7 @@ struct FollowingContent: View {
             }
             .padding(12)
             .background(Color.xomifyCard)
-            .cornerRadius(12)
+            .cornerRadius(XomRadius.xl)
         }
     }
 
@@ -196,7 +196,7 @@ struct FollowingContent: View {
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundStyle(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.top, 60)

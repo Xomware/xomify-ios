@@ -82,7 +82,7 @@ struct PlaylistAnalysisView: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 50, height: 50)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(playlist.name)
@@ -101,7 +101,7 @@ struct PlaylistAnalysisView: View {
         }
         .padding(12)
         .background(Color.xomifyCard)
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
     }
 
     // MARK: - Results
@@ -442,7 +442,7 @@ struct PlaylistAnalysisView: View {
                     .padding(.horizontal, 24).padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.horizontal, 40)

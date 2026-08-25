@@ -238,7 +238,7 @@ struct WrappedContent: View {
                 .padding(.vertical, 10)
                 .background(Color.xomifyPurple.opacity(0.2))
                 .foregroundStyle(Color.xomifyPurple)
-                .cornerRadius(20)
+                .cornerRadius(XomRadius.xl)
             }
 
             Button {
@@ -260,7 +260,7 @@ struct WrappedContent: View {
                 .padding(.vertical, 10)
                 .background(Color.xomifyGreen.opacity(0.2))
                 .foregroundStyle(Color.xomifyGreen)
-                .cornerRadius(20)
+                .cornerRadius(XomRadius.xl)
             }
             .disabled(isSaving)
         }
@@ -326,7 +326,7 @@ struct WrappedContent: View {
                 Rectangle().fill(Color.gray.opacity(0.3))
             }
             .frame(width: 50, height: 50)
-            .cornerRadius(6)
+            .cornerRadius(XomRadius.md)
 
             // Track info
             VStack(alignment: .leading, spacing: 4) {
@@ -346,6 +346,7 @@ struct WrappedContent: View {
 
             TrackActionsMenu(track: track)
         }
+        .trackContextMenu(track: track)
         .padding(.horizontal)
         .padding(.vertical, 10)
     }
@@ -672,7 +673,7 @@ struct WrappedContent: View {
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundStyle(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.horizontal, 40)

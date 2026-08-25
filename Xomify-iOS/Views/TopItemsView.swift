@@ -141,7 +141,7 @@ struct TopItemsContent: View {
             .padding(.vertical, 10)
             .background(selectedCategory == index ? Color.xomifyPurple.opacity(0.3) : Color.clear)
             .foregroundStyle(selectedCategory == index ? Color.xomifyPurple : Color.gray)
-            .cornerRadius(10)
+            .cornerRadius(XomRadius.lg)
         }
     }
 
@@ -158,7 +158,7 @@ struct TopItemsContent: View {
                         .padding(.vertical, 8)
                         .background(selectedTerm == term ? Color.xomifyGreen : Color.white.opacity(0.05))
                         .foregroundStyle(selectedTerm == term ? Color.black : Color.gray)
-                        .cornerRadius(20)
+                        .cornerRadius(XomRadius.xl)
                 }
             }
         }
@@ -198,7 +198,7 @@ struct TopItemsContent: View {
                 .padding(.vertical, 10)
                 .background(Color.xomifyPurple.opacity(0.2))
                 .foregroundStyle(Color.xomifyPurple)
-                .cornerRadius(20)
+                .cornerRadius(XomRadius.xl)
             }
 
             // Save directly to Spotify playlist
@@ -223,7 +223,7 @@ struct TopItemsContent: View {
                 .padding(.vertical, 10)
                 .background(Color.xomifyGreen)
                 .foregroundStyle(Color.black)
-                .cornerRadius(20)
+                .cornerRadius(XomRadius.xl)
             }
             .disabled(isSavingPlaylist)
 
@@ -318,7 +318,7 @@ struct TopItemsContent: View {
                         Rectangle().fill(Color.gray.opacity(0.3))
                     }
                     .frame(width: 50, height: 50)
-                    .cornerRadius(6)
+                    .cornerRadius(XomRadius.md)
                 }
             } else {
                 AsyncImage(url: track.imageUrl) { image in
@@ -327,7 +327,7 @@ struct TopItemsContent: View {
                     Rectangle().fill(Color.gray.opacity(0.3))
                 }
                 .frame(width: 50, height: 50)
-                .cornerRadius(6)
+                .cornerRadius(XomRadius.md)
             }
 
             // Track info
@@ -358,9 +358,10 @@ struct TopItemsContent: View {
 
             TrackActionsMenu(track: track)
         }
+        .trackContextMenu(track: track)
         .padding(12)
         .background(Color.white.opacity(0.03))
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
     }
 
     // MARK: - Artists Content
@@ -435,7 +436,7 @@ struct TopItemsContent: View {
             }
             .padding(12)
             .background(Color.white.opacity(0.03))
-            .cornerRadius(10)
+            .cornerRadius(XomRadius.lg)
         }
     }
 
@@ -478,12 +479,12 @@ struct TopItemsContent: View {
                         Rectangle()
                             .fill(Color.white.opacity(0.1))
                             .frame(height: 6)
-                            .cornerRadius(3)
+                            .cornerRadius(XomRadius.sm)
 
                         Rectangle()
                             .fill(LinearGradient(colors: [.xomifyPurple, .xomifyGreen], startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * CGFloat(genre.count) / CGFloat(maxCount), height: 6)
-                            .cornerRadius(3)
+                            .cornerRadius(XomRadius.sm)
                     }
                 }
                 .frame(height: 6)
@@ -499,11 +500,11 @@ struct TopItemsContent: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(Color.xomifyGreen.opacity(0.15))
-                .cornerRadius(12)
+                .cornerRadius(XomRadius.xl)
         }
         .padding(12)
         .background(Color.white.opacity(0.03))
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
     }
 
     // MARK: - Error / Partial-failure States
@@ -535,7 +536,7 @@ struct TopItemsContent: View {
                     .padding(.vertical, 10)
                     .background(Color.xomifyPurple)
                     .foregroundStyle(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(.horizontal, 40)
@@ -574,7 +575,7 @@ struct TopItemsContent: View {
                     .padding(.vertical, 6)
                     .background(Color.orange.opacity(0.2))
                     .foregroundStyle(.orange)
-                    .cornerRadius(12)
+                    .cornerRadius(XomRadius.xl)
             }
         }
         .padding(12)
@@ -583,7 +584,7 @@ struct TopItemsContent: View {
             RoundedRectangle(cornerRadius: XomRadius.lg)
                 .stroke(Color.orange.opacity(0.3), lineWidth: 1)
         )
-        .cornerRadius(10)
+        .cornerRadius(XomRadius.lg)
         .padding(.bottom, 4)
     }
 
