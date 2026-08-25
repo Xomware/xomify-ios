@@ -234,16 +234,19 @@ final class SettingsViewModel {
     }
 
     /// Push the latest notification flags to the backend. Swallows network
-    /// errors so the UI stays responsive; `UserDefaults` is the source of truth
-    /// and the backend reconciles on the next token register.
+    /// errors so the UI stays responsive; the local value stands and the next
+    /// successful token register reconciles it.
+    ///
+    /// These two toggles predate the per-kind registry and are kept because
+    /// they are the ones already bound in the existing Settings drawer. They
+    /// now write through the same `setPreference` path as every other kind, so
+    /// there is one code path rather than two that can disagree.
     private func syncNotificationPreferences() {
         let queue = queueNotificationsEnabled
         let digest = digestEnabled
         Task { @MainActor in
-            await notificationsService.updatePreferences(
-                queueNotificationsEnabled: queue,
-                digestEnabled: digest
-            )
+            await notificationsService.setPreference("queueNotificationsEnabled", enabled: queue)
+            await notificationsService.setPreference("digestEnabled", enabled: digest)
         }
     }
 
