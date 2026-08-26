@@ -17,9 +17,11 @@
 		5E5ED423C767FCDA4757A1D8 /* SettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0B7F6F74066BE37CAED577 /* SettingsViewModelTests.swift */; };
 		780B59EF4A2BBA3F2E5D0D04 /* AuthServiceJwtTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCED2E580538B1B7B9E93BA /* AuthServiceJwtTests.swift */; };
 		7CF6A051BF0A423E80ECFC27 /* MockXomifyServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39C08E8FA3EBC7B6F81D99D /* MockXomifyServiceProtocol.swift */; };
+		A4574D124083413224FF8296 /* PushPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01B0ECF4D34799677F4D667 /* PushPayloadTests.swift */; };
 		A6510CD4D76F4221D712C0B6 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CAD5C93A2102061C858643E4 /* Foundation.framework */; };
 		B0220430B97A8504A91FE818 /* ProfileLikesViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABFD1B5524784BB1C1D3159A /* ProfileLikesViewModelTests.swift */; };
 		C521E81E03B10F74F79C14CD /* ShareComposerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC9DE517DC7F22981C08234F /* ShareComposerViewModelTests.swift */; };
+		CC6AF6BB06FDD78A4327FEF1 /* NotificationPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7CAF5872A5C69214B89110 /* NotificationPreferencesTests.swift */; };
 		EDDAC6AEABF69C2791E38B4E /* NotificationsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60ED71CF786B711E482B0F4F /* NotificationsServiceTests.swift */; };
 		F29641B52FA19F5200A9830C /* XomifyShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F29641AB2FA19F5200A9830C /* XomifyShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -56,6 +58,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C7CAF5872A5C69214B89110 /* NotificationPreferencesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationPreferencesTests.swift; sourceTree = "<group>"; };
 		16ACCF8BF2B0271CF61284A8 /* MarkListenedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkListenedTests.swift; sourceTree = "<group>"; };
 		1FCED2E580538B1B7B9E93BA /* AuthServiceJwtTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthServiceJwtTests.swift; sourceTree = "<group>"; };
 		3450C82D7172082063125400 /* Xomify-iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Xomify-iOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,6 +73,7 @@
 		CAD5C93A2102061C858643E4 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		DDE575BAF70D30E456BD526A /* SharesByUserViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharesByUserViewModelTests.swift; sourceTree = "<group>"; };
 		EC9DE517DC7F22981C08234F /* ShareComposerViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareComposerViewModelTests.swift; sourceTree = "<group>"; };
+		F01B0ECF4D34799677F4D667 /* PushPayloadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushPayloadTests.swift; sourceTree = "<group>"; };
 		F29641AB2FA19F5200A9830C /* XomifyShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = XomifyShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F39C08E8FA3EBC7B6F81D99D /* MockXomifyServiceProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockXomifyServiceProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -150,6 +154,8 @@
 				EC9DE517DC7F22981C08234F /* ShareComposerViewModelTests.swift */,
 				DDE575BAF70D30E456BD526A /* SharesByUserViewModelTests.swift */,
 				A149D18F0C9C45FE02DF2FFE /* UserProfileViewModelTests.swift */,
+				0C7CAF5872A5C69214B89110 /* NotificationPreferencesTests.swift */,
+				F01B0ECF4D34799677F4D667 /* PushPayloadTests.swift */,
 			);
 			path = "Xomify-iOSTests";
 			sourceTree = SOURCE_ROOT;
@@ -349,6 +355,8 @@
 				C521E81E03B10F74F79C14CD /* ShareComposerViewModelTests.swift in Sources */,
 				295727F58E95E201E6B2EAD9 /* SharesByUserViewModelTests.swift in Sources */,
 				2A0C3C8DD8CE35F4C62D23F3 /* UserProfileViewModelTests.swift in Sources */,
+				CC6AF6BB06FDD78A4327FEF1 /* NotificationPreferencesTests.swift in Sources */,
+				A4574D124083413224FF8296 /* PushPayloadTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
