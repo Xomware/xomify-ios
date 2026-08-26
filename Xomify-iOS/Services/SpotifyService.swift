@@ -235,12 +235,28 @@ actor SpotifyService {
     
     // MARK: - Playlists
     
-    /// Get user's playlists
-    func getUserPlaylists(limit: Int = 50) async throws -> [SpotifyPlaylist] {
-        let response: PlaylistsResponse = try await network.spotifyGet(
-            "/me/playlists?limit=\(limit)"
-        )
-        return response.items
+    /// Get user's playlists.
+    ///
+    /// PAGES UNTIL EXHAUSTED. This used to issue one request capped at 50 and
+    /// return whatever came back, so anyone with more than 50 playlists simply
+    /// never saw the rest — silently, with no empty state or "load more" to
+    /// hint that anything was missing. Web has always paged.
+    ///
+    /// `pageCap` bounds a pathological account rather than the common case;
+    /// 20 pages is 1000 playlists.
+    func getUserPlaylists(limit: Int = 50, pageCap: Int = 20) async throws -> [SpotifyPlaylist] {
+        var all: [SpotifyPlaylist] = []
+        var offset = 0
+
+        for _ in 0..<pageCap {
+            let response: PlaylistsResponse = try await network.spotifyGet(
+                "/me/playlists?limit=\(limit)&offset=\(offset)"
+            )
+            all.append(contentsOf: response.items)
+            if response.items.count < limit { break }
+            offset += limit
+        }
+        return all
     }
     
     /// Get playlist details

@@ -101,6 +101,8 @@ struct MainShell: View {
             FavoritesView()
         case .ratings:
             RatingsHistoryView()
+        case .following:
+            FollowingView()
         case .friends:
             FriendsView()
         case .builder:
