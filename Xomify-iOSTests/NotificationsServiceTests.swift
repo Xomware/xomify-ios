@@ -12,17 +12,17 @@ final class NotificationsServiceTests: XCTestCase {
 
     // MARK: - Token hex encoding
 
-    func test_hexString_encodesKnownBytes() {
+    func test_hexString_encodesKnownBytes() async {
         let bytes: [UInt8] = [0x00, 0x01, 0x02, 0xFF, 0xAB, 0xCD]
         let hex = NotificationsService.hexString(from: Data(bytes))
         XCTAssertEqual(hex, "000102ffabcd")
     }
 
-    func test_hexString_emptyData_returnsEmptyString() {
+    func test_hexString_emptyData_returnsEmptyString() async {
         XCTAssertEqual(NotificationsService.hexString(from: Data()), "")
     }
 
-    func test_hexString_singleByte() {
+    func test_hexString_singleByte() async {
         XCTAssertEqual(NotificationsService.hexString(from: Data([0x7F])), "7f")
     }
 
@@ -44,7 +44,7 @@ final class NotificationsServiceTests: XCTestCase {
 
     // MARK: - Push payload inference
 
-    func test_pushPayload_queueThreshold_inferredFromShareId() {
+    func test_pushPayload_queueThreshold_inferredFromShareId() async {
         let userInfo: [AnyHashable: Any] = [
             "aps": ["alert": ["title": "x", "body": "y"]],
             "shareId": "share-123",
@@ -58,7 +58,7 @@ final class NotificationsServiceTests: XCTestCase {
         XCTAssertEqual(payload.reactorCount, 5)
     }
 
-    func test_pushPayload_digest_inferredFromWindowDays() {
+    func test_pushPayload_digest_inferredFromWindowDays() async {
         let userInfo: [AnyHashable: Any] = [
             "aps": ["alert": ["title": "x", "body": "y"]],
             "count": 3,
@@ -71,7 +71,7 @@ final class NotificationsServiceTests: XCTestCase {
         XCTAssertEqual(payload.windowDays, 7)
     }
 
-    func test_pushPayload_unknown_whenNoSignals() {
+    func test_pushPayload_unknown_whenNoSignals() async {
         let userInfo: [AnyHashable: Any] = [
             "aps": ["alert": ["title": "x", "body": "y"]]
         ]
@@ -79,7 +79,7 @@ final class NotificationsServiceTests: XCTestCase {
         XCTAssertEqual(payload.kind, .unknown)
     }
 
-    func test_pushPayload_acceptsStringIntegers() {
+    func test_pushPayload_acceptsStringIntegers() async {
         // DynamoDB / JSON wire can surface numerics as strings. Make sure we
         // coerce them.
         let userInfo: [AnyHashable: Any] = [

@@ -84,33 +84,10 @@ jobs:
             -resultBundlePath TestResults \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            2>&1 | tee test-output.log | xcpretty || true
-
-      # The run above is tolerant ON PURPOSE, and this step is why.
-      #
-      # There is a PRE-EXISTING crash in ShareCardViewModel's isolated deinit
-      # (swift_task_deinitOnExecutorMainActorBackDeploy) that aborts the host
-      # app during teardown, so xcodebuild exits non-zero even when every test
-      # passes. Failing the job on that exit code would block every PR on a bug
-      # unrelated to the change under review.
-      #
-      # So: assert on actual TEST FAILURES instead. Real regressions break the
-      # build; the known teardown crash does not. Delete this step and restore
-      # a plain non-zero check once the deinit crash is fixed.
-      - name: Assert no test failures
-        run: |
-          FAILED=$(grep -cE "^Test Case .* failed" test-output.log || true)
-          PASSED=$(grep -cE "^Test Case .* passed" test-output.log || true)
-          echo "passed=$PASSED failed=$FAILED"
-          if [ "$PASSED" -eq 0 ]; then
-            echo "::error::No tests executed — the suite did not run."
-            exit 1
-          fi
-          if [ "$FAILED" -ne 0 ]; then
-            echo "::error::$FAILED test(s) failed."
-            grep -E "^Test Case .* failed" test-output.log || true
-            exit 1
-          fi
+            2>&1 | tee test-output.log | xcpretty
+        # NO `|| true`. The suite now exits clean (see the isolated-deinit fix
+        # in the ios-test-target plan), so a non-zero exit is a real failure
+        # and should stop the build.
 
       - name: Upload test results
         if: always()

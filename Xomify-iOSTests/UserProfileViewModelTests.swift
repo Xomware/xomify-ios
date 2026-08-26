@@ -247,7 +247,7 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(shares?.targetEmail, "friend@example.com")
     }
 
-    func test_sharesViewModel_beforeLoad_returnsNil() {
+    func test_sharesViewModel_beforeLoad_returnsNil() async {
         let vm = UserProfileViewModel(
             context: .me,
             xomifyService: MockXomifyServiceProtocol(),
