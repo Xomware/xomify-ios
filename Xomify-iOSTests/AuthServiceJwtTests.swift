@@ -91,14 +91,14 @@ final class AuthServiceJwtTests: XCTestCase {
     // changes its emitted format we want this suite to fail loudly. We test
     // them via `ISO8601DateFormatter` directly, mirroring the helper.)
 
-    func test_iso8601_fractionalSeconds_parses() {
+    func test_iso8601_fractionalSeconds_parses() async {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let date = formatter.date(from: "2026-05-03T12:34:56.789Z")
         XCTAssertNotNil(date)
     }
 
-    func test_iso8601_plainSeconds_parses() {
+    func test_iso8601_plainSeconds_parses() async {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         let date = formatter.date(from: "2026-05-03T12:34:56Z")

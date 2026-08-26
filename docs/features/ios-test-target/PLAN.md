@@ -57,53 +57,65 @@ real bug regardless.)
 
 ---
 
-## ⚠️ PRE-EXISTING BUG the tests exposed, not fixed here
+## The isolated-deinit crash — diagnosed and FIXED
 
-The host app aborts during teardown:
+The host app was aborting during teardown:
 
 ```
 malloc: *** error for object 0x…: pointer being freed was not allocated
-  ShareCardViewModel.__deallocating_deinit
+  SettingsViewModel.__deallocating_deinit
   swift_task_deinitOnExecutorMainActorBackDeploy
   swift_task_deinitOnExecutorImpl
   swift::TaskLocal::StopLookupScope::~StopLookupScope()
 ```
 
-`ShareCardViewModel` is `@MainActor`, so Swift synthesises an **isolated deinit**, which
-back-deploys through `swift_task_deinitOnExecutorMainActorBackDeploy`. That shim is
-corrupting the heap on teardown.
+**Result: 8 crashes per run.** All 53 tests passed, but only across 8 forced relaunches, and
+`xcodebuild` exited non-zero.
 
-**Not caused by this epic** — `@MainActor` on that class predates all of it (`8fb2cf2`,
-#118). It has simply never been observable, because the tests never ran.
+### Root cause
 
-### Ruled out
+`@MainActor` classes get a synthesised **isolated deinit**, which back-deploys through
+`swift_task_deinitOnExecutorMainActorBackDeploy`. That shim calls
+`swift_task_deinitOnExecutorImpl`, which tears down a `TaskLocal::StopLookupScope` — and
+that **assumes a surrounding task context**.
+
+A synchronous `XCTest` method has none. It runs on the main thread inside an `NSInvocation`
+with no task, so releasing a `@MainActor` view model at the end of the method corrupted the
+heap.
+
+The tell was that the crash was never class-specific: removing `@MainActor` from
+`ShareCardViewModel` simply moved it to `SettingsViewModel`.
+
+### Fix
+
+**Make the test methods `async`.** That gives the deinit a task context to unwind in. 21
+test methods converted across 6 suites.
+
+| | Before | After |
+|---|--------|-------|
+| Crashes | 8 | **0** |
+| Passing | 53 | **61** |
+| Exit | `TEST EXECUTE FAILED` | **`TEST EXECUTE SUCCEEDED`** |
+
+More tests pass afterwards because fewer suites were being aborted mid-run.
+
+**No production code changed.** The view models keep their `@MainActor` isolation, which is
+correct — the bug was in how the tests released them, not in the app.
+
+### Ruled out along the way
 
 | Hypothesis | Result |
 |-----------|--------|
-| `Starfield` static cache | Fixed anyway; crash persists |
-| `@Observable` on `NotificationsService` | Removed as an experiment; crash persists |
-| Test parallelism | `-parallel-testing-enabled NO`; crash persists |
-| Back-deploy below iOS 18 | Raised target to 18.0; **crash persists** (reverted) |
+| `Starfield` static cache | Real data race, fixed — but not this crash |
+| `@Observable` on `NotificationsService` | Crash persists without it |
+| Test parallelism | `-parallel-testing-enabled NO`: persists |
+| `ShareCardViewModel`'s `@MainActor` | Crash just moves to the next `@MainActor` class |
+| Deployment target below iOS 18 | Raised to 18.0 with a clean build: persists |
 
-### Impact
+### CI
 
-`xcodebuild` exits non-zero even though **all 53 tests pass** — the runner restarts 8 times
-and completes the suite across relaunches.
-
-### Why CI asserts on failures rather than exit code
-
-Failing the job on that exit code would block every PR on a bug unrelated to the change under
-review. The added `Assert no test failures` step instead requires that tests actually ran and
-that **zero of them failed** — real regressions break the build, the known teardown crash does
-not. Delete that step and restore a plain exit-code check once the deinit crash is fixed.
-
-### Likely real fix
-
-Drop class-level `@MainActor` on `ShareCardViewModel` in favour of isolating individual
-members, which removes the synthesised isolated deinit. That is a concurrency refactor with
-real implications and wants a device and a careful review — deliberately not attempted blind.
-
----
+`|| true` is now gone from **both** steps, and the failure-count workaround is deleted — a
+non-zero exit is a real failure again.
 
 ## Caveat: new test files must be added to the target
 

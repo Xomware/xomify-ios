@@ -56,7 +56,7 @@ final class MarkListenedTests: XCTestCase {
 
     // MARK: - Optimistic flip
 
-    func test_withViewerHasListened_flipsAndBumpsCountOnce() {
+    func test_withViewerHasListened_flipsAndBumpsCountOnce() async {
         let share = Share(
             shareId: "s-1",
             sharedBy: "me@example.com",
@@ -79,7 +79,7 @@ final class MarkListenedTests: XCTestCase {
         XCTAssertEqual(secondFlip.listenerCount, 4)
     }
 
-    func test_withViewerHasListened_decrementsCountOnUnflip() {
+    func test_withViewerHasListened_decrementsCountOnUnflip() async {
         let share = Share(
             shareId: "s-1",
             sharedBy: "me@example.com",
@@ -103,7 +103,7 @@ final class MarkListenedTests: XCTestCase {
 
     // MARK: - ShareCardViewModel.markListenedOptimistically
 
-    func test_shareCardVM_markListenedOptimistically_flipsLocalShare() {
+    func test_shareCardVM_markListenedOptimistically_flipsLocalShare() async {
         let mock = MockXomifyServiceProtocol()
         let share = Share(
             shareId: "s-1",

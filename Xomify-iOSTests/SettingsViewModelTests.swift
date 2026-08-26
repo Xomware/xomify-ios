@@ -6,14 +6,14 @@ import XCTest
 @MainActor
 final class SettingsViewModelTests: XCTestCase {
 
-    func test_init_defaultsToggleValuesToTrue() {
+    func test_init_defaultsToggleValuesToTrue() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
         XCTAssertTrue(vm.queueNotificationsEnabled)
         XCTAssertTrue(vm.digestEnabled)
     }
 
-    func test_init_readsPersistedValues() {
+    func test_init_readsPersistedValues() async {
         let defaults = makeIsolatedDefaults()
         defaults.set(false, forKey: SettingsViewModel.queueEnabledKey)
         defaults.set(false, forKey: SettingsViewModel.digestEnabledKey)
@@ -23,7 +23,7 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertFalse(vm.digestEnabled)
     }
 
-    func test_toggleQueueEnabled_persistsToDefaults() {
+    func test_toggleQueueEnabled_persistsToDefaults() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
 
@@ -32,7 +32,7 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(defaults.object(forKey: SettingsViewModel.queueEnabledKey) as? Bool, false)
     }
 
-    func test_toggleDigestEnabled_persistsToDefaults() {
+    func test_toggleDigestEnabled_persistsToDefaults() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
 
@@ -41,28 +41,28 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(defaults.object(forKey: SettingsViewModel.digestEnabledKey) as? Bool, false)
     }
 
-    func test_togglesEnabled_authorized_returnsTrue() {
+    func test_togglesEnabled_authorized_returnsTrue() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
         vm.authorizationStatus = .authorized
         XCTAssertTrue(vm.togglesEnabled)
     }
 
-    func test_togglesEnabled_denied_returnsFalse() {
+    func test_togglesEnabled_denied_returnsFalse() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
         vm.authorizationStatus = .denied
         XCTAssertFalse(vm.togglesEnabled)
     }
 
-    func test_togglesEnabled_notDetermined_returnsFalse() {
+    func test_togglesEnabled_notDetermined_returnsFalse() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
         vm.authorizationStatus = .notDetermined
         XCTAssertFalse(vm.togglesEnabled)
     }
 
-    func test_statusFooter_reflectsStatus() {
+    func test_statusFooter_reflectsStatus() async {
         let defaults = makeIsolatedDefaults()
         let vm = SettingsViewModel(defaults: defaults)
 
