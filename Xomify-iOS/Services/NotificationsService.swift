@@ -372,7 +372,7 @@ extension NotificationsService: UNUserNotificationCenterDelegate {
         case "invite":              return .friends
         case "wrapped":             return .wrapped
         case "release_radar":       return .releaseRadar
-        case "favorites":           return .profile
+        case "favorites":           return .favorites
         case "home":                return .feed
         default:
             // No usable route. Fall back on the kind for the pre-registry

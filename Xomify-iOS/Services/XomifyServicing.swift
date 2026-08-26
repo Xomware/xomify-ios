@@ -78,6 +78,15 @@ protocol XomifyServicing: Sendable {
     func markNotificationRead(tsId: String) async throws
     func markAllNotificationsRead() async throws
     func fetchUnreadNotificationCount() async throws -> Int
+
+    // MARK: - Favorites
+
+    func fetchFavorites(year: Int) async throws -> FavoritesYear
+    func createFavoritesList(year: Int, category: FavoriteCategory, genreLabel: String) async throws -> FavoriteList
+    func setFavoritesList(year: Int, listId: String, items: [FavoriteItem]) async throws -> FavoriteList
+    func deleteFavoritesList(year: Int, listId: String) async throws
+    func fetchFavoritesHistory(listId: String) async throws -> [FavoriteHistoryEvent]
+    func fetchFavoritesRecommendations(year: Int, category: FavoriteCategory, listId: String) async throws -> [FavoriteItem]
 }
 
 // Conformance on the real service — ensures production callers can keep using

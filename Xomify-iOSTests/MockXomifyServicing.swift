@@ -103,6 +103,64 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
         return unreadCount
     }
 
+    // MARK: - Favorites
+
+    var favoritesYear: FavoritesYear?
+    var favoritesRecommendations: [FavoriteItem] = []
+    var favoritesHistory: [FavoriteHistoryEvent] = []
+    var favoritesError: Error?
+
+    private(set) var setListCalls: [(listId: String, items: [FavoriteItem])] = []
+    private(set) var createListCalls: [(category: FavoriteCategory, label: String)] = []
+    private(set) var deleteListCalls: [String] = []
+
+    func fetchFavorites(year: Int) async throws -> FavoritesYear {
+        if let favoritesError { throw favoritesError }
+        return favoritesYear ?? FavoritesYear(year: year, overall: nil, lists: nil)
+    }
+
+    func createFavoritesList(
+        year: Int, category: FavoriteCategory, genreLabel: String
+    ) async throws -> FavoriteList {
+        createListCalls.append((category, genreLabel))
+        if let favoritesError { throw favoritesError }
+        return FavoriteList(
+            listId: "list-\(createListCalls.count)",
+            year: year,
+            category: category,
+            genreLabel: genreLabel,
+            items: []
+        )
+    }
+
+    func setFavoritesList(
+        year: Int, listId: String, items: [FavoriteItem]
+    ) async throws -> FavoriteList {
+        setListCalls.append((listId, items))
+        if let favoritesError { throw favoritesError }
+        return FavoriteList(
+            listId: listId, year: year, category: .songs,
+            genreLabel: "Overall", items: items
+        )
+    }
+
+    func deleteFavoritesList(year: Int, listId: String) async throws {
+        deleteListCalls.append(listId)
+        if let favoritesError { throw favoritesError }
+    }
+
+    func fetchFavoritesHistory(listId: String) async throws -> [FavoriteHistoryEvent] {
+        if let favoritesError { throw favoritesError }
+        return favoritesHistory
+    }
+
+    func fetchFavoritesRecommendations(
+        year: Int, category: FavoriteCategory, listId: String
+    ) async throws -> [FavoriteItem] {
+        if let favoritesError { throw favoritesError }
+        return favoritesRecommendations
+    }
+
     // MARK: - Friends (unused — returned as empty / success stubs)
 
     func getAllFriends() async throws -> FriendsAllResponse {
