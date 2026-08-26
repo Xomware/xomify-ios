@@ -715,6 +715,81 @@ actor XomifyService {
         return response.unread ?? 0
     }
 
+    // MARK: - Favorites
+
+    func fetchFavorites(year: Int) async throws -> FavoritesYear {
+        try await network.xomifyGet("/favorites/get", queryParams: ["year": String(year)])
+    }
+
+    func createFavoritesList(
+        year: Int,
+        category: FavoriteCategory,
+        genreLabel: String
+    ) async throws -> FavoriteList {
+        try await network.xomifyPost("/favorites/list-create", body: [
+            "year": year,
+            "category": category.rawValue,
+            "genreLabel": genreLabel,
+        ])
+    }
+
+    /// Replaces a list's items wholesale. The backend diffs ranks against what
+    /// it had and appends history events, so the client sends the final order
+    /// rather than a sequence of moves.
+    func setFavoritesList(
+        year: Int,
+        listId: String,
+        items: [FavoriteItem]
+    ) async throws -> FavoriteList {
+        let payload: [[String: Any]] = items.enumerated().map { index, item in
+            var row: [String: Any] = [
+                // Rank is 1-based and derived from position — never trusted
+                // from the item, which may carry a stale value after a drag.
+                "rank": index + 1,
+                "spotifyId": item.spotifyId,
+                "name": item.name,
+            ]
+            if let artist = item.artist { row["artist"] = artist }
+            if let imageUrl = item.imageUrl { row["imageUrl"] = imageUrl }
+            return row
+        }
+        return try await network.xomifyPut("/favorites/list-set", body: [
+            "year": year,
+            "listId": listId,
+            "items": payload,
+        ])
+    }
+
+    func deleteFavoritesList(year: Int, listId: String) async throws {
+        let _: SuccessResponse = try await network.xomifyDelete(
+            "/favorites/list-delete",
+            queryParams: ["year": String(year), "listId": listId]
+        )
+    }
+
+    func fetchFavoritesHistory(listId: String) async throws -> [FavoriteHistoryEvent] {
+        let response: FavoriteHistoryResponse = try await network.xomifyGet(
+            "/favorites/list-history", queryParams: ["listId": listId]
+        )
+        return response.events ?? []
+    }
+
+    func fetchFavoritesRecommendations(
+        year: Int,
+        category: FavoriteCategory,
+        listId: String
+    ) async throws -> [FavoriteItem] {
+        let response: FavoriteRecommendations = try await network.xomifyGet(
+            "/favorites/recommendations",
+            queryParams: [
+                "year": String(year),
+                "category": category.rawValue,
+                "listId": listId,
+            ]
+        )
+        return response.items ?? []
+    }
+
     // MARK: - Likes
 
     /// Push the caller's top-200 saved tracks to the backend.

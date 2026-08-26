@@ -97,6 +97,8 @@ struct MainShell: View {
             WrappedView()
         case .releaseRadar:
             ReleaseRadarView()
+        case .favorites:
+            FavoritesView()
         case .ratings:
             RatingsHistoryView()
         case .friends:

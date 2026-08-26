@@ -11,6 +11,7 @@
 		295727F58E95E201E6B2EAD9 /* SharesByUserViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE575BAF70D30E456BD526A /* SharesByUserViewModelTests.swift */; };
 		298BFE084D497A84B6D63C02 /* MockXomifyServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC412162FDDE5E20E725713A /* MockXomifyServicing.swift */; };
 		2A0C3C8DD8CE35F4C62D23F3 /* UserProfileViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A149D18F0C9C45FE02DF2FFE /* UserProfileViewModelTests.swift */; };
+		49A73B6D956D7405BF1D5EB7 /* FavoritesViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D0C4B8CD3515484773D13D /* FavoritesViewModelTests.swift */; };
 		5291E4D62F08231D00A10C3E /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = 5291E4D52F08231D00A10C3E /* SpotifyiOS */; };
 		5291E4E42F08498E00A10C3E /* secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 5291E4E32F08498E00A10C3E /* secrets.xcconfig */; };
 		5291E4E62F084B2400A10C3E /* secrets.template.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 5291E4E52F084B2400A10C3E /* secrets.template.xcconfig */; };
@@ -67,6 +68,7 @@
 		5291E4E32F08498E00A10C3E /* secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secrets.xcconfig; sourceTree = "<group>"; };
 		5291E4E52F084B2400A10C3E /* secrets.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secrets.template.xcconfig; sourceTree = "<group>"; };
 		60ED71CF786B711E482B0F4F /* NotificationsServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsServiceTests.swift; sourceTree = "<group>"; };
+		86D0C4B8CD3515484773D13D /* FavoritesViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FavoritesViewModelTests.swift; sourceTree = "<group>"; };
 		A149D18F0C9C45FE02DF2FFE /* UserProfileViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileViewModelTests.swift; sourceTree = "<group>"; };
 		ABFD1B5524784BB1C1D3159A /* ProfileLikesViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileLikesViewModelTests.swift; sourceTree = "<group>"; };
 		BC412162FDDE5E20E725713A /* MockXomifyServicing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockXomifyServicing.swift; sourceTree = "<group>"; };
@@ -156,6 +158,7 @@
 				A149D18F0C9C45FE02DF2FFE /* UserProfileViewModelTests.swift */,
 				0C7CAF5872A5C69214B89110 /* NotificationPreferencesTests.swift */,
 				F01B0ECF4D34799677F4D667 /* PushPayloadTests.swift */,
+				86D0C4B8CD3515484773D13D /* FavoritesViewModelTests.swift */,
 			);
 			path = "Xomify-iOSTests";
 			sourceTree = SOURCE_ROOT;
@@ -357,6 +360,7 @@
 				2A0C3C8DD8CE35F4C62D23F3 /* UserProfileViewModelTests.swift in Sources */,
 				CC6AF6BB06FDD78A4327FEF1 /* NotificationPreferencesTests.swift in Sources */,
 				A4574D124083413224FF8296 /* PushPayloadTests.swift in Sources */,
+				49A73B6D956D7405BF1D5EB7 /* FavoritesViewModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
