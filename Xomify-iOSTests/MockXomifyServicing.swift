@@ -103,6 +103,31 @@ final class MockXomifyServicing: XomifyServicing, @unchecked Sendable {
         return unreadCount
     }
 
+    // MARK: - Goals
+
+    var goals: [StoredGoal] = []
+    var goalsHistory: [WeekHistoryEntry] = []
+    var goalsError: Error?
+
+    private(set) var setGoalsCalls: [[StoredGoal]] = []
+    private(set) var recordedWeeks: [WeekHistoryEntry] = []
+
+    func fetchGoals() async throws -> (goals: [StoredGoal], history: [WeekHistoryEntry]) {
+        if let goalsError { throw goalsError }
+        return (goals, goalsHistory)
+    }
+
+    func setGoals(_ goals: [StoredGoal]) async throws -> [StoredGoal] {
+        if let goalsError { throw goalsError }
+        setGoalsCalls.append(goals)
+        self.goals = goals
+        return goals
+    }
+
+    func recordGoalWeek(_ entry: WeekHistoryEntry) async throws {
+        recordedWeeks.append(entry)
+    }
+
     // MARK: - Favorites
 
     var favoritesYear: FavoritesYear?

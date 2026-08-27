@@ -41,6 +41,7 @@ struct DrawerView: View {
         .init(destination: .playlistAnalysis, label: "Playlist Analysis", systemImage: "chart.pie.fill"),
         .init(destination: .ratings,          label: "Ratings",           systemImage: "star.fill"),
         .init(destination: .favorites,        label: "My Favorites",      systemImage: "star.fill"),
+        .init(destination: .goals,            label: "Weekly Goals",      systemImage: "target"),
         .init(destination: .friends,          label: "Friends",           systemImage: "person.2.fill"),
         .init(destination: .following,        label: "Following",         systemImage: "person.badge.plus"),
         .init(destination: .builder,          label: "Playlist Builder",  systemImage: "music.note.list"),
