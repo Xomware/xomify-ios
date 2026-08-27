@@ -99,6 +99,8 @@ struct MainShell: View {
             ReleaseRadarView()
         case .favorites:
             FavoritesView()
+        case .goals:
+            GoalsView()
         case .ratings:
             RatingsHistoryView()
         case .following:

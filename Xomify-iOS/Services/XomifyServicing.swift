@@ -79,6 +79,12 @@ protocol XomifyServicing: Sendable {
     func markAllNotificationsRead() async throws
     func fetchUnreadNotificationCount() async throws -> Int
 
+    // MARK: - Goals
+
+    func fetchGoals() async throws -> (goals: [StoredGoal], history: [WeekHistoryEntry])
+    func setGoals(_ goals: [StoredGoal]) async throws -> [StoredGoal]
+    func recordGoalWeek(_ entry: WeekHistoryEntry) async throws
+
     // MARK: - Favorites
 
     func fetchFavorites(year: Int) async throws -> FavoritesYear

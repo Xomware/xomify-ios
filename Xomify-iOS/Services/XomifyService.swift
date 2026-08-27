@@ -715,6 +715,51 @@ actor XomifyService {
         return response.unread ?? 0
     }
 
+    // MARK: - Goals
+
+    /// The saved goal set plus week history. A user who has never saved gets
+    /// the backend's default set — not an empty list — so a first open shows
+    /// something to work toward. Those defaults are not persisted until saved.
+    func fetchGoals() async throws -> (goals: [StoredGoal], history: [WeekHistoryEntry]) {
+        let response: GoalsResponse = try await network.xomifyGet("/goals/get")
+        return (response.goals ?? [], response.history ?? [])
+    }
+
+    /// Replaces the whole set. A goal the client stops sending is a deletion —
+    /// there is no delete endpoint, by design.
+    ///
+    /// Progress is not in the payload and the backend rejects it if sent.
+    func setGoals(_ goals: [StoredGoal]) async throws -> [StoredGoal] {
+        let payload: [[String: Any]] = goals.map { goal in
+            var row: [String: Any] = [
+                "goalId": goal.goalId,
+                "metric": goal.metric.rawValue,
+                "target": goal.target,
+                "label": goal.label,
+            ]
+            // Round-tripped untouched so the web keeps its own icon name. iOS
+            // derives its SF Symbol from the metric and never reads this.
+            if let icon = goal.icon { row["icon"] = icon }
+            return row
+        }
+        let response: GoalsSetResponse = try await network.xomifyPut(
+            "/goals/set", body: ["goals": payload]
+        )
+        return response.goals ?? []
+    }
+
+    /// Upsert one week's outcome, keyed on `weekStart`. Called on every load
+    /// while the week is running, which is why the backend upserts rather than
+    /// appends.
+    func recordGoalWeek(_ entry: WeekHistoryEntry) async throws {
+        let _: EmptyResponse = try await network.xomifyPost("/goals/history-set", body: [
+            "weekStart": entry.weekStart,
+            "allMet": entry.allMet,
+            "metCount": entry.metCount,
+            "totalCount": entry.totalCount,
+        ])
+    }
+
     // MARK: - Favorites
 
     func fetchFavorites(year: Int) async throws -> FavoritesYear {
