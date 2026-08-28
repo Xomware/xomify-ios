@@ -148,6 +148,17 @@ final class NotificationsService: NSObject {
         UIApplication.shared.registerForRemoteNotifications()
     }
 
+    /// Re-ask APNs for the current device token when permission is already
+    /// granted, so a rotated token reaches the backend.
+    ///
+    /// Cheap and idempotent: when the token has not changed, the delegate hands
+    /// back the same value and `handleDeviceToken` upserts the row it already
+    /// wrote. Does NOT prompt — `requestPermissionIfNeeded()` owns that, once.
+    func registerIfAuthorized() async {
+        guard await currentAuthorizationStatus() == .authorized else { return }
+        await MainActor.run { UIApplication.shared.registerForRemoteNotifications() }
+    }
+
     /// Called from `XomifyAppDelegate.didRegisterForRemoteNotificationsWithDeviceToken`.
     /// Hex-encodes the raw token, caches it, and upserts to the backend.
     ///
