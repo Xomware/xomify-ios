@@ -17,7 +17,6 @@ enum SidebarDestination: Hashable {
     case releaseRadar
     case ratings
     case favorites
-    case goals
     case friends
     case following
     case builder

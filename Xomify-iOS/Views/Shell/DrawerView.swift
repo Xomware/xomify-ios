@@ -26,26 +26,51 @@ struct DrawerView: View {
         var id: SidebarDestination { destination }
     }
 
-    /// Primary entries (everything except Settings — pinned to the bottom).
-    /// Profile is reached via the profile card above this list, so it is not
-    /// duplicated as a row.
-    private let primaryEntries: [DrawerEntry] = [
-        .init(destination: .feed,             label: "Feed",              systemImage: "sparkles"),
-        .init(destination: .search,           label: "Search",            systemImage: "magnifyingglass"),
-        .init(destination: .likes,            label: "Likes",             systemImage: "heart.fill"),
-        .init(destination: .recentlyPlayed,   label: "Recently Played",   systemImage: "clock.arrow.circlepath"),
-        .init(destination: .musicTaste,       label: "Music Taste",       systemImage: "waveform"),
-        .init(destination: .wrapped,          label: "Wrapped",           systemImage: "chart.bar.fill"),
-        .init(destination: .releaseRadar,     label: "Release Radar",     systemImage: "antenna.radiowaves.left.and.right"),
-        .init(destination: .moodPicks,        label: "Mood Picks",        systemImage: "face.smiling"),
-        .init(destination: .playlistAnalysis, label: "Playlist Analysis", systemImage: "chart.pie.fill"),
-        .init(destination: .ratings,          label: "Ratings",           systemImage: "star.fill"),
-        .init(destination: .favorites,        label: "My Favorites",      systemImage: "star.fill"),
-        .init(destination: .goals,            label: "Weekly Goals",      systemImage: "target"),
-        .init(destination: .friends,          label: "Friends",           systemImage: "person.2.fill"),
-        .init(destination: .following,        label: "Following",         systemImage: "person.badge.plus"),
-        .init(destination: .builder,          label: "Playlist Builder",  systemImage: "music.note.list"),
+    /// A titled group of rows. Fifteen flat entries was a wall — everything
+    /// equally prominent, which is the same as nothing being prominent.
+    private struct DrawerSection: Identifiable {
+        let title: String
+        let entries: [DrawerEntry]
+        var id: String { title }
+    }
+
+    /// Grouped by what you came to do, not by which subsystem serves it.
+    /// Profile is reached via the card above, and Settings is pinned below, so
+    /// neither appears here.
+    private let sections: [DrawerSection] = [
+        .init(title: "Listen", entries: [
+            .init(destination: .recentlyPlayed,   label: "Recently Played",   systemImage: "clock.arrow.circlepath"),
+            .init(destination: .wrapped,          label: "Wrapped",           systemImage: "chart.bar.fill"),
+            .init(destination: .releaseRadar,     label: "Release Radar",     systemImage: "antenna.radiowaves.left.and.right"),
+            .init(destination: .moodPicks,        label: "Mood Picks",        systemImage: "face.smiling"),
+        ]),
+        .init(title: "Library", entries: [
+            .init(destination: .likes,            label: "Likes",             systemImage: "heart.fill"),
+            .init(destination: .ratings,          label: "Ratings",           systemImage: "star.fill"),
+            .init(destination: .favorites,        label: "My Favorites",      systemImage: "bookmark.fill"),
+            .init(destination: .builder,          label: "Playlist Builder",  systemImage: "music.note.list"),
+        ]),
+        .init(title: "Social", entries: [
+            // Labelled "Shares" to match the web. The screen has always read
+            // /shares/* — "Feed" was the pre-rename name and looked like a
+            // leftover of the tab that actually was removed.
+            .init(destination: .feed,             label: "Shares",            systemImage: "square.and.arrow.up"),
+            .init(destination: .friends,          label: "Friends",           systemImage: "person.2.fill"),
+            .init(destination: .following,        label: "Following",         systemImage: "person.badge.plus"),
+        ]),
+        .init(title: "Insights", entries: [
+            .init(destination: .musicTaste,       label: "Music Taste",       systemImage: "waveform"),
+            .init(destination: .playlistAnalysis, label: "Playlist Analysis", systemImage: "chart.pie.fill"),
+        ]),
     ]
+
+    /// Search sits above the groups rather than inside one — it reaches all of
+    /// them, so filing it under a heading would be a lie.
+    private let searchEntry = DrawerEntry(
+        destination: .search,
+        label: "Search",
+        systemImage: "magnifyingglass"
+    )
 
     private let settingsEntry = DrawerEntry(
         destination: .settings,
@@ -98,8 +123,13 @@ struct DrawerView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(primaryEntries) { entry in
-                        drawerRow(entry)
+                    drawerRow(searchEntry)
+
+                    ForEach(sections) { section in
+                        sectionHeader(section.title)
+                        ForEach(section.entries) { entry in
+                            drawerRow(entry)
+                        }
                     }
                 }
                 .padding(.horizontal, 10)
@@ -132,6 +162,19 @@ struct DrawerView: View {
                 .frame(width: 1)
                 .ignoresSafeArea(edges: .vertical)
         }
+    }
+
+    // MARK: - Section header
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.xomifyCaption)
+            .foregroundStyle(.white.opacity(0.45))
+            .tracking(0.8)
+            .padding(.horizontal, 12)
+            .padding(.top, 16)
+            .padding(.bottom, 2)
+            .accessibilityAddTraits(.isHeader)
     }
 
     // MARK: - Banner header
