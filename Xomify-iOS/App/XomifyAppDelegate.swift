@@ -16,6 +16,21 @@ final class XomifyAppDelegate: NSObject, UIApplicationDelegate {
         // Register `NotificationsService` as the notification center delegate so
         // foreground presentation + push-open dispatch route through it.
         UNUserNotificationCenter.current().delegate = NotificationsService.shared
+
+        // Re-register on EVERY launch, which Apple's documentation requires and
+        // this app was not doing. APNs rotates a device token on reinstall,
+        // restore-from-backup and some OS updates -- and registration only ever
+        // ran inside `requestPermissionIfNeeded()`, which no-ops permanently
+        // after the first prompt. So the first token was the only token ever
+        // sent to the backend, and once it rotated every push went to a dead
+        // address. APNs still answers 200 for a stale token, so nothing
+        // upstream ever noticed.
+        //
+        // Gated on already-authorized: calling it unprompted would not show the
+        // permission dialog, but it would register a device that has not opted
+        // in and cannot receive anything.
+        Task { await NotificationsService.shared.registerIfAuthorized() }
+
         return true
     }
 
