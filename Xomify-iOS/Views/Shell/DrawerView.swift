@@ -64,13 +64,13 @@ struct DrawerView: View {
         ]),
     ]
 
-    /// Search sits above the groups rather than inside one — it reaches all of
-    /// them, so filing it under a heading would be a lie.
-    private let searchEntry = DrawerEntry(
-        destination: .search,
-        label: "Search",
-        systemImage: "magnifyingglass"
-    )
+    /// Overview and Search sit above the groups rather than inside one. Overview
+    /// is the landing page and Search reaches all four groups, so filing either
+    /// under a heading would be a lie.
+    private let topEntries: [DrawerEntry] = [
+        .init(destination: .overview, label: "Overview", systemImage: "square.grid.2x2.fill"),
+        .init(destination: .search,   label: "Search",   systemImage: "magnifyingglass"),
+    ]
 
     private let settingsEntry = DrawerEntry(
         destination: .settings,
@@ -123,7 +123,9 @@ struct DrawerView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 6) {
-                    drawerRow(searchEntry)
+                    ForEach(topEntries) { entry in
+                        drawerRow(entry)
+                    }
 
                     ForEach(sections) { section in
                         sectionHeader(section.title)
