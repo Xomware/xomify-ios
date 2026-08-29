@@ -90,7 +90,7 @@ struct FavoritesRecommendationsSheet: View {
                 Color.xomifyDark.ignoresSafeArea()
 
                 if viewModel.isLoadingRecommendations {
-                    XomifyLoaderPulse(size: 48)
+                    XomifyLoaderPaint(size: 48)
                 } else if viewModel.recommendations.isEmpty {
                     VStack(spacing: XomSpacing.sm) {
                         Image(systemName: "sparkles")
@@ -177,7 +177,7 @@ struct FavoritesHistorySheet: View {
                 Color.xomifyDark.ignoresSafeArea()
 
                 if viewModel.isLoadingHistory {
-                    XomifyLoaderPulse(size: 48)
+                    XomifyLoaderPaint(size: 48)
                 } else if viewModel.history.isEmpty {
                     VStack(spacing: XomSpacing.sm) {
                         Image(systemName: "clock")

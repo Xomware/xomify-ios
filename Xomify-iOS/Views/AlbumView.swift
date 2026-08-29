@@ -16,7 +16,7 @@ struct AlbumView: View {
         ZStack {
             ScrollView {
                 if isLoading {
-                    XomifyLoaderPulse()
+                    XomifyLoaderPaint(size: 40)
                         .padding(.top, 100)
                 } else if let error = errorMessage {
                     errorState(error)

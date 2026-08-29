@@ -12,7 +12,7 @@ struct ProfilePlaylistsTab: View {
             searchField
 
             if viewModel.isLoading && viewModel.playlists.isEmpty {
-                XomifyLoaderPulse()
+                XomifyLoaderPaint(size: 40)
                     .frame(maxWidth: .infinity, minHeight: 200)
             } else if let error = viewModel.errorMessage, viewModel.playlists.isEmpty {
                 errorState(error)

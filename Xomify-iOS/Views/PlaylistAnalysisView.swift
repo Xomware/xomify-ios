@@ -30,7 +30,7 @@ struct PlaylistAnalysisView: View {
     private var content: some View {
         if viewModel.isAnalyzing {
             VStack(spacing: 12) {
-                XomifyLoaderPulse()
+                XomifyLoaderPaint(size: 40)
                 Text("Analyzing \(viewModel.selectedPlaylist?.name ?? "playlist")...")
                     .font(.caption).foregroundColor(.gray)
             }
@@ -38,7 +38,7 @@ struct PlaylistAnalysisView: View {
         } else if let analysis = viewModel.analysis {
             analysisResults(analysis)
         } else if viewModel.isLoadingPlaylists {
-            XomifyLoaderPulse()
+            XomifyLoaderPaint(size: 40)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.errorMessage {
             errorState(error)

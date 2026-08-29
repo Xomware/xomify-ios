@@ -374,7 +374,7 @@ struct RatingsHistoryView: View {
 
     private var loadingState: some View {
         VStack(spacing: 16) {
-            XomifyLoaderPulse()
+            XomifyLoaderPaint(size: 40)
             Text("Loading ratings…")
                 .font(.xomifyCaption)
                 .foregroundStyle(.white.opacity(0.7))

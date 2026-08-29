@@ -177,7 +177,7 @@ struct ProfileRecentTab: View {
     private var loadingRow: some View {
         HStack {
             Spacer()
-            XomifyLoaderSpin()
+            XomifyLoaderPaint(size: 36)
             Spacer()
         }
         .frame(minHeight: 80)

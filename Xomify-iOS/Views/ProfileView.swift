@@ -33,7 +33,7 @@ struct ProfileView: View {
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading && viewModel.displayName.isEmpty {
-            VStack { XomifyLoaderPulse() }
+            VStack { XomifyLoaderPaint(size: 40) }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.errorMessage, viewModel.displayName.isEmpty {
             errorState(error)
@@ -102,7 +102,7 @@ struct ProfileView: View {
     }
 
     private var loadingTab: some View {
-        XomifyLoaderSpin()
+        XomifyLoaderPaint(size: 36)
             .frame(maxWidth: .infinity, minHeight: 120)
     }
 
