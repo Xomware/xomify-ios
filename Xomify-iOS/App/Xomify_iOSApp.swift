@@ -91,12 +91,20 @@ private struct BootstrapSplash: View {
             )
             .ignoresSafeArea()
 
-            Image("banner-logo")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(maxWidth: 240)
-                .shadow(color: .xomifyPurple.opacity(0.5), radius: 20)
-                .accessibilityLabel("Xomify")
+            VStack(spacing: XomSpacing.lg) {
+                Image("banner-logo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 240)
+                    .shadow(color: .xomifyPurple.opacity(0.5), radius: 20)
+                    .accessibilityLabel("Xomify")
+
+                // Paint, not Pulse: this is the splash, and the X drawing
+                // itself is the one moment worth spending the full animation
+                // on. Mirrors XomFit, which uses its paint loader here and
+                // nowhere else at launch.
+                XomifyLoaderPaint(size: 60)
+            }
         }
     }
 }

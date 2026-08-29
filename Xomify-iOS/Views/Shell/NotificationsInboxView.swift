@@ -29,7 +29,7 @@ struct NotificationsInboxView: View {
                 Color.xomifyDark.ignoresSafeArea()
 
                 if isLoading {
-                    XomifyLoaderPulse(size: 52)
+                    XomifyLoaderPaint(size: 64)
                 } else if loadFailed && items.isEmpty {
                     failureState
                 } else if items.isEmpty {
