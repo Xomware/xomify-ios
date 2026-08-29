@@ -254,11 +254,10 @@ final class SettingsViewModel {
     /// in-memory toggle provides immediate UI feedback.
     private func syncLikesPublic() {
         let value = likesPublic
-        guard let email = user?.email, !email.isEmpty else { return }
         isUpdatingLikesPublic = true
         Task { @MainActor in
             do {
-                _ = try await xomifyService.setLikesPublic(email: email, value: value)
+                _ = try await xomifyService.setLikesPublic(value: value)
                 print("✅ Settings: likesPublic → \(value)")
             } catch {
                 print("⚠️ Settings: setLikesPublic failed — \(error)")
