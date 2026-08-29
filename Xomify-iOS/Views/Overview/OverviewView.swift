@@ -179,7 +179,7 @@ struct OverviewView: View {
     private let links: [QuickLink] = [
         .init(destination: .wrapped,      label: "Wrapped",       systemImage: "chart.bar.fill"),
         .init(destination: .releaseRadar, label: "Release Radar", systemImage: "antenna.radiowaves.left.and.right"),
-        .init(destination: .feed,         label: "Shares",        systemImage: "square.and.arrow.up"),
+        .init(destination: .shares,         label: "Shares",        systemImage: "square.and.arrow.up"),
         .init(destination: .favorites,    label: "My Favorites",  systemImage: "bookmark.fill"),
         .init(destination: .builder,      label: "Playlist Builder", systemImage: "music.note.list"),
         .init(destination: .moodPicks,    label: "Mood Picks",    systemImage: "face.smiling"),

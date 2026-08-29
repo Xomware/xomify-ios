@@ -11,6 +11,7 @@ struct MainShell: View {
     // MARK: - State
 
     @State private var navStore = NavigationStore()
+    @State private var composerViewModel = ShareComposerViewModel()
     @State private var avatarURL: URL? = nil
     @State private var displayName: String? = nil
     @State private var userEmail: String? = nil
@@ -53,11 +54,23 @@ struct MainShell: View {
             QueueToastHost()
         }
         .environment(navStore)
+        // The composer lives here, not on a screen. The Share Extension and the
+        // push pipeline both open it by setting `composerSheetPresented`, and
+        // whichever destination happens to be showing should not decide whether
+        // that works.
+        .sheet(isPresented: Binding(
+            get: { navStore.composerSheetPresented },
+            set: { navStore.composerSheetPresented = $0 }
+        )) {
+            ShareComposerView(viewModel: composerViewModel) { _ in
+                navStore.composerSheetPresented = false
+            }
+        }
         .ignoresSafeArea(edges: .bottom)
         .gesture(edgeDragGesture)
         .task {
             // Share the nav store with the push pipeline so push-open handlers
-            // can call `select(.feed)`.
+            // can call `select(.shares)`.
             NotificationsService.shared.navigationStore = navStore
             await fetchAvatar()
             // Fire-and-forget: push user's saved tracks to the backend once
@@ -83,8 +96,8 @@ struct MainShell: View {
             OverviewView(displayName: displayName, avatarURL: avatarURL)
         case .profile:
             ProfileView()
-        case .feed:
-            FeedView()
+        case .shares:
+            SharesView()
         case .search:
             SearchView()
         case .likes:

@@ -1123,3 +1123,15 @@ struct LikesByUserResponse: Codable, Sendable {
     let hasMore: Bool?
     let likesPublic: Bool?
 }
+
+// MARK: - SharerIdentity
+
+/// Resolved display name + avatar for a share author.
+///
+/// Lived in `FeedViewModel` until the old group Feed was removed; it outlived
+/// that screen because the profile Shares tab and share detail both render
+/// authors the same way — a name and avatar instead of a raw email.
+struct SharerIdentity: Hashable, Sendable {
+    let displayName: String
+    let avatarURL: URL?
+}

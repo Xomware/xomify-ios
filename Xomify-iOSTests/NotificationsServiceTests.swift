@@ -104,7 +104,7 @@ final class NotificationsServiceTests: XCTestCase {
             payload: PushPayload(kind: .queueThreshold, shareId: "s1")
         )
 
-        XCTAssertEqual(nav.currentDestination, .feed)
+        XCTAssertEqual(nav.currentDestination, .shares)
     }
 
     func test_handlePushOpen_digest_routesToFeed() async {
@@ -118,7 +118,7 @@ final class NotificationsServiceTests: XCTestCase {
             payload: PushPayload(kind: .digest, count: 3, windowDays: 7)
         )
 
-        XCTAssertEqual(nav.currentDestination, .feed)
+        XCTAssertEqual(nav.currentDestination, .shares)
     }
 
     func test_handlePushOpen_unknown_doesNotChangeDestination() async {
