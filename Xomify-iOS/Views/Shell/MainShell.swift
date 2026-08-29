@@ -79,6 +79,8 @@ struct MainShell: View {
     @ViewBuilder
     private var destinationRoot: some View {
         switch navStore.currentDestination {
+        case .overview:
+            OverviewView(displayName: displayName, avatarURL: avatarURL)
         case .profile:
             ProfileView()
         case .feed:

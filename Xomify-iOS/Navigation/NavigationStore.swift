@@ -5,6 +5,7 @@ import SwiftUI
 /// All top-level destinations reachable from the sidebar drawer.
 /// This is the sole primary-navigation enum — `ShellTab` has been removed.
 enum SidebarDestination: Hashable {
+    case overview
     case profile
     case feed
     case search
@@ -31,8 +32,11 @@ enum SidebarDestination: Hashable {
 @MainActor
 final class NavigationStore {
 
-    /// The currently visible full-screen destination. Defaults to Feed on cold launch.
-    var currentDestination: SidebarDestination = .feed
+    /// The currently visible full-screen destination.
+    ///
+    /// Overview, not Feed. Landing straight in a social feed gave no sense of
+    /// the user's own listening, and buried every other feature in the drawer.
+    var currentDestination: SidebarDestination = .overview
 
     var isDrawerOpen: Bool = false
 
