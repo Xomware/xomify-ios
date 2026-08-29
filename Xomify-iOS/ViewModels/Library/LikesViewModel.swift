@@ -162,14 +162,7 @@ final class LikesViewModel {
 
     private func fetchBackendPage(callerEmail: String, targetEmail: String) async throws {
         // Resolve caller email if not supplied at init (LikesView passes "" as placeholder).
-        var resolvedCaller = callerEmail
-        if resolvedCaller.isEmpty {
-            let user = try await SpotifyService.shared.getCurrentUser()
-            resolvedCaller = user.email ?? ""
-        }
-
         let response = try await xomifyService.getLikesByUser(
-            email: resolvedCaller,
             targetEmail: targetEmail,
             limit: Self.pageSize,
             offset: offset

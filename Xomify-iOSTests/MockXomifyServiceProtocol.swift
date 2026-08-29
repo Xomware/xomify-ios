@@ -240,7 +240,6 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     // MARK: - Likes
 
     struct PushUserLikesCall: Equatable {
-        let email: String
         let total: Int
         let trackCount: Int
     }
@@ -248,14 +247,13 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     private(set) var pushUserLikesCalls: [PushUserLikesCall] = []
     var pushUserLikesError: Error?
 
-    func pushUserLikes(email: String, total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse {
-        pushUserLikesCalls.append(PushUserLikesCall(email: email, total: total, trackCount: tracks.count))
+    func pushUserLikes(total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse {
+        pushUserLikesCalls.append(PushUserLikesCall(total: total, trackCount: tracks.count))
         if let pushUserLikesError { throw pushUserLikesError }
         return LikesPushResponse(success: true, deduped: false, count: tracks.count)
     }
 
     struct GetLikesByUserCall: Equatable {
-        let email: String
         let targetEmail: String
         let limit: Int
         let offset: Int
@@ -266,26 +264,24 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
     var getLikesByUserError: Error?
 
     func getLikesByUser(
-        email: String,
         targetEmail: String,
         limit: Int,
         offset: Int
     ) async throws -> LikesByUserResponse {
-        getLikesByUserCalls.append(GetLikesByUserCall(email: email, targetEmail: targetEmail, limit: limit, offset: offset))
+        getLikesByUserCalls.append(GetLikesByUserCall(targetEmail: targetEmail, limit: limit, offset: offset))
         if let getLikesByUserError { throw getLikesByUserError }
         return getLikesByUserResponse
     }
 
     struct SetLikesPublicCall: Equatable {
-        let email: String
         let value: Bool
     }
 
     private(set) var setLikesPublicCalls: [SetLikesPublicCall] = []
     var setLikesPublicError: Error?
 
-    func setLikesPublic(email: String, value: Bool) async throws -> SuccessResponse {
-        setLikesPublicCalls.append(SetLikesPublicCall(email: email, value: value))
+    func setLikesPublic(value: Bool) async throws -> SuccessResponse {
+        setLikesPublicCalls.append(SetLikesPublicCall(value: value))
         if let setLikesPublicError { throw setLikesPublicError }
         return SuccessResponse(success: true)
     }

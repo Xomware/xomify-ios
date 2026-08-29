@@ -88,7 +88,6 @@ actor LikesPushCoordinator {
             guard !allTracks.isEmpty else { return }
 
             _ = try await xomifyService.pushUserLikes(
-                email: email,
                 total: total,
                 tracks: allTracks
             )

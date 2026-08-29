@@ -120,17 +120,16 @@ protocol XomifyServiceProtocol: Sendable {
     // MARK: - Likes
 
     @discardableResult
-    func pushUserLikes(email: String, total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse
+    func pushUserLikes(total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse
 
     func getLikesByUser(
-        email: String,
         targetEmail: String,
         limit: Int,
         offset: Int
     ) async throws -> LikesByUserResponse
 
     @discardableResult
-    func setLikesPublic(email: String, value: Bool) async throws -> SuccessResponse
+    func setLikesPublic(value: Bool) async throws -> SuccessResponse
 }
 
 extension XomifyService: XomifyServiceProtocol {}

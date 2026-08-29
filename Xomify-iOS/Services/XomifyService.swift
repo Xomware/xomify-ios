@@ -795,7 +795,7 @@ actor XomifyService {
     /// Push the caller's top-200 saved tracks to the backend.
     /// Verb-disambiguated path: `/likes/push` (POST).
     @discardableResult
-    func pushUserLikes(email: String, total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse {
+    func pushUserLikes(total: Int, tracks: [LikesPushTrack]) async throws -> LikesPushResponse {
         let trackDicts: [[String: Any]] = tracks.map { t -> [String: Any] in
             var row: [String: Any] = [
                 "trackId": t.trackId,
@@ -807,7 +807,6 @@ actor XomifyService {
             return row
         }
         let body: [String: Any] = [
-            "email": email,
             "total": total,
             "tracks": trackDicts
         ]
@@ -817,13 +816,11 @@ actor XomifyService {
     /// Fetch a friend's (or self) liked tracks from the backend.
     /// Verb-disambiguated path: `/likes/by-user` (GET).
     func getLikesByUser(
-        email: String,
         targetEmail: String,
         limit: Int = 50,
         offset: Int = 0
     ) async throws -> LikesByUserResponse {
         try await network.xomifyGet("/likes/by-user", queryParams: [
-            "email": email,
             "targetEmail": targetEmail,
             "limit": String(limit),
             "offset": String(offset)
@@ -832,9 +829,8 @@ actor XomifyService {
 
     /// Set the caller's `likes_public` flag.
     @discardableResult
-    func setLikesPublic(email: String, value: Bool) async throws -> SuccessResponse {
+    func setLikesPublic(value: Bool) async throws -> SuccessResponse {
         try await network.xomifyPost("/users/likes-public", body: [
-            "email": email,
             "value": value
         ])
     }
