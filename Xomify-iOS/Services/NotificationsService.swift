@@ -378,20 +378,20 @@ extension NotificationsService: UNUserNotificationCenterDelegate {
         let head = token.split(separator: ":").first.map(String.init) ?? token
 
         switch head {
-        case "share", "shares":     return .feed
+        case "share", "shares":     return .shares
         case "friend", "friends":   return .friends
         case "invite":              return .friends
         case "wrapped":             return .wrapped
         case "release_radar":       return .releaseRadar
         case "favorites":           return .favorites
-        case "home":                return .feed
+        case "home":                return .overview
         default:
             // No usable route. Fall back on the kind for the pre-registry
             // payloads that predate `route` entirely.
             switch payload.kind {
             case .queueThreshold, .digest, .shareReceived, .shareComment,
                  .shareReaction, .shareListened, .shareRated, .rateReminder:
-                return .feed
+                return .shares
             case .friendRequest, .friendAccepted, .inviteReceived, .inviteAccepted:
                 return .friends
             case .wrappedDrop:      return .wrapped

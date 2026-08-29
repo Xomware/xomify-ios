@@ -54,7 +54,7 @@ struct DrawerView: View {
             // Labelled "Shares" to match the web. The screen has always read
             // /shares/* — "Feed" was the pre-rename name and looked like a
             // leftover of the tab that actually was removed.
-            .init(destination: .feed,             label: "Shares",            systemImage: "square.and.arrow.up"),
+            .init(destination: .shares,             label: "Shares",            systemImage: "square.and.arrow.up"),
             .init(destination: .friends,          label: "Friends",           systemImage: "person.2.fill"),
             .init(destination: .following,        label: "Following",         systemImage: "person.badge.plus"),
         ]),

@@ -84,14 +84,14 @@ final class PushPayloadTests: XCTestCase {
     @MainActor
     func test_routeTokensMapToDestinations() async {
         let cases: [(String, SidebarDestination)] = [
-            ("share:s1", .feed),
-            ("shares", .feed),
+            ("share:s1", .shares),
+            ("shares", .shares),
             ("friends", .friends),
             ("friend:a@e.com", .friends),
             ("invite:CODE", .friends),
             ("wrapped:p1", .wrapped),
             ("release_radar:p1", .releaseRadar),
-            ("home", .feed),
+            ("home", .overview),
         ]
         for (token, expected) in cases {
             let payload = PushPayload(kind: .unknown, route: token)

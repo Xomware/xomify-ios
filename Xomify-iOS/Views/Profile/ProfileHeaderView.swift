@@ -124,7 +124,7 @@ struct ProfileHeaderView: View {
                     value: viewModel.shareCount ?? 0,
                     label: "Posts",
                     color: .xomifyGreen,
-                    destination: .feed
+                    destination: .shares
                 )
                 // Likes chip — shown for self and friends when likesCount is
                 // present. Backend omits likesCount when likes_public=false
