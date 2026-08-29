@@ -119,7 +119,7 @@ struct LikesView: View {
                 if viewModel.isLoadingMore {
                     HStack {
                         Spacer()
-                        XomifyLoaderSpin()
+                        XomifyLoaderPaint(size: 36)
                         Spacer()
                     }
                     .frame(minHeight: 60)
@@ -239,7 +239,7 @@ struct LikesView: View {
     private var loadingState: some View {
         HStack {
             Spacer()
-            XomifyLoaderSpin()
+            XomifyLoaderPaint(size: 36)
             Spacer()
         }
         .frame(minHeight: 120)

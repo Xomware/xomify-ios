@@ -1,9 +1,12 @@
 import SwiftUI
 
-/// Xomify paint-style loader. Ports `XomperLoaderPaint` from the Xomper iOS
-/// app — draws the two X-stroke legs in sequence, fades out, and loops.
-/// Use for app-splash / long loads. The `Pulse` and `Spin` variants are for
-/// medium and quick loads respectively.
+/// Xomify paint-style loader — draws the two X-stroke legs in sequence, fades
+/// out, and loops. Ports `XomFitLoaderPaint`.
+///
+/// This is the app's ONLY loader. Spinning and pulsing variants used to exist
+/// alongside it and have been removed: neither said anything the paint does
+/// not, and having three answers to "what does loading look like" meant the
+/// brand animation was the one that never got used.
 struct XomifyLoaderPaint: View {
     var size: CGFloat = 60
 
@@ -44,43 +47,6 @@ struct XomifyLoaderPaint: View {
     }
 }
 
-/// Medium-load loader — soft breathing pulse.
-struct XomifyLoaderPulse: View {
-    var size: CGFloat = 40
-
-    @State private var isPulsing = false
-
-    var body: some View {
-        Image("logo")
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .scaleEffect(isPulsing ? 1.15 : 0.85)
-            .opacity(isPulsing ? 1 : 0.5)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
-            .onAppear { isPulsing = true }
-            .accessibilityLabel("Loading")
-    }
-}
-
-/// Quick-load loader — steady rotation.
-struct XomifyLoaderSpin: View {
-    var size: CGFloat = 36
-
-    @State private var rotation: Double = 0
-
-    var body: some View {
-        Image("logo")
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .rotationEffect(.degrees(rotation))
-            .animation(.linear(duration: 1.2).repeatForever(autoreverses: false), value: rotation)
-            .onAppear { rotation = 360 }
-            .accessibilityLabel("Loading")
-    }
-}
-
 // MARK: - XStroke
 
 /// One leg of the X-mark, drawn as a shallow quadratic curve. The two legs
@@ -113,8 +79,8 @@ private struct XStroke: Shape {
         Color.xomifyDark.ignoresSafeArea()
         HStack(spacing: 32) {
             XomifyLoaderPaint(size: 72)
-            XomifyLoaderPulse(size: 56)
-            XomifyLoaderSpin(size: 48)
+            XomifyLoaderPaint(size: 56)
+            XomifyLoaderPaint(size: 48)
         }
     }
 }

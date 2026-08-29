@@ -120,7 +120,7 @@ struct MoodPicksView: View {
     private var content: some View {
         if viewModel.isLoading {
             VStack(spacing: 10) {
-                XomifyLoaderPulse()
+                XomifyLoaderPaint(size: 40)
                 Text("Building your \(viewModel.selectedMood?.rawValue ?? "") picks...")
                     .font(.caption).foregroundColor(.gray)
             }

@@ -342,7 +342,7 @@ struct SearchView: View {
 
     private var loadingState: some View {
         VStack {
-            XomifyLoaderPulse()
+            XomifyLoaderPaint(size: 40)
                 .padding(.top, 80)
             Spacer()
         }

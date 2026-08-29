@@ -93,7 +93,7 @@ struct QueueBuilderView: View {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     if viewModel.isSearching {
-                        XomifyLoaderSpin().padding(.top, 40)
+                        XomifyLoaderPaint(size: 36).padding(.top, 40)
                     } else if viewModel.searchResults.isEmpty && !viewModel.searchQuery.isEmpty {
                         Text("No results found").foregroundColor(.gray).padding(.top, 40)
                     } else if viewModel.searchResults.isEmpty {

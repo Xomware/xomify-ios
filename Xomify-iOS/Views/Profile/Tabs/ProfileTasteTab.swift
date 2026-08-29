@@ -65,7 +65,7 @@ private struct SelfTasteSummary: View {
 
             if viewModel.isLoading && allEmpty {
                 VStack {
-                    XomifyLoaderPulse(size: 48)
+                    XomifyLoaderPaint(size: 48)
                 }
                 .frame(maxWidth: .infinity, minHeight: 200)
             } else {

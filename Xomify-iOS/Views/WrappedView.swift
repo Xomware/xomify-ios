@@ -273,7 +273,7 @@ struct WrappedContent: View {
     private var contentView: some View {
         ScrollView {
             if isLoadingContent {
-                XomifyLoaderSpin()
+                XomifyLoaderPaint(size: 36)
                     .padding(.top, 40)
             } else {
                 switch selectedTab {
@@ -641,7 +641,7 @@ struct WrappedContent: View {
 
     private var loadingState: some View {
         VStack(spacing: 12) {
-            XomifyLoaderPulse()
+            XomifyLoaderPaint(size: 40)
             Text("Loading wrapped data...")
                 .font(.caption)
                 .foregroundStyle(.gray)
