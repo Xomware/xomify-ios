@@ -18,7 +18,7 @@ struct SharesView: View {
 
                 if viewModel.isLoading {
                     Spacer()
-                    XomifyLoaderPulse(size: 52)
+                    XomifyLoaderPaint(size: 64)
                     Spacer()
                 } else if viewModel.shares.isEmpty {
                     Spacer()

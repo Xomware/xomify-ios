@@ -18,7 +18,7 @@ struct OverviewView: View {
             Color.xomifyDark.ignoresSafeArea()
 
             if viewModel.isLoading {
-                XomifyLoaderPulse(size: 52)
+                XomifyLoaderPaint(size: 64)
             } else {
                 content
             }
