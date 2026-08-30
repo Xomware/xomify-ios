@@ -721,109 +721,11 @@ struct SearchResult: Codable, Sendable, Identifiable, Hashable {
     }
 }
 
-// MARK: - Groups
-
-/// A group you belong to.
-///
-/// The backend's `/groups/list` endpoint used to return only membership
-/// rows (no `name`/`createdBy`), which crashed decoding. Backend now
-/// hydrates from the Groups table, but we keep most fields optional so a
-/// partial payload from any source degrades to a usable row rather than
-/// failing the whole list. `groupId` is always required — without it the
-/// row is meaningless.
-struct XomifyGroup: Codable, Sendable, Identifiable, Hashable {
-    let groupId: String
-    let name: String?
-    let description: String?
-    let ownerEmail: String?
-    let createdBy: String?
-    let createdAt: String?
-    let memberCount: Int?
-    let trackCount: Int?
-    let imageUrl: String?
-    let role: String?
-    let joinedAt: String?
-
-    var id: String { groupId }
-
-    /// Display-safe name — falls back to a short id suffix when the backend
-    /// returns a headless row so the UI never renders an empty label.
-    var displayName: String {
-        if let name, !name.isEmpty { return name }
-        let suffix = groupId.suffix(6)
-        return "Group \(suffix)"
-    }
-
-    /// Prefer `createdBy` (new hydrated shape) over `ownerEmail` (legacy).
-    var ownerLabel: String? {
-        createdBy ?? ownerEmail
-    }
-}
-
-/// Response for GET /groups/list
-struct GroupsListResponse: Codable, Sendable {
-    let email: String?
-    let groups: [XomifyGroup]?
-    let totalCount: Int?
-}
-
-/// Response for GET /groups/info — group + members + tracks
-struct GroupInfo: Codable, Sendable {
-    let group: XomifyGroup?
-    let members: [GroupMember]?
-    let tracks: [GroupTrack]?
-}
-
-struct GroupMember: Codable, Sendable, Identifiable, Hashable {
-    let email: String
-    let displayName: String?
-    let joinedAt: String?
-    let isOwner: Bool?
-
-    var id: String { email }
-
-    var label: String {
-        if let name = displayName, !name.isEmpty { return name }
-        return email
-    }
-}
-
-struct GroupTrack: Codable, Sendable, Identifiable, Hashable {
-    let trackIdTimestamp: String
-    let trackId: String?
-    let trackName: String?
-    let artistName: String?
-    let albumName: String?
-    let imageUrl: String?
-    let addedBy: String?
-    let addedAt: String?
-    let listenedBy: [String]?
-
-    var id: String { trackIdTimestamp }
-
-    var image: URL? {
-        guard let s = imageUrl else { return nil }
-        return URL(string: s)
-    }
-}
-
-/// POST /groups/create response — server returns the new group.
-struct GroupCreateResponse: Codable, Sendable {
-    let success: Bool?
-    let group: XomifyGroup?
-    let groupId: String?
-}
-
-/// Simple success ack.
+/// Bare `{ "success": true }` acknowledgement, returned by several mutating
+/// endpoints. Lived under the Groups models until those were removed; it was
+/// never group-specific.
 struct SuccessResponse: Codable, Sendable {
     let success: Bool?
-}
-
-/// POST /groups/song-status response.
-struct SongStatusResponse: Codable, Sendable {
-    let success: Bool?
-    let listened: Bool?
-    let listenedBy: [String]?
 }
 
 // MARK: - Ratings

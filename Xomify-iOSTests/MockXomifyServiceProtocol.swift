@@ -147,12 +147,6 @@ final class MockXomifyServiceProtocol: XomifyServiceProtocol, @unchecked Sendabl
         return getFriendProfileResponse
     }
 
-    // MARK: - listGroups
-
-    func listGroups() async throws -> GroupsListResponse {
-        GroupsListResponse(email: "", groups: [], totalCount: 0)
-    }
-
     // MARK: - publishRating
 
     func publishRating(

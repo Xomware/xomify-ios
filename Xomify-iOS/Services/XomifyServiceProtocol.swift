@@ -65,10 +65,6 @@ protocol XomifyServiceProtocol: Sendable {
         profileEmail: String
     ) async throws -> FriendProfile
 
-    // MARK: - Groups (for filter chips)
-
-    func listGroups() async throws -> GroupsListResponse
-
     // MARK: - Ratings (used by ShareCardViewModel)
 
     func publishRating(
