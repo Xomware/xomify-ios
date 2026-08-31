@@ -15,20 +15,33 @@ struct XomifyLoaderPaint: View {
     @State private var opacity: Double = 1
 
     var body: some View {
-        Image("logo")
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .mask {
-                ZStack {
-                    XStroke(topLeft: true)
-                        .trim(from: 0, to: stroke1)
-                        .stroke(style: StrokeStyle(lineWidth: size * 0.35, lineCap: .round))
-                    XStroke(topLeft: false)
-                        .trim(from: 0, to: stroke2)
-                        .stroke(style: StrokeStyle(lineWidth: size * 0.35, lineCap: .round))
+        ZStack {
+            // The whole mark, dimmed. Without this the mask leaves only an
+            // X-shaped sliver of the logo on screen -- and ours is a filled
+            // disc, so that hides most of it. XomFit can mask directly because
+            // its X sits over a muted figure; the X *is* its logo.
+            Image("logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .opacity(0.22)
+
+            // The painted X, revealed at full colour as the strokes draw.
+            Image("logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .mask {
+                    ZStack {
+                        XStroke(topLeft: true)
+                            .trim(from: 0, to: stroke1)
+                            .stroke(style: StrokeStyle(lineWidth: size * 0.35, lineCap: .round))
+                        XStroke(topLeft: false)
+                            .trim(from: 0, to: stroke2)
+                            .stroke(style: StrokeStyle(lineWidth: size * 0.35, lineCap: .round))
+                    }
                 }
-            }
+        }
             .opacity(opacity)
             .onAppear { animate() }
             .accessibilityLabel("Loading")

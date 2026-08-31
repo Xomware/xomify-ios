@@ -60,10 +60,10 @@ struct ReleaseRadarView: View {
                     ScrollView {
                         if isLoadingUser || viewModel.isLoading {
                             VStack(spacing: 12) {
-                                ProgressView()
+                                XomifyLoaderPaint(size: 44)
                                 Text(isLoadingUser ? "Loading profile..." : "Loading releases...")
                                     .font(.caption)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.white.opacity(0.5))
                             }
                             .padding(.top, 60)
                         } else if let error = viewModel.errorMessage {
@@ -156,7 +156,7 @@ struct ReleaseRadarView: View {
                     if let dateRange = viewModel.displayDateRange {
                         Text(dateRange)
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                 }
                 
@@ -188,25 +188,25 @@ struct ReleaseRadarView: View {
             
             Divider()
                 .frame(height: 30)
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             statItem(value: stats.artistCount ?? 0, label: "Artists", color: .xomifyPurple)
             
             Divider()
                 .frame(height: 30)
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             statItem(value: stats.trackCount ?? 0, label: "Tracks", color: .xomifyGreen)
             
             Divider()
                 .frame(height: 30)
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             statItem(value: stats.albumCount ?? 0, label: "Albums", color: .xomifyPurple)
             
             Divider()
                 .frame(height: 30)
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             statItem(value: stats.singleCount ?? 0, label: "Singles", color: .xomifyGreen)
         }
@@ -228,7 +228,7 @@ struct ReleaseRadarView: View {
                 .foregroundColor(color)
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
     }
@@ -243,7 +243,7 @@ struct ReleaseRadarView: View {
                     AsyncImage(url: release.image) { image in
                         image.resizable()
                     } placeholder: {
-                        Rectangle().fill(Color.gray.opacity(0.3))
+                        Rectangle().fill(Color.white.opacity(0.08))
                     }
                     .frame(width: 70, height: 70)
                     .cornerRadius(XomRadius.md)
@@ -252,7 +252,7 @@ struct ReleaseRadarView: View {
                 AsyncImage(url: release.image) { image in
                     image.resizable()
                 } placeholder: {
-                    Rectangle().fill(Color.gray.opacity(0.3))
+                    Rectangle().fill(Color.white.opacity(0.08))
                 }
                 .frame(width: 70, height: 70)
                 .cornerRadius(XomRadius.md)
@@ -289,7 +289,7 @@ struct ReleaseRadarView: View {
                 } else {
                     Text(release.displayArtist)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                         .lineLimit(1)
                 }
                 
@@ -310,14 +310,14 @@ struct ReleaseRadarView: View {
                     if let tracks = release.totalTracks {
                         Text("\(tracks) tracks")
                             .font(.caption2)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                     
                     // Release date
                     if let date = release.releaseDate {
                         Text(formatDate(date))
                             .font(.caption2)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                 }
             }
@@ -375,7 +375,7 @@ struct ReleaseRadarView: View {
         case "album": return .xomifyPurple
         case "single": return .xomifyGreen
         case "ep": return .blue
-        default: return .gray
+        default: return .white.opacity(0.5)
         }
     }
     
@@ -402,7 +402,7 @@ struct ReleaseRadarView: View {
             
             Text(message)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             
             Button {
@@ -428,7 +428,7 @@ struct ReleaseRadarView: View {
         VStack(spacing: 16) {
             Image(systemName: "antenna.radiowaves.left.and.right")
                 .font(.system(size: 50))
-                .foregroundColor(.gray.opacity(0.5))
+                .foregroundColor(.white.opacity(0.5))
             
             Text("No Releases Yet")
                 .font(.headline)
@@ -436,7 +436,7 @@ struct ReleaseRadarView: View {
             
             Text("Release data is updated weekly on Saturday mornings. Check back then for new music from your followed artists!")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.top, 60)
@@ -480,7 +480,7 @@ struct ReleaseRadarView: View {
                                 if let dateRange = week.dateRange {
                                     Text(dateRange)
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.white.opacity(0.5))
                                 }
                             }
                             

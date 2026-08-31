@@ -106,12 +106,12 @@ struct ShareDetailView: View {
                 .lineLimit(3)
             Text(viewModel.share.artistName)
                 .font(.subheadline)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .lineLimit(2)
             if let album = viewModel.share.albumName, !album.isEmpty {
                 Text(album)
                     .font(.caption)
-                    .foregroundStyle(.gray.opacity(0.75))
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             if viewModel.share.moodTag != nil || !(viewModel.share.genreTags ?? []).isEmpty {
@@ -158,7 +158,7 @@ struct ShareDetailView: View {
                         .lineLimit(1)
                     Text(viewModel.share.relativeTime)
                         .font(.caption2)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
 
                 Spacer(minLength: 8)
@@ -265,7 +265,7 @@ struct ShareDetailView: View {
                 .minimumScaleFactor(0.6)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             if let sublabel {
                 Text(sublabel)
@@ -401,7 +401,7 @@ struct ShareDetailView: View {
             } else if viewModel.comments.isEmpty {
                 Text("No comments yet. Be the first.")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(Color.xomifyCard.opacity(0.5))
@@ -434,7 +434,7 @@ struct ShareDetailView: View {
                         get: { viewModel.commentDraft },
                         set: { viewModel.commentDraft = $0 }
                     ),
-                    prompt: Text("Add a comment").foregroundStyle(.gray),
+                    prompt: Text("Add a comment").foregroundStyle(.white.opacity(0.5)),
                     axis: .vertical
                 )
                 .lineLimit(1...4)
@@ -457,8 +457,11 @@ struct ShareDetailView: View {
                     }
                 }
                 .frame(width: 44, height: 44)
+                // Disabled state: the brand gradient flattened to one dim tone,
+                // so the button reads as the same control turned off rather
+                // than a different control.
                 .background(canPostComment ? LinearGradient.xomifyGradient : LinearGradient(
-                    colors: [Color.gray.opacity(0.4)], startPoint: .leading, endPoint: .trailing
+                    colors: [Color.white.opacity(0.12)], startPoint: .leading, endPoint: .trailing
                 ))
                 .clipShape(.rect(cornerRadius: XomRadius.lg))
                 .disabled(!canPostComment)
@@ -490,7 +493,7 @@ struct ShareDetailView: View {
                         .lineLimit(1)
                     Text(comment.relativeTime)
                         .font(.caption2)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                     Spacer(minLength: 0)
                     if viewModel.canDelete(comment) {
                         Button(role: .destructive) {
@@ -531,7 +534,7 @@ struct ShareDetailView: View {
             Text("\(count)")
                 .font(.caption2)
                 .fontWeight(.semibold)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(Color.white.opacity(0.08))
@@ -542,11 +545,12 @@ struct ShareDetailView: View {
     private func sectionPlaceholder(message: String) -> some View {
         HStack(spacing: 8) {
             ProgressView()
+                .tint(.white.opacity(0.7))
                 .controlSize(.small)
                 .tint(Color.xomifyGreen)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -617,7 +621,7 @@ private struct DetailRateSheet: View {
                     .foregroundStyle(.white)
                 Text(viewModel.share.trackName)
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             .padding(.top, 24)

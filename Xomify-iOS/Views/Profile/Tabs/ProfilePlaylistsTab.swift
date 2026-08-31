@@ -33,7 +33,7 @@ struct ProfilePlaylistsTab: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
             TextField(
                 "Search playlists",
                 text: $viewModel.searchQuery
@@ -47,7 +47,7 @@ struct ProfilePlaylistsTab: View {
                     viewModel.searchQuery = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
@@ -77,7 +77,7 @@ struct ProfilePlaylistsTab: View {
             AsyncImage(url: playlist.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 52, height: 52)
             .clipShape(RoundedRectangle(cornerRadius: XomRadius.md, style: .continuous))
@@ -89,13 +89,13 @@ struct ProfilePlaylistsTab: View {
                     .lineLimit(1)
                 Text("\(playlist.tracks?.total ?? 0) tracks")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
 
             Spacer(minLength: 0)
 
             Image(systemName: "arrow.up.right.square")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .padding(12)
         .background(Color.xomifyCard)
@@ -110,10 +110,10 @@ struct ProfilePlaylistsTab: View {
         VStack(spacing: 6) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 32))
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
             Text(viewModel.searchQuery.isEmpty ? "No playlists yet" : "No playlists match \"\(viewModel.searchQuery)\"")
                 .font(.subheadline)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -128,7 +128,7 @@ struct ProfilePlaylistsTab: View {
                 .foregroundStyle(.white)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             Button("Retry") {
                 Task { await viewModel.load() }

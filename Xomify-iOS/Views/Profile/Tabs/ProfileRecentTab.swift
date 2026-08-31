@@ -85,7 +85,7 @@ struct ProfileRecentTab: View {
                     Text("\(tracks.count)")
                         .font(.caption2)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(Color.white.opacity(0.06))
@@ -121,7 +121,7 @@ struct ProfileRecentTab: View {
                     .lineLimit(1)
                 Text(artistNames(track))
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -186,7 +186,7 @@ struct ProfileRecentTab: View {
     private func emptyRow(_ text: String) -> some View {
         Text(text)
             .font(.caption)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
@@ -200,7 +200,7 @@ struct ProfileRecentTab: View {
                 .foregroundStyle(.orange)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }

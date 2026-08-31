@@ -59,7 +59,7 @@ struct TrackQuickInfoSheet: View {
                 .aspectRatio(contentMode: .fill)
         } placeholder: {
             Rectangle()
-                .fill(Color.gray.opacity(0.2))
+                .fill(Color.white.opacity(0.08))
         }
         .frame(width: 200, height: 200)
         .clipShape(.rect(cornerRadius: XomRadius.xl))
@@ -77,7 +77,7 @@ struct TrackQuickInfoSheet: View {
 
             Text(track.artistNames)
                 .font(.subheadline)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .accessibilityElement(children: .combine)
@@ -115,7 +115,7 @@ struct TrackQuickInfoSheet: View {
                 Text(title)
             }
             .font(.caption)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
 
             Text(value)
                 .font(.subheadline)
@@ -137,7 +137,7 @@ struct TrackQuickInfoSheet: View {
             HStack {
                 Text("Popularity")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                 Spacer()
                 Text("\(popularity)/100")
                     .font(.caption)

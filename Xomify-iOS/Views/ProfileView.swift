@@ -118,7 +118,7 @@ struct ProfileView: View {
                 .foregroundStyle(.white)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
         }

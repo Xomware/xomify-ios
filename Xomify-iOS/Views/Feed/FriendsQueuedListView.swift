@@ -42,7 +42,7 @@ struct FriendsQueuedListView: View {
                 .lineLimit(2)
             Text(listeners.count == 1 ? "1 friend queued this" : "\(listeners.count) friends queued this")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -50,7 +50,7 @@ struct FriendsQueuedListView: View {
     private var emptyState: some View {
         Text("No friends have queued this yet.")
             .font(.subheadline)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))

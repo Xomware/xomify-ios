@@ -84,7 +84,7 @@ struct LikesView: View {
                 Text(formattedCount(total))
                     .font(.caption2)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(Color.white.opacity(0.06))
@@ -127,7 +127,7 @@ struct LikesView: View {
                 } else if !viewModel.hasMore && !viewModel.items.isEmpty && viewModel.searchQuery.isEmpty {
                     Text("All \(viewModel.items.count) songs loaded")
                         .font(.caption2)
-                        .foregroundStyle(.gray.opacity(0.6))
+                        .foregroundStyle(.white.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                 }
@@ -140,16 +140,16 @@ struct LikesView: View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .accessibilityHidden(true)
             if let total = viewModel.total {
                 Text("Showing \(viewModel.items.count) of \(formattedCount(total)) — load more to search older")
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             } else {
                 Text("Load more to search older songs")
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             Spacer(minLength: 0)
         }
@@ -180,7 +180,7 @@ struct LikesView: View {
                     .lineLimit(1)
                 Text(item.artistNames)
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -249,7 +249,7 @@ struct LikesView: View {
     private var emptyState: some View {
         Text(targetEmail == nil ? "You haven't liked any songs yet." : "No liked songs to show.")
             .font(.caption)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
@@ -264,7 +264,7 @@ struct LikesView: View {
                 .accessibilityHidden(true)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }

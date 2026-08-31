@@ -122,7 +122,7 @@ struct MoodPicksView: View {
             VStack(spacing: 10) {
                 XomifyLoaderPaint(size: 40)
                 Text("Building your \(viewModel.selectedMood?.rawValue ?? "") picks...")
-                    .font(.caption).foregroundColor(.gray)
+                    .font(.caption).foregroundColor(.white.opacity(0.5))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.errorMessage {
@@ -140,10 +140,10 @@ struct MoodPicksView: View {
         VStack(spacing: 12) {
             Image(systemName: "sparkles")
                 .font(.system(size: 40))
-                .foregroundColor(.gray.opacity(0.5))
+                .foregroundColor(.white.opacity(0.5))
             Text("Pick a mood").font(.headline).foregroundColor(.white)
             Text("We'll build a list of songs from your top artists that match the vibe.")
-                .font(.caption).foregroundColor(.gray)
+                .font(.caption).foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 40)
@@ -154,10 +154,10 @@ struct MoodPicksView: View {
         VStack(spacing: 12) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 40))
-                .foregroundColor(.gray.opacity(0.5))
+                .foregroundColor(.white.opacity(0.5))
             Text("No matching songs").font(.headline).foregroundColor(.white)
             Text("Your top artists don't quite match this mood. Try another one.")
-                .font(.caption).foregroundColor(.gray)
+                .font(.caption).foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 40)
@@ -180,7 +180,7 @@ struct MoodPicksView: View {
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 50, height: 50)
             .cornerRadius(XomRadius.md)
@@ -193,7 +193,7 @@ struct MoodPicksView: View {
                     .lineLimit(1)
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -213,7 +213,7 @@ struct MoodPicksView: View {
                 .font(.system(size: 40))
                 .foregroundColor(.orange.opacity(0.7))
             Text("Error").font(.headline).foregroundColor(.white)
-            Text(message).font(.caption).foregroundColor(.gray)
+            Text(message).font(.caption).foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(40)

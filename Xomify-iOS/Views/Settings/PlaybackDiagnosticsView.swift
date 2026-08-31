@@ -54,7 +54,7 @@ struct PlaybackDiagnosticsView: View {
             }
         } header: {
             Text("SDK Status")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -64,11 +64,11 @@ struct PlaybackDiagnosticsView: View {
             statusRow(
                 title: "Token expires",
                 value: tokenExpiryString,
-                valueColor: tokenExpiringSoon ? .orange : .gray
+                valueColor: tokenExpiringSoon ? .orange : .white.opacity(0.5)
             )
         } header: {
             Text("Auth Token")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -84,14 +84,14 @@ struct PlaybackDiagnosticsView: View {
                         .foregroundStyle(.white)
                     Text("Bypasses the SDK — useful for A/B comparison.")
                         .font(.caption)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
             .tint(Color.xomifyGreen)
             .frame(minHeight: 44)
         } header: {
             Text("Fallback")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -123,7 +123,7 @@ struct PlaybackDiagnosticsView: View {
             }
         } header: {
             Text("Actions")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }

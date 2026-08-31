@@ -47,13 +47,13 @@ struct ShareComposerView: View {
                         Task { await submit() }
                     } label: {
                         if viewModel.isSubmitting {
-                            ProgressView()
+                            ProgressView().tint(.white)
                         } else {
                             Text("Post").fontWeight(.semibold)
                         }
                     }
                     .disabled(!viewModel.canSubmit)
-                    .foregroundStyle(viewModel.canSubmit ? Color.xomifyGreen : Color.gray)
+                    .foregroundStyle(viewModel.canSubmit ? Color.xomifyGreen : Color.white.opacity(0.5))
                 }
             }
             .task { await viewModel.bootstrap() }
@@ -66,15 +66,15 @@ struct ShareComposerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Search Spotify")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                 TextField(
                     "",
                     text: $viewModel.searchQuery,
-                    prompt: Text("Track name or artist").foregroundStyle(.gray)
+                    prompt: Text("Track name or artist").foregroundStyle(.white.opacity(0.5))
                 )
                 .foregroundStyle(.white)
                 .autocorrectionDisabled()
@@ -129,7 +129,7 @@ struct ShareComposerView: View {
                     .lineLimit(1)
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             Spacer()
@@ -163,7 +163,7 @@ struct ShareComposerView: View {
                     .lineLimit(2)
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             Spacer()
@@ -171,7 +171,7 @@ struct ShareComposerView: View {
                 viewModel.clearSelectedTrack()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
@@ -187,16 +187,16 @@ struct ShareComposerView: View {
             HStack {
                 Text("Caption")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                 Spacer()
                 Text("\(viewModel.captionRemaining)")
                     .font(.caption2)
-                    .foregroundStyle(viewModel.isCaptionValid ? .gray : Color.orange)
+                    .foregroundStyle(viewModel.isCaptionValid ? .white.opacity(0.5) : Color.orange)
             }
             TextField(
                 "",
                 text: $viewModel.caption,
-                prompt: Text("Say something about this track").foregroundStyle(.gray),
+                prompt: Text("Say something about this track").foregroundStyle(.white.opacity(0.5)),
                 axis: .vertical
             )
             .lineLimit(2...5)
@@ -212,7 +212,7 @@ struct ShareComposerView: View {
             HStack {
                 Text("Rate this track")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                 Spacer()
                 if viewModel.selectedRating != nil {
                     Button("Clear") {
@@ -251,7 +251,7 @@ struct ShareComposerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Mood")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -285,11 +285,11 @@ struct ShareComposerView: View {
             HStack {
                 Text("Genres")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                 Spacer()
                 Text("\(viewModel.selectedGenres.count)/\(ShareComposerViewModel.maxGenreTags)")
                     .font(.caption2)
-                    .foregroundStyle(viewModel.isGenreCountValid ? .gray : Color.orange)
+                    .foregroundStyle(viewModel.isGenreCountValid ? .white.opacity(0.5) : Color.orange)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -328,11 +328,11 @@ struct ShareComposerView: View {
             HStack {
                 Text("Post to")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                 Spacer()
                 Text(viewModel.targetSummary)
                     .font(.caption2)
-                    .foregroundStyle(viewModel.targetState == .ok ? .gray : Color.orange)
+                    .foregroundStyle(viewModel.targetState == .ok ? .white.opacity(0.5) : Color.orange)
             }
 
             publicToggleRow
@@ -358,12 +358,12 @@ struct ShareComposerView: View {
                         .foregroundStyle(.white)
                     Text("Anyone who follows you")
                         .font(.caption2)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 Spacer()
                 Image(systemName: "globe")
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             .padding(12)
             .frame(minHeight: 44)

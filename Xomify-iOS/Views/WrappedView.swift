@@ -194,7 +194,7 @@ struct WrappedContent: View {
                         .font(.subheadline)
                         .fontWeight(selectedTab == index ? .semibold : .regular)
                 }
-                .foregroundStyle(selectedTab == index ? color : Color.gray)
+                .foregroundStyle(selectedTab == index ? color : Color.white.opacity(0.5))
 
                 Rectangle()
                     .fill(selectedTab == index ? color : Color.clear)
@@ -301,7 +301,7 @@ struct WrappedContent: View {
 
                     if index < tracks.count - 1 {
                         Divider()
-                            .background(Color.gray.opacity(0.2))
+                            .background(Color.white.opacity(0.05))
                             .padding(.leading, 70)
                     }
                 }
@@ -316,14 +316,14 @@ struct WrappedContent: View {
             Text("\(index + 1)")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(index < 3 ? Color.xomifyGreen : Color.gray)
+                .foregroundStyle(index < 3 ? Color.xomifyGreen : Color.white.opacity(0.5))
                 .frame(width: 30)
 
             // Album art
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 50, height: 50)
             .cornerRadius(XomRadius.md)
@@ -338,7 +338,7 @@ struct WrappedContent: View {
 
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -369,7 +369,7 @@ struct WrappedContent: View {
 
                     if index < artists.count - 1 {
                         Divider()
-                            .background(Color.gray.opacity(0.2))
+                            .background(Color.white.opacity(0.05))
                             .padding(.leading, 70)
                     }
                 }
@@ -384,14 +384,14 @@ struct WrappedContent: View {
             Text("\(index + 1)")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(index < 3 ? Color.xomifyPurple : Color.gray)
+                .foregroundStyle(index < 3 ? Color.xomifyPurple : Color.white.opacity(0.5))
                 .frame(width: 30)
 
             // Artist image
             AsyncImage(url: artist.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Circle().fill(Color.gray.opacity(0.3))
+                Circle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 50, height: 50)
             .clipShape(Circle())
@@ -407,7 +407,7 @@ struct WrappedContent: View {
 
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
@@ -429,7 +429,7 @@ struct WrappedContent: View {
 
                     if index < min(sortedGenres.count, 15) - 1 {
                         Divider()
-                            .background(Color.gray.opacity(0.2))
+                            .background(Color.white.opacity(0.05))
                             .padding(.leading, 50)
                     }
                 }
@@ -446,7 +446,7 @@ struct WrappedContent: View {
             Text("\(index + 1)")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(index < 3 ? Color.xomifyGreen : Color.gray)
+                .foregroundStyle(index < 3 ? Color.xomifyGreen : Color.white.opacity(0.5))
                 .frame(width: 30)
 
             // Genre name
@@ -461,7 +461,7 @@ struct WrappedContent: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: XomRadius.sm)
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(Color.white.opacity(0.08))
 
                     RoundedRectangle(cornerRadius: XomRadius.sm)
                         .fill(
@@ -484,11 +484,11 @@ struct WrappedContent: View {
         VStack(spacing: 12) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 40))
-                .foregroundStyle(.gray.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.5))
 
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 60)
@@ -644,7 +644,7 @@ struct WrappedContent: View {
             XomifyLoaderPaint(size: 40)
             Text("Loading wrapped data...")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
     }
 
@@ -660,7 +660,7 @@ struct WrappedContent: View {
 
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
 
             Button {
@@ -683,7 +683,7 @@ struct WrappedContent: View {
         VStack(spacing: 16) {
             Image(systemName: "gift")
                 .font(.system(size: 50))
-                .foregroundStyle(.gray.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.5))
 
             Text("No Wrapped Data Yet")
                 .font(.headline)
@@ -691,7 +691,7 @@ struct WrappedContent: View {
 
             Text("Wrapped data is generated monthly. Check back after the first of the month!")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 40)

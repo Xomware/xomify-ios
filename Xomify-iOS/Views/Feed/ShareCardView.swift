@@ -140,7 +140,7 @@ struct ShareCardView: View {
 
                 Text(viewModel.share.relativeTime)
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             Spacer()
 
@@ -252,12 +252,12 @@ struct ShareCardView: View {
                     .lineLimit(2)
                 Text(viewModel.share.artistName)
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
                 if let albumName = viewModel.share.albumName, !albumName.isEmpty {
                     Text(albumName)
                         .font(.caption2)
-                        .foregroundStyle(.gray.opacity(0.7))
+                        .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
@@ -432,7 +432,7 @@ struct ShareCardView: View {
                 .font(.caption2)
                 .fontWeight(.semibold)
         }
-        .foregroundStyle(.gray)
+        .foregroundStyle(.white.opacity(0.5))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .accessibilityLabel("\(viewModel.displayedQueueCount) friends queued this")
@@ -460,7 +460,7 @@ private struct RateSheet: View {
                     .foregroundStyle(.white)
                 Text(viewModel.share.trackName)
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             .padding(.top, 24)

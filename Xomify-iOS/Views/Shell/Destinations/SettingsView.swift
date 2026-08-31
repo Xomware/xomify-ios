@@ -92,11 +92,11 @@ struct SettingsView: View {
             }
         } header: {
             Text("Notifications")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         } footer: {
             Text(viewModel.statusFooter)
                 .font(.caption2)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -128,7 +128,7 @@ struct SettingsView: View {
             }
         } header: {
             Text("Features")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -143,7 +143,7 @@ struct SettingsView: View {
                         .foregroundStyle(.white)
                     Text("Friends can see your liked songs count and list.")
                         .font(.caption2)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
             .tint(Color.xomifyGreen)
@@ -152,7 +152,7 @@ struct SettingsView: View {
             .frame(minHeight: 44)
         } header: {
             Text("Privacy")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -188,7 +188,7 @@ struct SettingsView: View {
                     .foregroundStyle(.white)
                 Text(description)
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(2)
                 if isEnrolled {
                     HStack(spacing: 4) {
@@ -235,7 +235,7 @@ struct SettingsView: View {
             }
         } header: {
             Text("Account")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -250,7 +250,7 @@ struct SettingsView: View {
                 .foregroundStyle(.white)
             Spacer()
             Text(value.isEmpty ? "—" : value)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -269,7 +269,7 @@ struct SettingsView: View {
                 Spacer()
                 Text(Self.versionString)
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .accessibilityLabel("Version \(Self.versionString)")
             }
             .frame(minHeight: 44)
@@ -280,13 +280,13 @@ struct SettingsView: View {
                 Spacer()
                 Text(Self.buildString)
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .accessibilityLabel("Build \(Self.buildString)")
             }
             .frame(minHeight: 44)
         } header: {
             Text("About")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -312,7 +312,7 @@ struct SettingsView: View {
             }
         } header: {
             Text("Legal")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -331,7 +331,7 @@ struct SettingsView: View {
             }
         } header: {
             Text("Support")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }
@@ -351,7 +351,7 @@ struct SettingsView: View {
             .accessibilityHint("SDK connection status, token info, and force-fallback toggle")
         } header: {
             Text("Developer")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .listRowBackground(Color.xomifyCard)
     }

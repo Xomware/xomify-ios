@@ -32,7 +32,7 @@ struct PlaylistAnalysisView: View {
             VStack(spacing: 12) {
                 XomifyLoaderPaint(size: 40)
                 Text("Analyzing \(viewModel.selectedPlaylist?.name ?? "playlist")...")
-                    .font(.caption).foregroundColor(.gray)
+                    .font(.caption).foregroundColor(.white.opacity(0.5))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let analysis = viewModel.analysis {
@@ -58,7 +58,7 @@ struct PlaylistAnalysisView: View {
 
                 if viewModel.playlists.isEmpty {
                     Text("No playlists found.")
-                        .font(.caption).foregroundColor(.gray)
+                        .font(.caption).foregroundColor(.white.opacity(0.5))
                 } else {
                     ForEach(viewModel.playlists) { playlist in
                         Button {
@@ -79,7 +79,7 @@ struct PlaylistAnalysisView: View {
             AsyncImage(url: playlist.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 50, height: 50)
             .cornerRadius(XomRadius.md)
@@ -92,12 +92,12 @@ struct PlaylistAnalysisView: View {
                     .lineLimit(1)
                 Text("\(playlist.tracks?.total ?? 0) tracks")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
             }
             Spacer()
 
             Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
         }
         .padding(12)
         .background(Color.xomifyCard)
@@ -431,7 +431,7 @@ struct PlaylistAnalysisView: View {
                 .font(.system(size: 50))
                 .foregroundColor(.orange.opacity(0.7))
             Text("Error").font(.headline).foregroundColor(.white)
-            Text(message).font(.caption).foregroundColor(.gray)
+            Text(message).font(.caption).foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             Button {
                 Task { await viewModel.loadPlaylists() }

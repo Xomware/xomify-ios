@@ -135,6 +135,6 @@ struct HeaderBar: View {
         Image(systemName: "person.crop.circle.fill")
             .resizable()
             .scaledToFit()
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
     }
 }

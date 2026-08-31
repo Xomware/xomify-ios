@@ -29,7 +29,7 @@ struct InvitesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     generateSection
-                    Divider().background(Color.gray.opacity(0.3))
+                    Divider().background(Color.white.opacity(0.05))
                     acceptSection
                     if let error = viewModel.errorMessage {
                         Text(error).font(.caption).foregroundColor(.red)
@@ -49,7 +49,7 @@ struct InvitesView: View {
                 .foregroundColor(.white)
             Text("Share a link. When they accept, you'll be friends.")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
 
             if let code = viewModel.inviteCode {
                 VStack(alignment: .leading, spacing: 10) {
@@ -106,7 +106,7 @@ struct InvitesView: View {
 
                     if let exp = viewModel.expiresAt {
                         Text("Expires \(exp)")
-                            .font(.caption2).foregroundColor(.gray)
+                            .font(.caption2).foregroundColor(.white.opacity(0.5))
                     }
                 }
             }
@@ -137,7 +137,7 @@ struct InvitesView: View {
 
     private func codeCard(code: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("CODE").font(.caption2).foregroundColor(.gray)
+            Text("CODE").font(.caption2).foregroundColor(.white.opacity(0.5))
             Text(code)
                 .font(.title2)
                 .fontWeight(.bold)
@@ -159,7 +159,7 @@ struct InvitesView: View {
                 .foregroundColor(.white)
             Text("Paste it below to add the sender as a friend.")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
 
             TextField("Paste invite code", text: $viewModel.codeInput)
                 .autocorrectionDisabled()

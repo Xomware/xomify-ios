@@ -42,7 +42,7 @@ struct TopItemsContent: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         if viewModel.isLoading {
-                            ProgressView()
+                            XomifyLoaderPaint(size: 44)
                                 .padding(.top, 40)
                         } else if let error = viewModel.errorMessage {
                             errorState(error)
@@ -140,7 +140,7 @@ struct TopItemsContent: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(selectedCategory == index ? Color.xomifyPurple.opacity(0.3) : Color.clear)
-            .foregroundStyle(selectedCategory == index ? Color.xomifyPurple : Color.gray)
+            .foregroundStyle(selectedCategory == index ? Color.xomifyPurple : Color.white.opacity(0.5))
             .cornerRadius(XomRadius.lg)
         }
     }
@@ -157,7 +157,7 @@ struct TopItemsContent: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(selectedTerm == term ? Color.xomifyGreen : Color.white.opacity(0.05))
-                        .foregroundStyle(selectedTerm == term ? Color.black : Color.gray)
+                        .foregroundStyle(selectedTerm == term ? Color.black : Color.white.opacity(0.5))
                         .cornerRadius(XomRadius.xl)
                 }
             }
@@ -315,7 +315,7 @@ struct TopItemsContent: View {
                     AsyncImage(url: track.imageUrl) { image in
                         image.resizable()
                     } placeholder: {
-                        Rectangle().fill(Color.gray.opacity(0.3))
+                        Rectangle().fill(Color.white.opacity(0.08))
                     }
                     .frame(width: 50, height: 50)
                     .cornerRadius(XomRadius.md)
@@ -324,7 +324,7 @@ struct TopItemsContent: View {
                 AsyncImage(url: track.imageUrl) { image in
                     image.resizable()
                 } placeholder: {
-                    Rectangle().fill(Color.gray.opacity(0.3))
+                    Rectangle().fill(Color.white.opacity(0.08))
                 }
                 .frame(width: 50, height: 50)
                 .cornerRadius(XomRadius.md)
@@ -349,7 +349,7 @@ struct TopItemsContent: View {
                 } else {
                     Text(track.artistNames)
                         .font(.caption)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
@@ -395,7 +395,7 @@ struct TopItemsContent: View {
                 AsyncImage(url: artist.imageUrl) { image in
                     image.resizable()
                 } placeholder: {
-                    Circle().fill(Color.gray.opacity(0.3))
+                    Circle().fill(Color.white.opacity(0.08))
                 }
                 .frame(width: 50, height: 50)
                 .clipShape(Circle())
@@ -411,7 +411,7 @@ struct TopItemsContent: View {
                     if let genres = artist.genres, !genres.isEmpty {
                         Text(genres.prefix(2).joined(separator: ", "))
                             .font(.caption)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                             .lineLimit(1)
                     }
                 }
@@ -432,7 +432,7 @@ struct TopItemsContent: View {
                 // Chevron
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             .padding(12)
             .background(Color.white.opacity(0.03))
@@ -523,7 +523,7 @@ struct TopItemsContent: View {
 
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
 
             Button {
@@ -560,7 +560,7 @@ struct TopItemsContent: View {
                     .foregroundStyle(.white)
                 Text("Spotify hiccupped. Pull to refresh or tap retry.")
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
 
             Spacer()

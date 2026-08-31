@@ -31,7 +31,7 @@ struct NewFavoritesListSheet: View {
                     VStack(alignment: .leading, spacing: XomSpacing.xs) {
                         Text("Genre or theme")
                             .font(.xomifyCaption)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                         TextField("Hip Hop", text: $label)
                             .textFieldStyle(.plain)
                             .padding(XomSpacing.md)
@@ -44,7 +44,7 @@ struct NewFavoritesListSheet: View {
 
                     Text("Overall lists already exist for every year. This adds a separate ranking you can keep alongside them.")
                         .font(.xomifyCaption)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
 
                     Spacer()
                 }
@@ -59,7 +59,7 @@ struct NewFavoritesListSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Create") { create() }
                         .fontWeight(.semibold)
-                        .foregroundStyle(canCreate ? Color.xomifyGreen : Color.gray)
+                        .foregroundStyle(canCreate ? Color.xomifyGreen : Color.white.opacity(0.5))
                         .disabled(!canCreate)
                 }
             }
@@ -95,13 +95,13 @@ struct FavoritesRecommendationsSheet: View {
                     VStack(spacing: XomSpacing.sm) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 34))
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                         Text("Nothing to suggest")
                             .font(.xomifyHeadline)
                             .foregroundStyle(.white)
                         Text("Either this list already has your top picks, or there isn't enough listening yet.")
                             .font(.xomifyFootnote)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, XomSpacing.xl)
                     }
@@ -131,7 +131,7 @@ struct FavoritesRecommendationsSheet: View {
                                         if let artist = item.artist, !artist.isEmpty {
                                             Text(artist)
                                                 .font(.xomifyCaption)
-                                                .foregroundStyle(.gray)
+                                                .foregroundStyle(.white.opacity(0.5))
                                                 .lineLimit(1)
                                         }
                                     }
@@ -182,13 +182,13 @@ struct FavoritesHistorySheet: View {
                     VStack(spacing: XomSpacing.sm) {
                         Image(systemName: "clock")
                             .font(.system(size: 34))
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                         Text("No changes yet")
                             .font(.xomifyHeadline)
                             .foregroundStyle(.white)
                         Text("Reorder this list and the moves show up here.")
                             .font(.xomifyFootnote)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                     }
                 } else {
                     List {
@@ -203,7 +203,7 @@ struct FavoritesHistorySheet: View {
                                         .foregroundStyle(.white)
                                     Text(event.ts)
                                         .font(.xomifyCaption)
-                                        .foregroundStyle(.gray)
+                                        .foregroundStyle(.white.opacity(0.5))
                                 }
                                 Spacer()
                             }
@@ -249,8 +249,8 @@ struct FavoritesHistorySheet: View {
         case .added:   return .xomifyGreen
         case .removed: return .orange
         case .moved(let from, let to):
-            return to < from ? .xomifyGreen : .gray
-        case nil:      return .gray
+            return to < from ? .xomifyGreen : .white.opacity(0.5)
+        case nil:      return .white.opacity(0.5)
         }
     }
 }

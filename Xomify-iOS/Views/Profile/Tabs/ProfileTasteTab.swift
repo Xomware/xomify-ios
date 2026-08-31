@@ -300,10 +300,10 @@ private struct SelfTasteSummary: View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 28))
-                .foregroundStyle(.gray.opacity(0.55))
+                .foregroundStyle(.white.opacity(0.5))
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity, minHeight: 140)
     }
@@ -696,13 +696,13 @@ private struct OtherTasteView: View {
         VStack(spacing: 8) {
             Image(systemName: "waveform")
                 .font(.system(size: 32))
-                .foregroundStyle(.gray.opacity(0.6))
+                .foregroundStyle(.white.opacity(0.5))
             Text("No taste data yet")
                 .font(.subheadline)
                 .foregroundStyle(.white)
             Text("This user hasn't built up enough listening history.")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
         }
@@ -713,10 +713,10 @@ private struct OtherTasteView: View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 28))
-                .foregroundStyle(.gray.opacity(0.55))
+                .foregroundStyle(.white.opacity(0.5))
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity, minHeight: 140)
     }

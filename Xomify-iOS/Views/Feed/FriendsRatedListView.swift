@@ -45,7 +45,7 @@ struct FriendsRatedListView: View {
                 .lineLimit(2)
             Text(ratings.count == 1 ? "1 friend rated this" : "\(ratings.count) friends rated this")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -64,7 +64,7 @@ struct FriendsRatedListView: View {
                         .foregroundStyle(.white)
                     Text("Average friend rating")
                         .font(.caption2)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 Spacer()
             }
@@ -77,7 +77,7 @@ struct FriendsRatedListView: View {
     private var emptyState: some View {
         Text("No friends have rated this yet.")
             .font(.subheadline)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
@@ -96,7 +96,7 @@ struct FriendsRatedListView: View {
                 if let review = rating.review, !review.isEmpty {
                     Text(review)
                         .font(.caption)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }

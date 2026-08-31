@@ -92,7 +92,7 @@ struct RecentlyPlayedView: View {
                 } else if !viewModel.hasMore && !viewModel.tracks.isEmpty && viewModel.searchQuery.isEmpty {
                     Text("\(viewModel.tracks.count) tracks loaded")
                         .font(.caption2)
-                        .foregroundStyle(.gray.opacity(0.6))
+                        .foregroundStyle(.white.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                 }
@@ -105,11 +105,11 @@ struct RecentlyPlayedView: View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .accessibilityHidden(true)
             Text("Showing \(viewModel.tracks.count) tracks — load more to search older history")
                 .font(.caption2)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
             Spacer(minLength: 0)
         }
         .padding(10)
@@ -131,7 +131,7 @@ struct RecentlyPlayedView: View {
                     .lineLimit(1)
                 Text(artistNames(track))
                     .font(.caption2)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -202,7 +202,7 @@ struct RecentlyPlayedView: View {
     private var emptyState: some View {
         Text("Nothing played recently.")
             .font(.caption)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.xomifyCard.opacity(0.5))
@@ -217,7 +217,7 @@ struct RecentlyPlayedView: View {
                 .accessibilityHidden(true)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }

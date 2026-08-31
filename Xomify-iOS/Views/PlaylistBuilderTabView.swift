@@ -72,7 +72,7 @@ struct PlaylistBuilderTabView: View {
                     }
                     .font(.subheadline)
                     .fontWeight(selectedTab == 0 ? .semibold : .regular)
-                    .foregroundColor(selectedTab == 0 ? .white : .gray)
+                    .foregroundColor(selectedTab == 0 ? .white : .white.opacity(0.5))
 
                     Rectangle()
                         .fill(selectedTab == 0 ? Color.xomifyPurple : Color.clear)
@@ -94,7 +94,7 @@ struct PlaylistBuilderTabView: View {
                     }
                     .font(.subheadline)
                     .fontWeight(selectedTab == 1 ? .semibold : .regular)
-                    .foregroundColor(selectedTab == 1 ? .white : .gray)
+                    .foregroundColor(selectedTab == 1 ? .white : .white.opacity(0.5))
 
                     Rectangle()
                         .fill(selectedTab == 1 ? Color.xomifyGreen : Color.clear)
@@ -146,7 +146,7 @@ struct PlaylistBuilderTabView: View {
     private var searchBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
 
             TextField("Search for songs...", text: $viewModel.searchQuery)
                 .foregroundColor(.white)
@@ -160,7 +160,7 @@ struct PlaylistBuilderTabView: View {
                     viewModel.clearSearch()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
             }
         }
@@ -176,7 +176,7 @@ struct PlaylistBuilderTabView: View {
 
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 50))
-                .foregroundColor(.gray.opacity(0.5))
+                .foregroundColor(.white.opacity(0.5))
 
             Text("Search for Songs")
                 .font(.headline)
@@ -184,7 +184,7 @@ struct PlaylistBuilderTabView: View {
 
             Text("Find songs to add to your playlist")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
 
             Spacer()
         }
@@ -209,7 +209,7 @@ struct PlaylistBuilderTabView: View {
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 50, height: 50)
             .cornerRadius(XomRadius.md)
@@ -224,7 +224,7 @@ struct PlaylistBuilderTabView: View {
 
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -233,7 +233,7 @@ struct PlaylistBuilderTabView: View {
             // Duration
             Text(track.duration)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
 
             // Add button
             Button {
@@ -270,7 +270,7 @@ struct PlaylistBuilderTabView: View {
 
             Text("Add songs from anywhere in the app\nusing the + button")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
 
             // Quick tips
@@ -300,7 +300,7 @@ struct PlaylistBuilderTabView: View {
 
             Text(text)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
         }
     }
 
@@ -321,7 +321,7 @@ struct PlaylistBuilderTabView: View {
 
             Text(message)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
 
             if let url = viewModel.createdPlaylistUrl {
@@ -366,7 +366,7 @@ struct PlaylistBuilderTabView: View {
                             .foregroundColor(.white)
                         Text(viewModel.totalDuration)
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
 
                     Spacer()
@@ -409,13 +409,13 @@ struct PlaylistBuilderTabView: View {
         HStack(spacing: 12) {
             Text("\(index + 1)")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .frame(width: 24)
 
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 44, height: 44)
             .cornerRadius(XomRadius.sm)
@@ -429,7 +429,7 @@ struct PlaylistBuilderTabView: View {
 
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -437,7 +437,7 @@ struct PlaylistBuilderTabView: View {
 
             Text(track.duration)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
         }
     }
 
@@ -446,7 +446,7 @@ struct PlaylistBuilderTabView: View {
     private var bottomBar: some View {
         VStack(spacing: 0) {
             Divider()
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
 
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -456,7 +456,7 @@ struct PlaylistBuilderTabView: View {
                         .foregroundColor(.white)
                     Text(viewModel.totalDuration)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
 
                 Spacer()
@@ -498,7 +498,7 @@ struct PlaylistBuilderTabView: View {
 
                     Text("\(viewModel.trackCount) tracks • \(viewModel.totalDuration)")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 .padding(.top, 20)
 
@@ -507,7 +507,7 @@ struct PlaylistBuilderTabView: View {
                         Text("Playlist Name")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
 
                         TextField("My Playlist", text: $viewModel.playlistName)
                             .textFieldStyle(.plain)
@@ -521,7 +521,7 @@ struct PlaylistBuilderTabView: View {
                         Text("Description (optional)")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
 
                         TextField("Add a description...", text: $viewModel.playlistDescription)
                             .textFieldStyle(.plain)
@@ -538,7 +538,7 @@ struct PlaylistBuilderTabView: View {
                                 .foregroundColor(.white)
                             Text("Others can find and follow")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.5))
                         }
                     }
                     .tint(Color.xomifyGreen)
@@ -599,7 +599,7 @@ struct PlaylistBuilderTabView: View {
                     Button("Cancel") {
                         showingCreateSheet = false
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                 }
             }
         }
@@ -629,7 +629,7 @@ struct PlaylistBuilderTabView: View {
                 AsyncImage(url: firstImage) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
-                    Rectangle().fill(Color.gray.opacity(0.3))
+                    Rectangle().fill(Color.white.opacity(0.08))
                 }
                 .frame(width: 160, height: 160)
                 .cornerRadius(XomRadius.xl)
@@ -650,7 +650,7 @@ struct PlaylistBuilderTabView: View {
         AsyncImage(url: url) { image in
             image.resizable().aspectRatio(contentMode: .fill)
         } placeholder: {
-            Rectangle().fill(Color.gray.opacity(0.3))
+            Rectangle().fill(Color.white.opacity(0.08))
         }
         .frame(width: 79, height: 79)
         .clipped()
