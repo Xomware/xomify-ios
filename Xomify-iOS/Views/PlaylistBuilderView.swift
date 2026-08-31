@@ -63,7 +63,7 @@ struct PlaylistBuilderView: View {
             
             Text("Add songs from anywhere in the app\nusing the + button")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             
             Spacer()
@@ -88,7 +88,7 @@ struct PlaylistBuilderView: View {
             
             Text(message)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             
             if let url = viewModel.createdPlaylistUrl {
@@ -134,7 +134,7 @@ struct PlaylistBuilderView: View {
                             .foregroundColor(.white)
                         Text(viewModel.totalDuration)
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                     
                     Spacer()
@@ -177,14 +177,14 @@ struct PlaylistBuilderView: View {
             // Track number
             Text("\(index + 1)")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .frame(width: 24)
             
             // Album art
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 44, height: 44)
             .cornerRadius(XomRadius.sm)
@@ -199,7 +199,7 @@ struct PlaylistBuilderView: View {
                 
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
             
@@ -208,7 +208,7 @@ struct PlaylistBuilderView: View {
             // Duration
             Text(track.duration)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
 
             QueueButton(
                 uri: track.uri ?? "spotify:track:\(track.id)",
@@ -222,7 +222,7 @@ struct PlaylistBuilderView: View {
     private var bottomBar: some View {
         VStack(spacing: 0) {
             Divider()
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             HStack(spacing: 16) {
                 // Track count
@@ -233,7 +233,7 @@ struct PlaylistBuilderView: View {
                         .foregroundColor(.white)
                     Text(viewModel.totalDuration)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 
                 Spacer()
@@ -274,7 +274,7 @@ struct PlaylistBuilderView: View {
                     
                     Text("\(viewModel.trackCount) tracks • \(viewModel.totalDuration)")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 .padding(.top, 20)
                 
@@ -285,7 +285,7 @@ struct PlaylistBuilderView: View {
                         Text("Playlist Name")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                         
                         TextField("My Playlist", text: $viewModel.playlistName)
                             .textFieldStyle(.plain)
@@ -300,7 +300,7 @@ struct PlaylistBuilderView: View {
                         Text("Description (optional)")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                         
                         TextField("Add a description...", text: $viewModel.playlistDescription)
                             .textFieldStyle(.plain)
@@ -318,7 +318,7 @@ struct PlaylistBuilderView: View {
                                 .foregroundColor(.white)
                             Text("Others can find and follow")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.5))
                         }
                     }
                     .tint(.xomifyGreen)
@@ -377,7 +377,7 @@ struct PlaylistBuilderView: View {
                     Button("Cancel") {
                         showingCreateSheet = false
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                 }
             }
         }
@@ -409,7 +409,7 @@ struct PlaylistBuilderView: View {
                 AsyncImage(url: firstImage) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
-                    Rectangle().fill(Color.gray.opacity(0.3))
+                    Rectangle().fill(Color.white.opacity(0.08))
                 }
                 .frame(width: 160, height: 160)
                 .cornerRadius(XomRadius.xl)
@@ -431,7 +431,7 @@ struct PlaylistBuilderView: View {
         AsyncImage(url: url) { image in
             image.resizable().aspectRatio(contentMode: .fill)
         } placeholder: {
-            Rectangle().fill(Color.gray.opacity(0.3))
+            Rectangle().fill(Color.white.opacity(0.08))
         }
         .frame(width: 79, height: 79)
         .clipped()

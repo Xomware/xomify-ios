@@ -29,7 +29,7 @@ struct NotificationPreferencesView: View {
                     }
                 } header: {
                     Text(section.title)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 .listRowBackground(Color.xomifyCard)
             }
@@ -67,7 +67,7 @@ struct NotificationPreferencesView: View {
                     .foregroundStyle(.white)
                 Text(setting.subtitle)
                     .font(.xomifyCaption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
         }
         .tint(Color.xomifyGreen)
@@ -91,7 +91,7 @@ struct NotificationPreferencesView: View {
                         .foregroundStyle(.white)
                     Text("These settings won't do anything until you allow notifications for Xomify in iOS Settings.")
                         .font(.xomifyFootnote)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         Link("Open System Settings", destination: url)
                             .foregroundStyle(Color.xomifyGreen)
@@ -106,7 +106,7 @@ struct NotificationPreferencesView: View {
                         .foregroundStyle(.white)
                     Text("You'll be asked the first time something happens worth telling you about. Your choices below are saved either way.")
                         .font(.xomifyFootnote)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 .padding(.vertical, XomSpacing.xs)
             }

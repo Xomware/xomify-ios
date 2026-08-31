@@ -73,7 +73,7 @@ struct ProfileRatingsTab: View {
                 .foregroundStyle(.white)
             Text("· \(viewModel.ratings.count) total")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
             Spacer()
             Button {
                 withAnimation(.easeInOut(duration: 0.25)) { reshuffle() }
@@ -140,11 +140,11 @@ struct ProfileRatingsTab: View {
                     .font(.subheadline).fontWeight(.medium)
                     .foregroundStyle(.white).lineLimit(1)
                 if let artist = rating.artistName {
-                    Text(artist).font(.caption).foregroundStyle(.gray).lineLimit(1)
+                    Text(artist).font(.caption).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
                 }
                 if let review = rating.review, !review.isEmpty {
                     Text(review).font(.caption2)
-                        .foregroundStyle(.gray.opacity(0.8)).lineLimit(2)
+                        .foregroundStyle(.white.opacity(0.5)).lineLimit(2)
                 }
             }
 
@@ -229,14 +229,14 @@ struct ProfileRatingsTab: View {
         VStack(spacing: 12) {
             Image(systemName: "star")
                 .font(.system(size: 40))
-                .foregroundStyle(.gray.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.5))
                 .accessibilityHidden(true)
             Text(context.isSelf ? "No ratings yet" : "No ratings yet")
                 .font(.headline).foregroundStyle(.white)
             Text(context.isSelf
                  ? "Rate tracks from the Feed or Top Items screen to track your favorites here."
                  : "This user hasn't rated anything yet.")
-                .font(.caption).foregroundStyle(.gray)
+                .font(.caption).foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
         }
@@ -250,7 +250,7 @@ struct ProfileRatingsTab: View {
                 .foregroundStyle(.orange.opacity(0.8))
             Text("Couldn't load ratings")
                 .font(.headline).foregroundStyle(.white)
-            Text(message).font(.caption).foregroundStyle(.gray)
+            Text(message).font(.caption).foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding()

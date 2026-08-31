@@ -148,7 +148,7 @@ struct FriendsView: View {
 
     private var searchField: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Color.gray)
+            Image(systemName: "magnifyingglass").foregroundStyle(Color.white.opacity(0.5))
             TextField("Search by name or email", text: $searchText)
                 .foregroundStyle(Color.white)
                 .autocorrectionDisabled()
@@ -157,7 +157,7 @@ struct FriendsView: View {
                 Button {
                     searchText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.gray)
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.white.opacity(0.5))
                 }
                 .accessibilityLabel("Clear search")
             }
@@ -192,7 +192,7 @@ struct FriendsView: View {
     private var loadingState: some View {
         VStack(spacing: 12) {
             ProgressView().tint(.xomifyGreen)
-            Text("Loading...").font(.caption).foregroundStyle(Color.gray)
+            Text("Loading...").font(.caption).foregroundStyle(Color.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -203,7 +203,7 @@ struct FriendsView: View {
                 .font(.system(size: 50))
                 .foregroundStyle(Color.orange.opacity(0.7))
             Text("Error").font(.headline).foregroundStyle(Color.white)
-            Text(message).font(.caption).foregroundStyle(Color.gray)
+            Text(message).font(.caption).foregroundStyle(Color.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             Button {
                 Task { await loadUserAndData() }
@@ -384,12 +384,12 @@ struct FriendsView: View {
                     .lineLimit(1)
                 Text(invite.senderEmail)
                     .font(.caption2)
-                    .foregroundStyle(Color.gray)
+                    .foregroundStyle(Color.white.opacity(0.5))
                     .lineLimit(1)
                 if !invite.relativeTime.isEmpty {
                     Text(invite.relativeTime)
                         .font(.caption2)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(Color.white.opacity(0.5))
                 }
             }
 
@@ -468,7 +468,7 @@ struct FriendsView: View {
                     .lineLimit(1)
                 Text(user.email)
                     .font(.caption2)
-                    .foregroundStyle(Color.gray)
+                    .foregroundStyle(Color.white.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -517,7 +517,7 @@ struct FriendsView: View {
                     .lineLimit(1)
                 Text(friend.targetEmail)
                     .font(.caption2)
-                    .foregroundStyle(Color.gray)
+                    .foregroundStyle(Color.white.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -556,7 +556,7 @@ struct FriendsView: View {
         Text(text)
             .font(.caption)
             .fontWeight(.semibold)
-            .foregroundStyle(Color.gray)
+            .foregroundStyle(Color.white.opacity(0.5))
             .padding(.top, 4)
     }
 
@@ -564,11 +564,11 @@ struct FriendsView: View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 40))
-                .foregroundStyle(Color.gray.opacity(0.5))
+                .foregroundStyle(Color.white.opacity(0.5))
             Text(title).font(.headline).foregroundStyle(Color.white)
             Text(message)
                 .font(.caption)
-                .foregroundStyle(Color.gray)
+                .foregroundStyle(Color.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 40)
@@ -631,7 +631,7 @@ private struct InviteShareSheet: View {
 
             Text("Send this link to anyone you want to add as a friend on Xomify.")
                 .font(.subheadline)
-                .foregroundStyle(Color.gray)
+                .foregroundStyle(Color.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 

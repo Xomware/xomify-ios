@@ -143,7 +143,7 @@ struct FavoritesView: View {
                 Text(list.displayTitle)
                     .font(.xomifyCaption)
             }
-            .foregroundStyle(selected ? Color.white : Color.gray)
+            .foregroundStyle(selected ? Color.white : Color.white.opacity(0.5))
             .padding(.horizontal, XomSpacing.md)
             .padding(.vertical, XomSpacing.sm)
             .background(selected ? Color.xomifyPurple : Color.xomifyCard)
@@ -180,13 +180,13 @@ struct FavoritesView: View {
             Spacer()
             Image(systemName: list.category.systemImage)
                 .font(.system(size: 38))
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
             Text("No \(list.category.singular)s yet")
                 .font(.xomifyTitle3)
                 .foregroundStyle(.white)
             Text("Add from your listening, then drag to rank them.")
                 .font(.xomifyFootnote)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             Button("Add from your top \(list.category.rawValue)") {
                 showingRecommendations = true
@@ -261,7 +261,7 @@ private struct FavoriteRow: View {
             Text("\(item.rank)")
                 .font(.xomifyCaption)
                 .fontWeight(.bold)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .frame(width: 22, alignment: .trailing)
 
             AsyncImage(url: item.imageUrl.flatMap(URL.init(string:))) { phase in
@@ -282,7 +282,7 @@ private struct FavoriteRow: View {
                 if let artist = item.artist, !artist.isEmpty {
                     Text(artist)
                         .font(.xomifyCaption)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }

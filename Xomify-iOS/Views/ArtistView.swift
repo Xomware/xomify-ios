@@ -85,7 +85,7 @@ struct ArtistView: View {
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Circle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.white.opacity(0.08))
             }
             .frame(width: 180, height: 180)
             .clipShape(Circle())
@@ -114,7 +114,7 @@ struct ArtistView: View {
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(Color.white.opacity(0.1))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.5))
                                 .cornerRadius(XomRadius.xxl)
                         }
                     }
@@ -136,7 +136,7 @@ struct ArtistView: View {
             
             Divider()
                 .frame(height: 30)
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             statItem(
                 value: "\(artist.popularity ?? 0)",
@@ -145,7 +145,7 @@ struct ArtistView: View {
             
             Divider()
                 .frame(height: 30)
-                .background(Color.gray.opacity(0.3))
+                .background(Color.white.opacity(0.05))
             
             statItem(
                 value: "\(albums.count + singles.count)",
@@ -167,7 +167,7 @@ struct ArtistView: View {
                 .foregroundColor(.xomifyGreen)
             Text(label)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
     }
@@ -250,7 +250,7 @@ struct ArtistView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(selectedSection == index ? Color.xomifyPurple.opacity(0.3) : Color.white.opacity(0.05))
-            .foregroundColor(selectedSection == index ? .xomifyPurple : .gray)
+            .foregroundColor(selectedSection == index ? .xomifyPurple : .white.opacity(0.5))
             .cornerRadius(XomRadius.lg)
         }
     }
@@ -323,7 +323,7 @@ struct ArtistView: View {
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 48, height: 48)
             .cornerRadius(XomRadius.md)
@@ -338,7 +338,7 @@ struct ArtistView: View {
                 
                 Text(track.album?.name ?? "")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
             
@@ -381,7 +381,7 @@ struct ArtistView: View {
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.white.opacity(0.08))
             }
             .frame(height: 160)
             .cornerRadius(XomRadius.md)
@@ -404,7 +404,7 @@ struct ArtistView: View {
                     }
                 }
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
             }
         }
     }
@@ -423,7 +423,7 @@ struct ArtistView: View {
             
             Text(message)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             
             Button {

@@ -64,13 +64,13 @@ struct NotificationsInboxView: View {
         VStack(spacing: XomSpacing.md) {
             Image(systemName: "bell.slash")
                 .font(.system(size: 40))
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
             Text("Nothing yet")
                 .font(.xomifyTitle3)
                 .foregroundStyle(.white)
             Text("Share a song, add a friend, or wait for your next Wrapped — anything that happens shows up here.")
                 .font(.xomifyFootnote)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, XomSpacing.xl)
         }
@@ -142,7 +142,7 @@ struct NotificationsInboxView: View {
                     .foregroundStyle(.white)
                 Text(item.body)
                     .font(.xomifyFootnote)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(2)
             }
 

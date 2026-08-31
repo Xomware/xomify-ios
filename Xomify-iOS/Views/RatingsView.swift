@@ -22,7 +22,7 @@ struct RatingsView: View {
                     Task { await viewModel.refresh() }
                 } label: {
                     if viewModel.isRefreshing {
-                        ProgressView()
+                        ProgressView().tint(.white)
                     } else {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -60,10 +60,10 @@ struct RatingsView: View {
                             }
                             ForEach(group.stars..<5, id: \.self) { _ in
                                 Image(systemName: "star")
-                                    .foregroundColor(.gray.opacity(0.4))
+                                    .foregroundColor(.white.opacity(0.5))
                             }
                             Text("\(group.ratings.count) songs")
-                                .font(.caption).foregroundColor(.gray)
+                                .font(.caption).foregroundColor(.white.opacity(0.5))
                                 .padding(.leading, 8)
                         }
                         .font(.caption)
@@ -83,7 +83,7 @@ struct RatingsView: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: XomRadius.md)
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.white.opacity(0.08))
                     .frame(width: 44, height: 44)
                 Image(systemName: "music.note")
                     .foregroundColor(.white.opacity(0.7))
@@ -98,13 +98,13 @@ struct RatingsView: View {
                 if let artist = rating.artistName {
                     Text(artist)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                         .lineLimit(1)
                 }
                 if let review = rating.review, !review.isEmpty {
                     Text(review)
                         .font(.caption2)
-                        .foregroundColor(.gray.opacity(0.8))
+                        .foregroundColor(.white.opacity(0.5))
                         .lineLimit(2)
                 }
             }
@@ -128,10 +128,10 @@ struct RatingsView: View {
         VStack(spacing: 16) {
             Image(systemName: "star")
                 .font(.system(size: 50))
-                .foregroundColor(.gray.opacity(0.5))
+                .foregroundColor(.white.opacity(0.5))
             Text("No Ratings Yet").font(.headline).foregroundColor(.white)
             Text("Rate tracks from the Feed or Top Items screen to track your favorites here.")
-                .font(.caption).foregroundColor(.gray)
+                .font(.caption).foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 40)
@@ -144,7 +144,7 @@ struct RatingsView: View {
                 .font(.system(size: 50))
                 .foregroundColor(.orange.opacity(0.7))
             Text("Error").font(.headline).foregroundColor(.white)
-            Text(message).font(.caption).foregroundColor(.gray)
+            Text(message).font(.caption).foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             Button {
                 Task { await loadUserAndData() }

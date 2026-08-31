@@ -72,7 +72,7 @@ struct AlbumView: View {
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.white.opacity(0.08))
             }
             .frame(width: 220, height: 220)
             .cornerRadius(XomRadius.xl)
@@ -88,7 +88,7 @@ struct AlbumView: View {
                 
                 Text(album.artistNames)
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                 
                 HStack(spacing: 8) {
                     if let type = album.albumType {
@@ -105,15 +105,15 @@ struct AlbumView: View {
                     if let year = album.year {
                         Text(year)
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                     
                     Text("•")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                     
                     Text("\(album.totalTracks ?? tracks.count) tracks")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
             }
         }
@@ -211,7 +211,7 @@ struct AlbumView: View {
             // Track number
             Text("\(number)")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .frame(width: 28, alignment: .center)
             
             // Track info
@@ -225,7 +225,7 @@ struct AlbumView: View {
                 if track.artists.count > 1 || track.artistNames != album?.artistNames {
                     Text(track.artistNames)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
@@ -237,17 +237,17 @@ struct AlbumView: View {
                 Text("E")
                     .font(.caption2)
                     .fontWeight(.bold)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
-                    .background(Color.gray.opacity(0.3))
+                    .background(Color.white.opacity(0.05))
                     .cornerRadius(XomRadius.sm)
             }
             
             // Duration
             Text(track.duration)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
             
             TrackActionsMenu(track: track)
         }
@@ -275,7 +275,7 @@ struct AlbumView: View {
             
             Text(message)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             
             Button {

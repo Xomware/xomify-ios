@@ -49,7 +49,7 @@ struct HelpAboutView: View {
                     .foregroundStyle(.white)
                 Text("by Xomware")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
 
             Spacer()
@@ -59,7 +59,7 @@ struct HelpAboutView: View {
     private var versionLine: some View {
         Text("Version \(SettingsView.versionString) (\(SettingsView.buildString))")
             .font(.subheadline)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
     }
 
     private var tagline: some View {
@@ -120,7 +120,7 @@ struct HelpAboutView: View {
         Text(title.uppercased())
             .font(.caption)
             .fontWeight(.semibold)
-            .foregroundStyle(.gray)
+            .foregroundStyle(.white.opacity(0.5))
     }
 
     private func row(label: String, systemImage: String) -> some View {
@@ -138,7 +138,7 @@ struct HelpAboutView: View {
 
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .accessibilityHidden(true)
         }
         .padding(.vertical, 12)
@@ -151,14 +151,14 @@ struct HelpAboutView: View {
         VStack(spacing: 12) {
             Image(systemName: "text.book.closed")
                 .font(.system(size: 40))
-                .foregroundStyle(.gray.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.5))
                 .accessibilityHidden(true)
             Text("Acknowledgements coming soon")
                 .font(.headline)
                 .foregroundStyle(.white)
             Text("We'll list third-party libraries here as we add them.")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }

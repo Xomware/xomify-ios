@@ -29,7 +29,7 @@ struct LoginView: View {
                     
                     Text("Your Music, Your Stats")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 
                 Spacer()

@@ -24,7 +24,7 @@ struct QueueBuilderView: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 2) {
                         Text("Queue Builder").font(.headline).foregroundColor(.white)
-                        Text("Search, build, and save playlists").font(.caption2).foregroundColor(.gray)
+                        Text("Search, build, and save playlists").font(.caption2).foregroundColor(.white.opacity(0.5))
                     }
                 }
             }
@@ -44,7 +44,7 @@ struct QueueBuilderView: View {
                 .font(.subheadline).fontWeight(.medium)
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                 .background(selectedPanel == 0 ? Color.xomifyPurple.opacity(0.3) : Color.clear)
-                .foregroundColor(selectedPanel == 0 ? .xomifyPurple : .gray)
+                .foregroundColor(selectedPanel == 0 ? .xomifyPurple : .white.opacity(0.5))
                 .cornerRadius(XomRadius.lg)
             }
             
@@ -59,7 +59,7 @@ struct QueueBuilderView: View {
                 .font(.subheadline).fontWeight(.medium)
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                 .background(selectedPanel == 1 ? Color.xomifyGreen.opacity(0.3) : Color.clear)
-                .foregroundColor(selectedPanel == 1 ? .xomifyGreen : .gray)
+                .foregroundColor(selectedPanel == 1 ? .xomifyGreen : .white.opacity(0.5))
                 .cornerRadius(XomRadius.lg)
             }
         }
@@ -73,14 +73,14 @@ struct QueueBuilderView: View {
         VStack(spacing: 0) {
             // Search box
             HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass").foregroundColor(.gray)
+                Image(systemName: "magnifyingglass").foregroundColor(.white.opacity(0.5))
                 TextField("Search songs, artists...", text: $viewModel.searchQuery)
                     .foregroundColor(.white)
                     .autocorrectionDisabled()
                     .onChange(of: viewModel.searchQuery) { _, _ in viewModel.search() }
                 if !viewModel.searchQuery.isEmpty {
                     Button { viewModel.clearSearch() } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
+                        Image(systemName: "xmark.circle.fill").foregroundColor(.white.opacity(0.5))
                     }
                 }
             }
@@ -95,13 +95,13 @@ struct QueueBuilderView: View {
                     if viewModel.isSearching {
                         XomifyLoaderPaint(size: 36).padding(.top, 40)
                     } else if viewModel.searchResults.isEmpty && !viewModel.searchQuery.isEmpty {
-                        Text("No results found").foregroundColor(.gray).padding(.top, 40)
+                        Text("No results found").foregroundColor(.white.opacity(0.5)).padding(.top, 40)
                     } else if viewModel.searchResults.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "magnifyingglass")
                                 .font(.system(size: 40))
-                                .foregroundColor(.gray.opacity(0.5))
-                            Text("Search for tracks to add").foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("Search for tracks to add").foregroundColor(.white.opacity(0.5))
                         }
                         .padding(.top, 60)
                     } else {
@@ -123,7 +123,7 @@ struct QueueBuilderView: View {
             AsyncImage(url: track.imageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 48, height: 48)
             .cornerRadius(XomRadius.md)
@@ -138,7 +138,7 @@ struct QueueBuilderView: View {
                 
                 Text(track.artistNames)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
             
@@ -147,7 +147,7 @@ struct QueueBuilderView: View {
             // Duration
             Text(track.duration)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
             
             // Add button
             Button {
@@ -187,7 +187,7 @@ struct QueueBuilderView: View {
                             .foregroundColor(.white)
                         Text(viewModel.totalDurationFormatted)
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                     }
                     
                     Spacer()
@@ -213,7 +213,7 @@ struct QueueBuilderView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "music.note.list")
                             .font(.system(size: 50))
-                            .foregroundColor(.gray.opacity(0.4))
+                            .foregroundColor(.white.opacity(0.5))
                         
                         Text("Your queue is empty")
                             .font(.headline)
@@ -221,7 +221,7 @@ struct QueueBuilderView: View {
                         
                         Text("Search and add tracks to build your playlist")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 60)
@@ -271,14 +271,14 @@ struct QueueBuilderView: View {
             Text("\(index + 1)")
                 .font(.caption)
                 .fontWeight(.semibold)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .frame(width: 24)
             
             // Album art
             AsyncImage(url: track.albumImageUrl) { image in
                 image.resizable()
             } placeholder: {
-                Rectangle().fill(Color.gray.opacity(0.3))
+                Rectangle().fill(Color.white.opacity(0.08))
             }
             .frame(width: 40, height: 40)
             .cornerRadius(XomRadius.md)
@@ -293,7 +293,7 @@ struct QueueBuilderView: View {
                 
                 Text(track.artistNames)
                     .font(.caption2)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
             }
             
@@ -305,7 +305,7 @@ struct QueueBuilderView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
                     .frame(width: 28, height: 28)
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(XomRadius.md)
@@ -325,7 +325,7 @@ struct QueueBuilderView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Playlist Name")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                     
                     TextField("Enter playlist name", text: $viewModel.playlistName)
                         .textFieldStyle(.roundedBorder)
@@ -335,7 +335,7 @@ struct QueueBuilderView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Description (optional)")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                     
                     TextField("Add a description...", text: $viewModel.playlistDescription, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
@@ -352,9 +352,9 @@ struct QueueBuilderView: View {
                     Text(viewModel.totalDurationFormatted)
                 }
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
                 .padding()
-                .background(Color.gray.opacity(0.1))
+                .background(Color.white.opacity(0.05))
                 .cornerRadius(XomRadius.md)
                 
                 Spacer()

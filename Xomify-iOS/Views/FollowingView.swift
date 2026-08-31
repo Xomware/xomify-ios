@@ -40,7 +40,7 @@ struct FollowingContent: View {
             // Content
             ScrollView {
                 if isLoading {
-                    ProgressView()
+                    XomifyLoaderPaint(size: 44)
                         .padding(.top, 60)
                 } else if let error = errorMessage {
                     errorState(error)
@@ -67,7 +67,7 @@ struct FollowingContent: View {
                         .foregroundStyle(.white)
                     Text("\(artists.count) artists")
                         .font(.caption2)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
         }
@@ -84,7 +84,7 @@ struct FollowingContent: View {
     private var searchBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
 
             TextField("Search artists...", text: $searchText)
                 .foregroundStyle(.white)
@@ -95,7 +95,7 @@ struct FollowingContent: View {
                     searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
         }
@@ -117,7 +117,7 @@ struct FollowingContent: View {
                         .aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Circle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(Color.white.opacity(0.08))
                 }
                 .frame(width: 56, height: 56)
                 .clipShape(Circle())
@@ -133,7 +133,7 @@ struct FollowingContent: View {
                     if let genres = artist.genres, !genres.isEmpty {
                         Text(genres.prefix(2).joined(separator: ", "))
                             .font(.caption)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                             .lineLimit(1)
                     }
 
@@ -155,13 +155,13 @@ struct FollowingContent: View {
                             .foregroundStyle(Color.xomifyPurple)
                         Text("POP")
                             .font(.system(size: 8))
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.white.opacity(0.5))
                     }
                 }
 
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             .padding(12)
             .background(Color.xomifyCard)
@@ -183,7 +183,7 @@ struct FollowingContent: View {
 
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
 
             Button {
@@ -207,7 +207,7 @@ struct FollowingContent: View {
         VStack(spacing: 16) {
             Image(systemName: "person.2")
                 .font(.system(size: 50))
-                .foregroundStyle(.gray.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.5))
 
             Text("Not Following Anyone")
                 .font(.headline)
@@ -215,7 +215,7 @@ struct FollowingContent: View {
 
             Text("Follow artists on Spotify to see them here")
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
         }
         .padding(.top, 60)

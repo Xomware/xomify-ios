@@ -28,7 +28,7 @@ struct ProfileHeaderView: View {
     private var avatar: some View {
         Group {
             if isInitialLoading {
-                Circle().fill(Color.gray.opacity(0.2))
+                Circle().fill(Color.white.opacity(0.08))
             } else if let url = viewModel.avatarURL {
                 AsyncImage(url: url) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
@@ -90,7 +90,7 @@ struct ProfileHeaderView: View {
             if !viewModel.profileEmail.isEmpty {
                 Text(viewModel.profileEmail)
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.white.opacity(0.5))
             }
         }
     }
@@ -159,10 +159,10 @@ struct ProfileHeaderView: View {
     private var skeletonStat: some View {
         VStack(spacing: 6) {
             RoundedRectangle(cornerRadius: XomRadius.sm, style: .continuous)
-                .fill(Color.gray.opacity(0.25))
+                .fill(Color.white.opacity(0.08))
                 .frame(width: 28, height: 16)
             RoundedRectangle(cornerRadius: XomRadius.sm, style: .continuous)
-                .fill(Color.gray.opacity(0.18))
+                .fill(Color.white.opacity(0.08))
                 .frame(width: 44, height: 8)
         }
         .frame(maxWidth: .infinity)
@@ -170,7 +170,7 @@ struct ProfileHeaderView: View {
     }
 
     private var divider: some View {
-        Divider().frame(height: 30).background(Color.gray.opacity(0.25))
+        Divider().frame(height: 30).background(Color.white.opacity(0.05))
     }
 
     private func statItem(
@@ -188,7 +188,7 @@ struct ProfileHeaderView: View {
         let content = VStack(spacing: 4) {
             Text("\(value)")
                 .font(.title3).fontWeight(.bold).foregroundStyle(color)
-            Text(label).font(.caption2).foregroundStyle(.gray)
+            Text(label).font(.caption2).foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
