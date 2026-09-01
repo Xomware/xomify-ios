@@ -47,6 +47,8 @@ struct SearchView: View {
             Color.xomifyDark.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                BrandGradientHeader("Search", systemImage: "magnifyingglass")
+
                 searchField
                     .padding(.horizontal, 16)
                     .padding(.top, 12)

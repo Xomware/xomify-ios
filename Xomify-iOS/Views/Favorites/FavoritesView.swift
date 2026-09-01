@@ -23,7 +23,9 @@ struct FavoritesView: View {
                 content
             }
         }
-        .navigationTitle("My Favorites")
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader("My Favorites", systemImage: "bookmark.fill")
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .task { await viewModel.load() }

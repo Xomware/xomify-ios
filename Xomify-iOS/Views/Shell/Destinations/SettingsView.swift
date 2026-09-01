@@ -31,7 +31,9 @@ struct SettingsView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Color.xomifyDark.ignoresSafeArea())
-        .navigationTitle("Settings")
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader("Settings", systemImage: "gearshape.fill")
+        }
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.load()
