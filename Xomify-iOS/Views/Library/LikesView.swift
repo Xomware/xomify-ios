@@ -57,8 +57,10 @@ struct LikesView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle(targetEmail == nil ? "Likes" : "Liked Songs")
-        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader(targetEmail == nil ? "Likes" : "Liked Songs", systemImage: "heart.fill")
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .searchable(text: $viewModel.searchQuery, prompt: "Search liked songs")
         .task {
             await viewModel.loadIfNeeded()

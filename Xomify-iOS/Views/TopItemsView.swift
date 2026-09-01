@@ -426,7 +426,7 @@ struct TopItemsContent: View {
                         Text("\(popularity)")
                             .font(.caption)
                     }
-                    .foregroundStyle(.yellow.opacity(0.8))
+                    .foregroundStyle(Color.xomifyGreen.opacity(0.85))
                 }
 
                 // Chevron
@@ -463,7 +463,7 @@ struct TopItemsContent: View {
             Text("\(rank)")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.xomifyGreen)
                 .frame(width: 30)
 
             // Genre info

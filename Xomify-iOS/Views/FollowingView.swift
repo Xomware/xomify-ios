@@ -57,20 +57,16 @@ struct FollowingContent: View {
             }
         }
         .background(Color.xomifyDark.ignoresSafeArea())
-        .navigationTitle("Following")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 2) {
-                    Text("Following")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                    Text("\(artists.count) artists")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-            }
+        // One header for every destination. Half of them were falling back to
+        // the plain nav bar, which renders grey on this background.
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader(
+                "Following",
+                subtitle: "\(artists.count) ARTISTS",
+                systemImage: "person.2.fill"
+            )
         }
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await loadArtists()
         }

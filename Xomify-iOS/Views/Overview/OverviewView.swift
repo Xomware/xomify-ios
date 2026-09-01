@@ -23,8 +23,15 @@ struct OverviewView: View {
                 content
             }
         }
-        .navigationTitle("Overview")
-        .navigationBarTitleDisplayMode(.inline)
+        // One header for every destination. Half of them were falling back to
+        // the plain nav bar, which renders grey on this background.
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader(
+                "Overview",
+                systemImage: "square.grid.2x2.fill"
+            )
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
     }

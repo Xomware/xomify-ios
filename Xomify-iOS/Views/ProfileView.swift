@@ -17,8 +17,10 @@ struct ProfileView: View {
             Color.xomifyDark.ignoresSafeArea()
             content
         }
-        .navigationTitle(viewModel.displayName.isEmpty ? "Profile" : viewModel.displayName)
-        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader(viewModel.displayName.isEmpty ? "Profile" : viewModel.displayName, systemImage: "person.crop.circle.fill")
+        }
+        .toolbar(.hidden, for: .navigationBar)
         // Force the system nav bar visible so pushed destinations (friend
         // profile from FriendsView) surface the default back button even
         // though the parent tab view (`.toolbar(.hidden)`) suppresses it.

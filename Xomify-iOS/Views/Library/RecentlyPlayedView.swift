@@ -33,8 +33,15 @@ struct RecentlyPlayedView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle("Recently Played")
-        .navigationBarTitleDisplayMode(.inline)
+        // One header for every destination. Half of them were falling back to
+        // the plain nav bar, which renders grey on this background.
+        .safeAreaInset(edge: .top) {
+            BrandGradientHeader(
+                "Recently Played",
+                systemImage: "clock.arrow.circlepath"
+            )
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .searchable(text: $viewModel.searchQuery, prompt: "Search recently played")
         .task {
             await viewModel.loadIfNeeded()
