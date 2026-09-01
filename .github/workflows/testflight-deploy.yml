@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       id-token: write # mint the OIDC token traded for the build role
-      contents: read
+      contents: write # push the release tag
 
     steps:
       - uses: actions/checkout@v6
@@ -82,6 +82,19 @@ jobs:
           echo "build=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
           echo "Marketing version: $MARKETING_VERSION"
           echo "Build number: $BUILD_NUMBER"
+
+          # Surface an unchanged marketing version. A rebuild of the same
+          # version is legitimate, so this warns rather than fails -- but
+          # 1.18.0 silently absorbed two features and a dozen merges before
+          # anyone noticed every TestFlight build looked identical.
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -1)
+          if [ "$LAST_TAG" = "v$MARKETING_VERSION" ]; then
+            echo "::warning title=Marketing version unchanged::Still $MARKETING_VERSION, already released as $LAST_TAG. Run scripts/bump-version.sh <feat|fix|epic> if this build ships anything new."
+          fi
+          {
+            echo "### TestFlight $MARKETING_VERSION ($BUILD_NUMBER)"
+            [ "$LAST_TAG" = "v$MARKETING_VERSION" ] && echo "⚠️ Marketing version unchanged since \`$LAST_TAG\` — testers will not see a new version number."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install Python deps for ASC API
         run: pip3 install --quiet --break-system-packages PyJWT cryptography requests
@@ -313,6 +326,19 @@ jobs:
                   sys.exit(1)
               print(f"Assigned build to group {name!r} ({group_id})")
           PY
+
+      # Tags the commit a marketing version actually shipped from. Without
+      # this the version guard above has nothing to compare against, which is
+      # how 1.18.0 absorbed two features and a dozen merges unnoticed.
+      - name: Tag the release
+        run: |
+          TAG="v${{ steps.version.outputs.marketing }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already tagged — same marketing version shipped again."
+            exit 0
+          fi
+          git tag -a "$TAG" -m "TestFlight ${{ steps.version.outputs.marketing }} (${{ steps.version.outputs.build }})"
+          git push origin "$TAG"
 
       - name: Cleanup API key
         if: always()
