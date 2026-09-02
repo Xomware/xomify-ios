@@ -137,6 +137,28 @@ struct SettingsView: View {
 
     // MARK: - Privacy
 
+    /// One row per artefact. These default ON, matching the backend — so this
+    /// section is where someone discovers that and turns it off.
+    private func visibilityToggle(
+        isOn: Binding<Bool>,
+        title: String,
+        systemImage: String,
+        detail: String
+    ) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Label(title, systemImage: systemImage)
+                    .foregroundStyle(.white)
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .tint(Color.xomifyGreen)
+        .disabled(viewModel.isUpdatingVisibility)
+        .frame(minHeight: 44)
+    }
+
     private var privacySection: some View {
         Section {
             Toggle(isOn: $viewModel.likesPublic) {
@@ -152,6 +174,27 @@ struct SettingsView: View {
             .disabled(viewModel.isUpdatingLikesPublic)
             .accessibilityHint("When off, your liked songs are hidden from friends")
             .frame(minHeight: 44)
+
+            visibilityToggle(
+                isOn: $viewModel.wrappedVisible,
+                title: "Show my Wrapped to friends",
+                systemImage: "gift.fill",
+                detail: "Friends can open your monthly recap."
+            )
+
+            visibilityToggle(
+                isOn: $viewModel.releaseRadarVisible,
+                title: "Show my Release Radar to friends",
+                systemImage: "antenna.radiowaves.left.and.right",
+                detail: "Friends can see new releases from artists you follow."
+            )
+
+            visibilityToggle(
+                isOn: $viewModel.topItemsVisible,
+                title: "Show my top items to friends",
+                systemImage: "chart.bar.fill",
+                detail: "Friends can see your top songs, artists and genres."
+            )
         } header: {
             Text("Privacy")
                 .foregroundStyle(.white.opacity(0.5))

@@ -10,6 +10,9 @@ struct XomifyUser: Codable, Sendable {
     let refreshToken: String?
     let createdAt: String?
     let updatedAt: String?
+    /// Normalized server-side: absent attributes come back as `friends`, so a
+    /// client never has to know the default rule.
+    let visibility: VisibilitySettings?
 }
 
 // MARK: - Release Radar
