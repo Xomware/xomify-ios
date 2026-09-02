@@ -63,6 +63,37 @@ final class SettingsViewModel {
     }
     var isUpdatingLikesPublic: Bool = false
 
+    // Friend visibility. Each syncs independently so flipping one never
+    // rewrites the other two -- the endpoint takes a partial body for the same
+    // reason. Default true matches the backend, which treats an unset flag as
+    // `friends`.
+    var wrappedVisible: Bool = true {
+        didSet {
+            guard oldValue != wrappedVisible, !isApplyingRemoteVisibility else { return }
+            syncVisibility(wrapped: wrappedVisible)
+        }
+    }
+
+    var releaseRadarVisible: Bool = true {
+        didSet {
+            guard oldValue != releaseRadarVisible, !isApplyingRemoteVisibility else { return }
+            syncVisibility(releaseRadar: releaseRadarVisible)
+        }
+    }
+
+    var topItemsVisible: Bool = true {
+        didSet {
+            guard oldValue != topItemsVisible, !isApplyingRemoteVisibility else { return }
+            syncVisibility(topItems: topItemsVisible)
+        }
+    }
+
+    var isUpdatingVisibility: Bool = false
+
+    /// Set while adopting server state, so the toggles' didSet does not echo
+    /// it straight back as three writes.
+    private var isApplyingRemoteVisibility = false
+
     // MARK: - Account state
 
     /// The signed-in Spotify user. Populated by `load()`.
@@ -225,6 +256,14 @@ final class SettingsViewModel {
             isWrappedEnrolled = userData.activeWrapped ?? false
             isReleaseRadarEnrolled = userData.activeReleaseRadar ?? false
             print("✅ Settings: enrollment loaded — Wrapped: \(isWrappedEnrolled), RR: \(isReleaseRadarEnrolled)")
+
+            // Separate call: enrollment comes from /wrapped/all, visibility
+            // from /user/data. A failure here must not blank the toggles —
+            // showing everything ON when we could not read the real state
+            // would misreport who can see their data, so leave them alone.
+            if let table = try? await xomifyService.getUserTableData() {
+                adoptVisibility(table.visibility)
+            }
         } catch {
             // User may not exist yet in Xomify — that's fine.
             isWrappedEnrolled = false
@@ -252,6 +291,42 @@ final class SettingsViewModel {
 
     /// Push the `likes_public` flag to the backend. Swallows errors — the
     /// in-memory toggle provides immediate UI feedback.
+    /// Push ONE flag. On failure the toggle snaps back, because a switch that
+    /// stays on after the write failed is a lie about who can see your data.
+    /// Adopt the stored state WITHOUT firing the didSet writes — assigning
+    /// through the observed properties would post three updates back to the
+    /// server for values that just came from it.
+    private func adoptVisibility(_ v: VisibilitySettings?) {
+        guard let v else { return }
+        isApplyingRemoteVisibility = true
+        wrappedVisible = v.wrapped != VisibilitySettings.private
+        releaseRadarVisible = v.releaseRadar != VisibilitySettings.private
+        topItemsVisible = v.topItems != VisibilitySettings.private
+        isApplyingRemoteVisibility = false
+    }
+
+    private func syncVisibility(wrapped: Bool? = nil, releaseRadar: Bool? = nil, topItems: Bool? = nil) {
+        func value(_ on: Bool?) -> String? {
+            on.map { $0 ? VisibilitySettings.friends : VisibilitySettings.private }
+        }
+        isUpdatingVisibility = true
+        Task { @MainActor in
+            do {
+                try await xomifyService.setVisibility(
+                    wrapped: value(wrapped),
+                    releaseRadar: value(releaseRadar),
+                    topItems: value(topItems)
+                )
+            } catch {
+                print("⚠️ Settings: setVisibility failed — \(error)")
+                if wrapped != nil { wrappedVisible.toggle() }
+                if releaseRadar != nil { releaseRadarVisible.toggle() }
+                if topItems != nil { topItemsVisible.toggle() }
+            }
+            isUpdatingVisibility = false
+        }
+    }
+
     private func syncLikesPublic() {
         let value = likesPublic
         isUpdatingLikesPublic = true
