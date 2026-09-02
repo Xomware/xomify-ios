@@ -96,3 +96,31 @@ struct FriendDataUnavailable: View {
         .padding(.vertical, XomSpacing.xl)
     }
 }
+
+/// A friend whose top items have never been built.
+///
+/// Deliberately worded as "not yet", not "unavailable". The backend serves
+/// friends' top items from cache only and never fetches Spotify on their
+/// behalf, so this is a temporary gap their next visit fills — not a refusal,
+/// and it should not read like one.
+struct FriendDataPending: View {
+    let name: String
+
+    var body: some View {
+        VStack(spacing: XomSpacing.sm) {
+            Image(systemName: "hourglass")
+                .font(.title)
+                .foregroundStyle(.white.opacity(0.35))
+            Text("Nothing yet")
+                .font(.headline)
+                .foregroundStyle(.white)
+            Text("\(name) hasn't opened their Music Taste recently, so there's nothing cached to show.")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.55))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, XomSpacing.xl)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, XomSpacing.xl)
+    }
+}

@@ -20,6 +20,13 @@ final class ReleaseRadarViewModel {
     
     // User email (set from profile)
     var userEmail: String?
+
+    // Friend scope. `viewingFriend` nil means own data regardless of the
+    // toggle, so a half-made selection never renders someone else's weeks.
+    var showingFriends = false
+    var viewingFriend: Friend?
+    var friends: [Friend] = []
+    var friendDataDenied = false
     
     private let xomifyService = XomifyService.shared
     
@@ -68,8 +75,38 @@ final class ReleaseRadarViewModel {
     
     // MARK: - Actions
     
+    /// A denial and "they have nothing" are one state: the backend returns the
+    /// same error for "not your friend" and "set to private".
+    private func loadFriendWeeks(_ friend: Friend) async {
+        do {
+            // 12 weeks so the week picker still works on their data, not just
+            // the latest drop.
+            let response = try await xomifyService.getFriendReleaseRadar(email: friend.email, limit: 12)
+            historyWeeks = response.weeks ?? []
+            selectedWeek = historyWeeks.first
+            friendDataDenied = historyWeeks.isEmpty
+        } catch {
+            print("[ReleaseRadar] friend radar unavailable: \(error)")
+            historyWeeks = []
+            selectedWeek = nil
+            friendDataDenied = true
+        }
+        isLoading = false
+    }
+
+    /// Names whose radar this is, so the screen never reads as your own drops
+    /// with someone else's releases in it.
+    var headerSubtitle: String {
+        if showingFriends, let friend = viewingFriend {
+            return "\((friend.displayName ?? friend.email).uppercased()) · NEW DROPS"
+        }
+        return "NEW DROPS · \(displayWeekName.uppercased())"
+    }
+
     func loadData() async {
-        guard let email = userEmail, !email.isEmpty else {
+        friendDataDenied = false
+
+        guard showingFriends || (userEmail.map { !$0.isEmpty } ?? false) else {
             errorMessage = "Please log in first"
             print("❌ ReleaseRadar: No email provided")
             return
@@ -80,9 +117,18 @@ final class ReleaseRadarViewModel {
         isLoading = true
         errorMessage = nil
         
-        print("📡 ReleaseRadar: Loading history for \(email)...")
+        print("📡 ReleaseRadar: Loading history for \(viewingFriend?.email ?? userEmail ?? "self")...")
         
         do {
+            if friends.isEmpty {
+                friends = (try? await xomifyService.getAllFriends().accepted) ?? []
+            }
+
+            if showingFriends, let friend = viewingFriend {
+                await loadFriendWeeks(friend)
+                return
+            }
+
             let response = try await xomifyService.getReleaseRadarHistory()
             
             print("✅ ReleaseRadar: Got response")

@@ -14,7 +14,7 @@ struct ReleaseRadarView: View {
                 VStack(spacing: 0) {
                     BrandGradientHeader(
                         "Release Radar",
-                        subtitle: "NEW DROPS · \(viewModel.displayWeekName.uppercased())",
+                        subtitle: viewModel.headerSubtitle,
                         systemImage: "antenna.radiowaves.left.and.right"
                     ) {
                         HStack(spacing: 12) {
@@ -52,7 +52,24 @@ struct ReleaseRadarView: View {
                     weekHeader
 
                     // Stats bar
-                    if let stats = viewModel.displayStats {
+                    FriendScopePicker(
+                        showingFriends: Binding(
+                            get: { viewModel.showingFriends },
+                            set: { viewModel.showingFriends = $0; Task { await viewModel.loadData() } }
+                        ),
+                        selectedFriend: Binding(
+                            get: { viewModel.viewingFriend },
+                            set: { viewModel.viewingFriend = $0; Task { await viewModel.loadData() } }
+                        ),
+                        friends: viewModel.friends
+                    )
+
+                    if viewModel.friendDataDenied, let friend = viewModel.viewingFriend {
+                        FriendDataUnavailable(
+                            name: friend.displayName ?? friend.email,
+                            artefact: "Release Radar"
+                        )
+                    } else if let stats = viewModel.displayStats {
                         statsBar(stats)
                     }
 

@@ -41,9 +41,68 @@ final class TopItemsViewModel {
     /// from Spotify on the most recent load. Empty on full success.
     var failedRanges: Set<String> = []
 
+    // Friend scope.
+    var showingFriends = false
+    var viewingFriend: Friend?
+    var friends: [Friend] = []
+    var friendDataDenied = false
+    /// The friend has not loaded their own top items yet. Distinct from a
+    /// denial: the backend never fetches Spotify on someone else's behalf, so
+    /// this is a real, temporary state rather than a refusal.
+    var friendCacheCold = false
+
     private let xomifyService = XomifyService.shared
 
     // MARK: - Actions
+
+    /// Names whose taste this is.
+    var headerSubtitle: String {
+        if showingFriends, let friend = viewingFriend {
+            return "\(friend.displayName ?? friend.email) · top tracks, artists, genres"
+        }
+        return "Your top tracks, artists, and genres"
+    }
+
+    private func loadFriendTopItems(_ friend: Friend) async {
+        defer { isLoading = false }
+        do {
+            let response = try await xomifyService.getFriendTopItems(email: friend.email)
+
+            if response.cached != true {
+                friendCacheCold = true
+                clearItems()
+                return
+            }
+
+            shortTermTracks  = response.tracks?["short_term"] ?? []
+            mediumTermTracks = response.tracks?["medium_term"] ?? []
+            longTermTracks   = response.tracks?["long_term"] ?? []
+            shortTermArtists  = response.artists?["short_term"] ?? []
+            mediumTermArtists = response.artists?["medium_term"] ?? []
+            longTermArtists   = response.artists?["long_term"] ?? []
+            shortTermGenres  = Self.genres(from: response.genres?["short_term"])
+            mediumTermGenres = Self.genres(from: response.genres?["medium_term"])
+            longTermGenres   = Self.genres(from: response.genres?["long_term"])
+        } catch {
+            print("[TopItems] friend top items unavailable: \(error)")
+            clearItems()
+            friendDataDenied = true
+        }
+    }
+
+    /// Backend ships weighted `{ genre: score }`; the view consumes
+    /// `(name, count)` tuples, ordered by weight.
+    private static func genres(from weighted: [String: Double]?) -> [(name: String, count: Int)] {
+        (weighted ?? [:])
+            .sorted { $0.value > $1.value }
+            .map { (name: $0.key, count: Int($0.value.rounded())) }
+    }
+
+    private func clearItems() {
+        shortTermTracks = []; mediumTermTracks = []; longTermTracks = []
+        shortTermArtists = []; mediumTermArtists = []; longTermArtists = []
+        shortTermGenres = []; mediumTermGenres = []; longTermGenres = []
+    }
 
     func loadData() async {
         guard !isLoading else { return }
@@ -51,7 +110,19 @@ final class TopItemsViewModel {
         isLoading = true
         errorMessage = nil
 
+        friendDataDenied = false
+        friendCacheCold = false
+
         do {
+            if friends.isEmpty {
+                friends = (try? await xomifyService.getAllFriends().accepted) ?? []
+            }
+
+            if showingFriends, let friend = viewingFriend {
+                await loadFriendTopItems(friend)
+                return
+            }
+
             let response = try await xomifyService.getCurrentTopItems()
 
             shortTermTracks  = response.tracks(for: .shortTerm)

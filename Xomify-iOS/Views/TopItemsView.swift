@@ -28,9 +28,33 @@ struct TopItemsContent: View {
             VStack(spacing: 0) {
                 BrandGradientHeader(
                     "Music Taste",
-                    subtitle: "Your top tracks, artists, and genres",
+                    subtitle: viewModel.headerSubtitle,
                     systemImage: "waveform"
                 )
+
+                FriendScopePicker(
+                    showingFriends: Binding(
+                        get: { viewModel.showingFriends },
+                        set: { viewModel.showingFriends = $0; Task { await viewModel.loadData() } }
+                    ),
+                    selectedFriend: Binding(
+                        get: { viewModel.viewingFriend },
+                        set: { viewModel.viewingFriend = $0; Task { await viewModel.loadData() } }
+                    ),
+                    friends: viewModel.friends
+                )
+
+                if viewModel.friendDataDenied, let friend = viewModel.viewingFriend {
+                    FriendDataUnavailable(
+                        name: friend.displayName ?? friend.email,
+                        artefact: "top items"
+                    )
+                    Spacer()
+                } else if viewModel.friendCacheCold, let friend = viewModel.viewingFriend {
+                    // NOT a refusal. Say so, or it reads as being blocked.
+                    FriendDataPending(name: friend.displayName ?? friend.email)
+                    Spacer()
+                } else {
 
                 // Category selector
                 categorySelector
@@ -69,6 +93,7 @@ struct TopItemsContent: View {
                     .padding(.horizontal)
                     .padding(.top, 12)
                     .padding(.bottom, 100) // Space for floating button
+                }
                 }
             }
 
