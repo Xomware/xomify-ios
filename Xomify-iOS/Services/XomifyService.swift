@@ -26,6 +26,45 @@ actor XomifyService {
         try await network.xomifyGet("/wrapped/all")
     }
 
+    // MARK: - Friends' data
+    //
+    // Same payloads as the caller's own endpoints; the backend gates each on an
+    // accepted friendship AND the subject's visibility flag, and returns the
+    // same error for both so a denial reveals nothing.
+
+    /// A friend's Wrapped archive. 401 when not permitted.
+    func getFriendWrapped(email: String) async throws -> WrappedDataResponse {
+        let envelope: FriendWrappedResponse = try await network.xomifyGet(
+            "/friends/wrapped", queryParams: ["email": email]
+        )
+        return envelope.wrapped
+    }
+
+    /// A friend's Release Radar weeks. `limit` defaults to the latest week only.
+    func getFriendReleaseRadar(email: String, limit: Int = 1) async throws -> FriendReleaseRadarResponse {
+        try await network.xomifyGet("/friends/release-radar", queryParams: [
+            "email": email,
+            "limit": String(limit)
+        ])
+    }
+
+    /// A friend's top items. Cache-only server-side: `cached == false` means
+    /// they have not loaded their own top items yet, NOT that anything failed.
+    func getFriendTopItems(email: String) async throws -> FriendTopItemsResponse {
+        try await network.xomifyGet("/friends/top-items", queryParams: ["email": email])
+    }
+
+    /// Set which of the caller's artefacts friends can see. Partial - omitted
+    /// keys are left alone.
+    @discardableResult
+    func setVisibility(wrapped: String? = nil, releaseRadar: String? = nil, topItems: String? = nil) async throws -> VisibilityResponse {
+        var body: [String: Any] = [:]
+        if let wrapped { body["wrapped"] = wrapped }
+        if let releaseRadar { body["releaseRadar"] = releaseRadar }
+        if let topItems { body["topItems"] = topItems }
+        return try await network.xomifyPost("/users/visibility", body: body)
+    }
+
     /// Get user table data
     func getUserTableData() async throws -> XomifyUser {
         try await network.xomifyGet("/user/data")

@@ -27,6 +27,13 @@ struct WrappedContent: View {
     @State private var isLoadingContent = false
     @State private var isSaving = false
 
+    // Friend scope. Nil `viewingFriend` means "Me" regardless of the toggle,
+    // so a half-made selection never renders someone else's header.
+    @State private var showingFriends = false
+    @State private var viewingFriend: Friend?
+    @State private var friends: [Friend] = []
+    @State private var friendDataDenied = false
+
     @Bindable private var playlistBuilder = PlaylistBuilderManager.shared
     private let spotifyService = SpotifyService.shared
     private let xomifyService = XomifyService.shared
@@ -36,7 +43,7 @@ struct WrappedContent: View {
             VStack(spacing: 0) {
                 BrandGradientHeader(
                     "Wrapped",
-                    subtitle: currentWrap.map { "MONTHLY RECAP · \($0.displayName.uppercased())" } ?? "YOUR MONTHLY RECAP",
+                    subtitle: headerSubtitle,
                     systemImage: "gift.fill"
                 ) {
                     if let wrap = currentWrap, let shareURL = URL(string: "https://xomify.xomware.com/wrapped") {
@@ -54,6 +61,20 @@ struct WrappedContent: View {
                         })
                     }
                 }
+
+                FriendScopePicker(
+                    showingFriends: $showingFriends,
+                    selectedFriend: $viewingFriend,
+                    friends: friends
+                )
+
+                if friendDataDenied, let friend = viewingFriend {
+                    FriendDataUnavailable(
+                        name: friend.displayName ?? friend.email,
+                        artefact: "Wrapped"
+                    )
+                    Spacer()
+                } else {
 
                 // Month selector header
                 if !wraps.isEmpty {
@@ -89,6 +110,7 @@ struct WrappedContent: View {
                 } else {
                     contentView
                 }
+                }
             }
 
             // Floating playlist builder button
@@ -104,6 +126,8 @@ struct WrappedContent: View {
         }
         .background(Color.xomifyDark.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
+        .onChange(of: showingFriends) { _, _ in Task { await loadData() } }
+        .onChange(of: viewingFriend?.email) { _, _ in Task { await loadData() } }
         .task {
             await loadData()
         }
@@ -511,11 +535,31 @@ struct WrappedContent: View {
 
     // MARK: - Data Loading
 
+    /// Whose recap this is. Says the name when it is not yours, so the screen
+    /// never looks like your own data with someone else's numbers in it.
+    private var headerSubtitle: String {
+        if let friend = viewingFriend, showingFriends {
+            return "\((friend.displayName ?? friend.email).uppercased()) · MONTHLY RECAP"
+        }
+        return currentWrap.map { "MONTHLY RECAP · \($0.displayName.uppercased())" }
+            ?? "YOUR MONTHLY RECAP"
+    }
+
     private func loadData() async {
         isLoading = true
         errorMessage = nil
+        friendDataDenied = false
 
         do {
+            if friends.isEmpty {
+                friends = (try? await xomifyService.getAllFriends().accepted) ?? []
+            }
+
+            if showingFriends, let friend = viewingFriend {
+                await loadFriendWraps(friend)
+                return
+            }
+
             let user = try await spotifyService.getCurrentUser()
 
             guard let email = user.email, !email.isEmpty else {
@@ -540,6 +584,25 @@ struct WrappedContent: View {
         }
 
         isLoading = false
+    }
+
+    /// A denial and "they have nothing" are one state on purpose: the backend
+    /// returns the same error for "not your friend" and "set to private", and
+    /// distinguishing them here would leak what that was designed to hide.
+    private func loadFriendWraps(_ friend: Friend) async {
+        do {
+            let data = try await xomifyService.getFriendWrapped(email: friend.email)
+            wraps = data.wraps ?? []
+            selectedMonth = wraps.first
+            friendDataDenied = wraps.isEmpty
+        } catch {
+            print("[Wrapped] friend wrapped unavailable: \(error)")
+            wraps = []
+            selectedMonth = nil
+            friendDataDenied = true
+        }
+        isLoading = false
+        await loadContent()
     }
 
     private func loadContent() async {

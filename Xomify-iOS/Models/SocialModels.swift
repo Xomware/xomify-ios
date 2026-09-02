@@ -1037,3 +1037,43 @@ struct SharerIdentity: Hashable, Sendable {
     let displayName: String
     let avatarURL: URL?
 }
+
+// MARK: - Friends' data
+//
+// Envelopes for the friend-scoped reads. Each mirrors the caller's own payload
+// with the subject's email attached, so a view can tell whose data it holds.
+
+struct FriendWrappedResponse: Codable, Sendable {
+    let email: String?
+    let wrapped: WrappedDataResponse
+}
+
+struct FriendReleaseRadarResponse: Codable, Sendable {
+    let email: String?
+    let weeks: [ReleaseRadarWeek]?
+}
+
+struct FriendTopItemsResponse: Codable, Sendable {
+    let email: String?
+    /// `false` means the friend has not loaded their own top items yet. The
+    /// backend never fetches Spotify on their behalf, so this is a real state
+    /// to render, not an error.
+    let cached: Bool?
+    let tracks: [String: [SpotifyTrack]]?
+    let artists: [String: [SpotifyArtist]]?
+    let genres: [String: [String: Double]]?
+}
+
+struct VisibilityResponse: Codable, Sendable {
+    let email: String?
+    let visibility: VisibilitySettings?
+}
+
+struct VisibilitySettings: Codable, Sendable, Equatable {
+    let wrapped: String?
+    let releaseRadar: String?
+    let topItems: String?
+
+    static let friends = "friends"
+    static let `private` = "private"
+}
