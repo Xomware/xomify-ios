@@ -88,6 +88,13 @@
 			);
 			target = 5291E4C52F0822CF00A10C3E /* Xomify-iOS */;
 		};
+		F29641B62FA19F5200A9830C /* Exceptions for "XomifyShareExtension" folder in "XomifyShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F29641AA2FA19F5200A9830C /* XomifyShareExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -101,6 +108,9 @@
 		};
 		F29641AC2FA19F5200A9830C /* XomifyShareExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F29641B62FA19F5200A9830C /* Exceptions for "XomifyShareExtension" folder in "XomifyShareExtension" target */,
+			);
 			path = XomifyShareExtension;
 			sourceTree = "<group>";
 		};
