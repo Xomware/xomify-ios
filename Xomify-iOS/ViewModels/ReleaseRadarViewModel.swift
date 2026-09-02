@@ -96,6 +96,16 @@ final class ReleaseRadarViewModel {
 
     /// Names whose radar this is, so the screen never reads as your own drops
     /// with someone else's releases in it.
+    /// The Spotify playlist for the week on screen, when one was built.
+    /// Works the same for your own weeks and a friend's — the id travels with
+    /// the week either way.
+    var selectedPlaylistURL: URL? {
+        guard let id = (selectedWeek ?? historyWeeks.first)?.playlistId, !id.isEmpty else {
+            return nil
+        }
+        return URL(string: "https://open.spotify.com/playlist/\(id)")
+    }
+
     var headerSubtitle: String {
         if showingFriends, let friend = viewingFriend {
             return "\((friend.displayName ?? friend.email).uppercased()) · NEW DROPS"

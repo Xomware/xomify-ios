@@ -18,6 +18,18 @@ struct ReleaseRadarView: View {
                         systemImage: "antenna.radiowaves.left.and.right"
                     ) {
                         HStack(spacing: 12) {
+                            // Every week already carried a playlistId and
+                            // nothing ever opened it. It is the only way to
+                            // hear a friend's radar rather than just read it.
+                            if let playlistURL = viewModel.selectedPlaylistURL {
+                                Link(destination: playlistURL) {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(Color.spotifyGreen)
+                                }
+                                .accessibilityLabel("Open this week's playlist in Spotify")
+                            }
+
                             Button {
                                 Task { await viewModel.refresh() }
                             } label: {
@@ -30,6 +42,8 @@ struct ReleaseRadarView: View {
                                 }
                             }
                             .disabled(viewModel.isRefreshing || isLoadingUser)
+                            .opacity(viewModel.showingFriends ? 0 : 1)
+                            .allowsHitTesting(!viewModel.showingFriends)
 
                             if viewModel.selectedWeek != nil || !viewModel.historyWeeks.isEmpty {
                                 ShareLink(
