@@ -38,7 +38,6 @@ final class AuthService: NSObject, Sendable {
     
     // Config values cached at init (matching your Secrets.xcconfig keys)
     private let clientId: String
-    private let clientSecret: String
     private let redirectUri = "xomify://callback"
     private let scopes: String
     
@@ -62,7 +61,6 @@ final class AuthService: NSObject, Sendable {
     private override init() {
         // Read config at init time - matching your Secrets.xcconfig variable names
         self.clientId = Bundle.main.object(forInfoDictionaryKey: "SPOTIFY_CLIENT_ID") as? String ?? ""
-        self.clientSecret = Bundle.main.object(forInfoDictionaryKey: "SPOTIFY_CLIENT_SECRET") as? String ?? ""
         self.xomifyApiId = Bundle.main.object(forInfoDictionaryKey: "XOMIFY_API_ID") as? String ?? ""
         self.xomifyApiToken = Bundle.main.object(forInfoDictionaryKey: "XOMIFY_API_TOKEN") as? String ?? ""
         
