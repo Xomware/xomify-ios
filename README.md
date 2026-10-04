@@ -95,7 +95,6 @@ Xomify-iOS/
 ```xcconfig
 // Spotify API Credentials
 SPOTIFY_CLIENT_ID = your_spotify_client_id
-SPOTIFY_CLIENT_SECRET = your_spotify_client_secret
 
 // Xomify Backend API
 XOMIFY_API_ID = your_api_gateway_id
@@ -107,8 +106,6 @@ XOMIFY_API_TOKEN = your_api_key
 ```xml
 <key>SPOTIFY_CLIENT_ID</key>
 <string>$(SPOTIFY_CLIENT_ID)</string>
-<key>SPOTIFY_CLIENT_SECRET</key>
-<string>$(SPOTIFY_CLIENT_SECRET)</string>
 <key>XOMIFY_API_ID</key>
 <string>$(XOMIFY_API_ID)</string>
 <key>XOMIFY_API_TOKEN</key>

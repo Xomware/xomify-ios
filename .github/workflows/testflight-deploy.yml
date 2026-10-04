@@ -44,18 +44,15 @@ jobs:
           set -euo pipefail
 
           SPOTIFY_CLIENT_ID=$(aws ssm get-parameter --name /xomify/spotify/CLIENT_ID --with-decryption --query 'Parameter.Value' --output text)
-          SPOTIFY_CLIENT_SECRET=$(aws ssm get-parameter --name /xomify/spotify/CLIENT_SECRET --with-decryption --query 'Parameter.Value' --output text)
           XOMIFY_API_ID=$(aws ssm get-parameter --name /xomify/api/API_ID --with-decryption --query 'Parameter.Value' --output text)
           XOMIFY_API_TOKEN=$(aws ssm get-parameter --name /xomify/api/API_AUTH_TOKEN --with-decryption --query 'Parameter.Value' --output text)
 
           echo "::add-mask::$SPOTIFY_CLIENT_ID"
-          echo "::add-mask::$SPOTIFY_CLIENT_SECRET"
           echo "::add-mask::$XOMIFY_API_ID"
           echo "::add-mask::$XOMIFY_API_TOKEN"
 
           cat > secrets.xcconfig << XCCONFIG
           SPOTIFY_CLIENT_ID = $SPOTIFY_CLIENT_ID
-          SPOTIFY_CLIENT_SECRET = $SPOTIFY_CLIENT_SECRET
           XOMIFY_API_ID = $XOMIFY_API_ID
           XOMIFY_API_TOKEN = $XOMIFY_API_TOKEN
           XCCONFIG
